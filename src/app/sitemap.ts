@@ -4,9 +4,9 @@ import { getPrograms } from '@/lib/data'
 export const dynamic = 'force-dynamic';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://funoonfiesta.noorululama.org';
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://darsfest.org';
     let programs: any[] = [];
-    
+
     try {
         programs = await getPrograms();
     } catch (e) {

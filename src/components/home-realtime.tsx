@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Music2, ArrowRight } from "lucide-react"; // Added Music2, ArrowRight
+import { ArrowRight } from "lucide-react";
 import { LiveScorePulse } from "@/components/live-score-pulse";
 import { TeamLeadersShowcase } from "@/components/team-leaders-showcase";
 
@@ -98,11 +98,6 @@ export function HomeRealtime({ teams: initialTeams, liveScores: initialLiveScore
               <div className="bg-[#F2C04D] hover:bg-[#dbb13d] text-black font-medium text-lg px-8 py-3 rounded-full shadow-lg transition-transform hover:scale-105 flex items-center gap-3 active:scale-95">
                 Click to Dive In
                 <ArrowRight className="w-5 h-5" />
-              </div>
-            </Link>
-            <Link href="/festory">
-              <div className="bg-gradient-to-r from-fuchsia-600 to-purple-600 text-white font-medium text-lg px-8 py-3 rounded-full shadow-lg transition-transform hover:scale-105 flex items-center gap-3 active:scale-95 border border-white/20">
-                Festory Live <Music2 className="w-5 h-5" />
               </div>
             </Link>
           </div>

@@ -1,7 +1,6 @@
 export const ADMIN_COOKIE = "fest_admin_token";
 export const JURY_COOKIE = "fest_jury_token";
 export const TEAM_COOKIE = "fest_team_token";
-export const FESTORY_COOKIE = "fest_social_token";
 export const SESSION_MAX_AGE = 60 * 60 * 24 * 365 * 10; // 10 years
 
 
