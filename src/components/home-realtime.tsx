@@ -7,8 +7,6 @@ import { Button } from "@/components/ui/button";
 import { Music2, ArrowRight } from "lucide-react"; // Added Music2, ArrowRight
 import { LiveScorePulse } from "@/components/live-score-pulse";
 import { TeamLeadersShowcase } from "@/components/team-leaders-showcase";
-import { HomeEngagementSection } from "@/components/HomeEngagementSection";
-import { AboutSection } from "@/components/AboutSection";
 
 import { useScoreboardUpdates } from "@/hooks/use-realtime";
 import { useRouter } from "next/navigation";
@@ -193,8 +191,6 @@ export function HomeRealtime({ teams: initialTeams, liveScores: initialLiveScore
         </div>
       </section>
 
-      {/* Engagement Section */}
-      <HomeEngagementSection />
 
       {/* Team Leaders Section */}
       <section className="bg-white py-12 sm:py-16 md:py-20 relative overflow-hidden">
@@ -224,8 +220,6 @@ export function HomeRealtime({ teams: initialTeams, liveScores: initialLiveScore
         </div>
       </section>
 
-      {/* About Funoon Fiesta Section */}
-      <AboutSection />
 
       {/* Control Room Section */}
       <section className="bg-gradient-to-br from-[#8B4513]/5 to-[#0d7377]/5 py-12 sm:py-16 md:py-20">
