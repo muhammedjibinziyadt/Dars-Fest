@@ -19,35 +19,28 @@ interface LiveScorePieProps {
   liveScores: Map<string, number>;
 }
 
-// Match team brand colors used across the app
-const TEAM_COLORS: Record<string, string> = {
-  SAMARQAND: "#D72638",
-  NAHAVAND: "#1E3A8A",
-  YAMAMA: "#7C3AED",
-  QURTUBA: "#FACC15",
-  MUQADDAS: "#059669",
-  BUKHARA: "#FB923C",
-};
-
 export function LiveScorePie({ teams, liveScores }: LiveScorePieProps) {
-  const teamsWithScores = teams.map((team) => {
-    const totalPoints = liveScores.get(team.id) ?? team.total_points;
+  const teamsWithScores = (teams || []).map((team) => {
+    const totalPoints = liveScores.get(team.id) ?? team.total_points ?? 0;
     return { ...team, totalPoints };
   });
 
   const sorted = [...teamsWithScores].sort((a, b) => b.totalPoints - a.totalPoints);
 
+  const fallbackPalette = [
+    "#D72638",
+    "#1E3A8A",
+    "#7C3AED",
+    "#FACC15",
+    "#059669",
+    "#FB923C",
+    "#0EA5E9",
+    "#EC4899",
+  ];
+
   const chartData = sorted.map((team, index) => {
-    const fallbackPalette = [
-      "#D72638",
-      "#1E3A8A",
-      "#7C3AED",
-      "#FACC15",
-      "#059669",
-      "#FB923C",
-    ];
     const fallback = fallbackPalette[index % fallbackPalette.length];
-    const fill = TEAM_COLORS[team.name] ?? fallback;
+    const fill = team.color && /^#([0-9A-F]{3}){1,2}$/i.test(team.color) ? team.color : fallback;
     return {
       team: team.name,
       points: team.totalPoints,
@@ -70,7 +63,7 @@ export function LiveScorePie({ teams, liveScores }: LiveScorePieProps) {
   const totalPoints = sorted.reduce((sum, t) => sum + t.totalPoints, 0);
 
   return (
-    <div className="flex flex-col ">
+    <div className="flex flex-col">
       <div className="flex flex-col gap-2 p-6 pb-0">
         <div className="flex items-center gap-2">
           <CardTitle className="text-xl text-white">Funoon Fiesta Team Spread</CardTitle>
@@ -83,7 +76,7 @@ export function LiveScorePie({ teams, liveScores }: LiveScorePieProps) {
           </Badge>
         </div>
         <CardDescription className="text-white/60">
-          Share of total points across all houses in the fest.
+          Share of total points across all house teams.
         </CardDescription>
       </div>
       {totalPoints === 0 ? (
@@ -94,61 +87,59 @@ export function LiveScorePie({ teams, liveScores }: LiveScorePieProps) {
         </CardContent>
       ) : (
         <CardContent className="flex flex-col items-center gap-4 pb-6 pt-2">
-        <ChartContainer
-          config={chartConfig}
-          className="[&_.recharts-text]:fill-white mx-auto h-[280px] md:h-[340px] w-full max-w-[420px]"
-        >
-          <PieChart>
-            <ChartTooltip
-              content={
-                <ChartTooltipContent
-                  nameKey="team"
-                  labelKey="team"
-                  hideLabel
-                  formatter={(value, name) => (
-                    <span className="flex w-full items-center justify-between gap-4">
-                      <span className="text-xs text-muted-foreground">{name}</span>
-                      <span className="font-mono text-xs font-medium">
-                        {formatNumber(value as number)} pts
+          <ChartContainer
+            config={chartConfig}
+            className="[&_.recharts-text]:fill-white mx-auto h-[280px] md:h-[340px] w-full max-w-[420px]"
+          >
+            <PieChart>
+              <ChartTooltip
+                content={
+                  <ChartTooltipContent
+                    nameKey="team"
+                    labelKey="team"
+                    hideLabel
+                    formatter={(value, name) => (
+                      <span className="flex w-full items-center justify-between gap-4">
+                        <span className="text-xs text-muted-foreground">{name}</span>
+                        <span className="font-mono text-xs font-medium">
+                          {formatNumber(value as number)} pts
+                        </span>
                       </span>
-                    </span>
-                  )}
-                />
-              }
-            />
-            <Pie
-              data={chartData}
-              dataKey="points"
-              nameKey="team"
-              innerRadius={60}
-              outerRadius={120}
-              paddingAngle={3}
-              cornerRadius={8}
-            >
-              <LabelList
-                dataKey="points"
-                stroke="none"
-                fontSize={11}
-                fontWeight={500}
-                fill="currentColor"
-                formatter={(value: any) => {
-                  if (typeof value === 'number') {
-                    return formatNumber(value);
-                  }
-                  return String(value ?? '');
-                }}
+                    )}
+                  />
+                }
               />
-            </Pie>
-          </PieChart>
-        </ChartContainer>
-        <p className="text-xs text-white/60">
-          Total points across teams:{" "}
-          <span className="font-semibold text-white">{formatNumber(totalPoints)}</span>
-        </p>
-      </CardContent>
+              <Pie
+                data={chartData}
+                dataKey="points"
+                nameKey="team"
+                innerRadius={60}
+                outerRadius={120}
+                paddingAngle={3}
+                cornerRadius={8}
+              >
+                <LabelList
+                  dataKey="points"
+                  stroke="none"
+                  fontSize={11}
+                  fontWeight={500}
+                  fill="currentColor"
+                  formatter={(value: any) => {
+                    if (typeof value === 'number') {
+                      return formatNumber(value);
+                    }
+                    return String(value ?? '');
+                  }}
+                />
+              </Pie>
+            </PieChart>
+          </ChartContainer>
+          <p className="text-xs text-white/60">
+            Total points across teams:{" "}
+            <span className="font-semibold text-white">{formatNumber(totalPoints)}</span>
+          </p>
+        </CardContent>
       )}
     </div>
   );
 }
-
-

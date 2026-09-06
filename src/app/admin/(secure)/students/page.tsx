@@ -394,7 +394,7 @@ export default async function StudentsPage() {
           Required columns: <code>name</code> and either <code>team_id</code> or <code>team_name</code>
           <br />
           <span className="text-xs text-white/50">
-            Chest numbers will be auto-generated. Team names: SAMARQAND, NAHAVAND, YAMAMA, QURTUBA, MUQADDAS, BUKHARA
+            Chest numbers will be auto-generated based on selected/provided team names.
           </span>
         </CardDescription>
         <form

@@ -85,12 +85,12 @@ export default function ChatbotClient() {
                 ...prev,
                 { role: "assistant", content: data.response },
             ]);
-        } catch (error) {
+        } catch (error: any) {
             setMessages((prev) => [
                 ...prev,
                 {
                     role: "assistant",
-                    content: "Sorry, I encountered an error. Please try again later.",
+                    content: error?.message || "Sorry, I encountered an error. Please try again later.",
                 },
             ]);
         } finally {

@@ -7,16 +7,19 @@ import {
   ProgramRegistration,
   RegistrationSchedule,
   ReplacementRequest,
+  Student,
+  Team,
 } from "@/lib/types";
 import {
-  ProgramModel,
-  ProgramRegistrationModel,
-  RegistrationScheduleModel,
-  ReplacementRequestModel,
-  StudentModel,
-  TeamModel,
+  teamsCol,
+  studentsCol,
+  programsCol,
+  programRegistrationsCol,
+  registrationSchedulesCol,
+  replacementRequestsCol,
+  docsToData,
 } from "./models";
-import { connectDB } from "./db";
+import { adminDb } from "./firebase-admin";
 
 function sanitizeColor(color?: string) {
   if (!color) return "#0ea5e9";
@@ -24,8 +27,8 @@ function sanitizeColor(color?: string) {
 }
 
 export async function getPortalTeams(): Promise<PortalTeam[]> {
-  await connectDB();
-  const teams = await TeamModel.find().lean();
+  const snap = await teamsCol.get();
+  const teams = docsToData<Team>(snap);
   return teams.map((team) => ({
     id: team.id,
     teamName: team.name,
@@ -36,7 +39,8 @@ export async function getPortalTeams(): Promise<PortalTeam[]> {
 }
 
 export async function savePortalTeam(team: PortalTeam) {
-  await connectDB();
+  const ref = teamsCol.doc(team.id);
+  const doc = await ref.get();
 
   const updateData: any = {
     name: team.teamName,
@@ -44,46 +48,48 @@ export async function savePortalTeam(team: PortalTeam) {
     color: sanitizeColor(team.themeColor),
   };
 
-  // Only update password if provided and not empty
   if (team.password && team.password.trim() !== "") {
-    // If it looks like a bcrypt hash, assume it's already hashed (e.g. from seed or re-save)
-    // But usually we just re-hash if it's being saved from UI.
-    // To be safe, if the UI sends a new password, we hash it.
-    // If the UI sends the 'placeholder' (empty), we skip this block.
     if (!team.password.startsWith("$2")) {
       updateData.portal_password = await hash(team.password, 10);
     }
   }
 
-  await TeamModel.updateOne(
-    { id: team.id },
-    {
-      $set: updateData,
-      $setOnInsert: {
-        leader_photo: team.leaderName,
-        description: `${team.teamName} squad`,
-        contact: `${team.teamName.toLowerCase().replace(/\s+/g, "")}@fest.edu`,
-        total_points: 0,
-      },
-    },
-    { upsert: true },
-  );
+  if (!doc.exists) {
+    updateData.leader_photo = team.leaderName;
+    updateData.description = `${team.teamName} squad`;
+    updateData.contact = `${team.teamName.toLowerCase().replace(/\s+/g, "")}@fest.edu`;
+    updateData.total_points = 0;
+  }
+
+  await ref.set(updateData, { merge: true });
 }
 
 export async function deletePortalTeam(teamId: string) {
-  await connectDB();
-  await TeamModel.deleteOne({ id: teamId });
-  await StudentModel.deleteMany({ team_id: teamId });
-  await ProgramRegistrationModel.deleteMany({ teamId });
+  const batch = adminDb.batch();
+
+  batch.delete(teamsCol.doc(teamId));
+
+  const [studentsSnap, regsSnap] = await Promise.all([
+    studentsCol.where("team_id", "==", teamId).get(),
+    programRegistrationsCol.where("teamId", "==", teamId).get(),
+  ]);
+
+  studentsSnap.docs.forEach((doc: any) => batch.delete(doc.ref));
+  regsSnap.docs.forEach((doc: any) => batch.delete(doc.ref));
+
+  await batch.commit();
 }
 
 export async function getPortalStudents(): Promise<PortalStudent[]> {
-  await connectDB();
-  const [students, teams] = await Promise.all([
-    StudentModel.find().lean(),
-    TeamModel.find().lean(),
+  const [studentsSnap, teamsSnap] = await Promise.all([
+    studentsCol.get(),
+    teamsCol.get(),
   ]);
+
+  const students = docsToData<Student>(studentsSnap);
+  const teams = docsToData<Team>(teamsSnap);
   const teamMap = new Map(teams.map((team) => [team.id, team.name]));
+
   return students.map((student) => ({
     id: student.id,
     name: student.name,
@@ -100,89 +106,56 @@ export async function upsertPortalStudent(input: {
   chestNumber: string;
   teamId: string;
 }) {
-  await connectDB();
   const chestNumber = input.chestNumber.trim().toUpperCase();
-  const duplicate = await StudentModel.findOne({
-    chest_no: chestNumber,
-    ...(input.id ? { id: { $ne: input.id } } : {}),
-  })
-    .lean()
-    .exec();
+
+  const snap = await studentsCol.where("chest_no", "==", chestNumber).get();
+  const duplicate = snap.docs.find((d: any) => !input.id || d.id !== input.id);
+
   if (duplicate) {
-    throw new Error(`Chest number "${input.chestNumber}" is already registered to student "${duplicate.name}".`);
+    const student = duplicate.data() as Student;
+    throw new Error(`Chest number "${input.chestNumber}" is already registered to student "${student.name}".`);
   }
 
   const studentId = input.id ?? randomUUID();
-  const isNew = !input.id;
+  const ref = studentsCol.doc(studentId);
+  const doc = await ref.get();
 
-  try {
-    await StudentModel.updateOne(
-      { id: studentId },
-      {
-        $set: {
-          name: input.name,
-          chest_no: chestNumber,
-          team_id: input.teamId,
-        },
-        $setOnInsert: { total_points: 0 },
-      },
-      { upsert: true },
-    );
+  const updateData: any = {
+    name: input.name,
+    chest_no: chestNumber,
+    team_id: input.teamId,
+  };
 
-    // Emit real-time event
-    const { emitStudentCreated, emitStudentUpdated } = await import("./pusher");
-    if (isNew) {
-      await emitStudentCreated(studentId, input.teamId);
-    } else {
-      await emitStudentUpdated(studentId, input.teamId);
-    }
-  } catch (error: any) {
-    // Handle MongoDB duplicate key error (code 11000) for chest_no unique index
-    if (error.code === 11000 && error.keyPattern?.chest_no) {
-      throw new Error(`Chest number "${input.chestNumber}" is already registered.`);
-    }
-    throw error;
+  if (!doc.exists) {
+    updateData.total_points = 0;
   }
+
+  await ref.set(updateData, { merge: true });
 }
 
 export async function deletePortalStudent(studentId: string) {
-  await connectDB();
-  const student = await StudentModel.findOne({ id: studentId }).lean();
-  await StudentModel.deleteOne({ id: studentId });
-  await ProgramRegistrationModel.deleteMany({ studentId });
+  const batch = adminDb.batch();
 
-  // Emit real-time event
-  if (student?.team_id) {
-    const { emitStudentDeleted } = await import("./pusher");
-    await emitStudentDeleted(studentId, student.team_id);
-  }
+  batch.delete(studentsCol.doc(studentId));
+
+  const regsSnap = await programRegistrationsCol.where("studentId", "==", studentId).get();
+  regsSnap.docs.forEach((doc: any) => batch.delete(doc.ref));
+
+  await batch.commit();
 }
 
 export async function getProgramsWithLimits(): Promise<Program[]> {
-  await connectDB();
-  const programs = await ProgramModel.find().lean();
-  const mapped = programs.map((program) => ({
+  const snap = await programsCol.get();
+  const programs = docsToData<Program>(snap);
+  return programs.map((program) => ({
     ...program,
     candidateLimit: program.candidateLimit ?? 1,
   }));
-  // Ensure plain JSON objects to prevent Next.js serialization errors
-  return JSON.parse(JSON.stringify(mapped));
 }
 
 export async function getProgramRegistrations(): Promise<ProgramRegistration[]> {
-  await connectDB();
-  const registrations = await ProgramRegistrationModel.find().lean();
-  return registrations.map((registration) => ({
-    id: registration.id,
-    programId: registration.programId,
-    programName: registration.programName,
-    studentId: registration.studentId,
-    studentName: registration.studentName,
-    studentChest: registration.studentChest,
-    teamId: registration.teamId,
-    teamName: registration.teamName,
-    timestamp: registration.timestamp,
-  }));
+  const snap = await programRegistrationsCol.get();
+  return docsToData<ProgramRegistration>(snap);
 }
 
 export async function registerCandidate(entry: {
@@ -194,63 +167,54 @@ export async function registerCandidate(entry: {
   teamId: string;
   teamName: string;
 }) {
-  await connectDB();
+  const existingSnap = await programRegistrationsCol
+    .where("programId", "==", entry.programId)
+    .where("studentId", "==", entry.studentId)
+    .limit(1)
+    .get();
+
+  if (!existingSnap.empty) {
+    throw new Error(`Student "${entry.studentName}" is already registered for program "${entry.programName}".`);
+  }
+
+  const id = randomUUID();
   const record: ProgramRegistration = {
-    id: randomUUID(),
+    id,
     ...entry,
     timestamp: new Date().toISOString(),
   };
 
-  try {
-    await ProgramRegistrationModel.create(record);
-    return record;
-  } catch (error: any) {
-    // Handle MongoDB duplicate key error (code 11000) for programId + studentId unique index
-    if (error.code === 11000 && error.keyPattern?.programId && error.keyPattern?.studentId) {
-      throw new Error(`Student "${entry.studentName}" is already registered for program "${entry.programName}".`);
-    }
-    throw error;
-  }
+  await programRegistrationsCol.doc(id).set(record);
+  return record;
 }
 
 export async function removeProgramRegistration(registrationId: string) {
-  await connectDB();
-  const registration = await ProgramRegistrationModel.findOne({ id: registrationId }).lean();
-  await ProgramRegistrationModel.deleteOne({ id: registrationId });
-
-  // Emit real-time event
-  if (registration) {
-    const { emitRegistrationDeleted } = await import("./pusher");
-    await emitRegistrationDeleted(registrationId, registration.programId, registration.teamId);
-  }
+  await programRegistrationsCol.doc(registrationId).delete();
 }
 
 export async function removeRegistrationsByProgram(programId: string) {
-  await connectDB();
-  await ProgramRegistrationModel.deleteMany({ programId });
+  const snap = await programRegistrationsCol.where("programId", "==", programId).get();
+  const batch = adminDb.batch();
+  snap.docs.forEach((doc: any) => batch.delete(doc.ref));
+  await batch.commit();
 }
 
 export async function getRegistrationSchedule(): Promise<RegistrationSchedule> {
-  await connectDB();
-  const doc = await RegistrationScheduleModel.findOne().lean();
-  if (doc) {
-    return { startDateTime: doc.startDateTime, endDateTime: doc.endDateTime };
+  const doc = await registrationSchedulesCol.doc("global").get();
+  if (doc.exists) {
+    const data = doc.data() as RegistrationSchedule;
+    return { startDateTime: data.startDateTime, endDateTime: data.endDateTime };
   }
   const schedule = {
     startDateTime: new Date().toISOString(),
     endDateTime: new Date(Date.now() + 3600_000).toISOString(),
   };
-  await RegistrationScheduleModel.create({ key: "global", ...schedule });
+  await registrationSchedulesCol.doc("global").set(schedule);
   return schedule;
 }
 
 export async function updateRegistrationSchedule(schedule: RegistrationSchedule) {
-  await connectDB();
-  await RegistrationScheduleModel.updateOne(
-    { key: "global" },
-    { $set: schedule, $setOnInsert: { key: "global" } },
-    { upsert: true },
-  );
+  await registrationSchedulesCol.doc("global").set(schedule, { merge: true });
 }
 
 export async function isRegistrationOpen(now: Date = new Date()): Promise<boolean> {
@@ -258,39 +222,26 @@ export async function isRegistrationOpen(now: Date = new Date()): Promise<boolea
   return now >= new Date(schedule.startDateTime) && now <= new Date(schedule.endDateTime);
 }
 
-/**
- * Check participation limits with full program context
- * Limits:
- * - Maximum 3 individual on-stage events (section: "single", stage: true)
- * - Maximum 3 individual off-stage events (section: "single", stage: false)
- * - Maximum 3 group events (section: "group")
- * - No limit on general events (section: "general")
- */
 export function validateParticipationLimit(
   studentId: string,
   program: Program,
   allPrograms: Program[],
   registrations: ProgramRegistration[],
 ): { allowed: boolean; reason?: string; currentCount?: number; maxCount?: number } {
-  // General events have no limit
   if (program.section === "general") {
     return { allowed: true };
   }
 
-  // Get all registrations for this student
   const studentRegistrations = registrations.filter((reg) => reg.studentId === studentId);
-
-  // Create a map of programId -> Program for quick lookup
   const programMap = new Map(allPrograms.map((p) => [p.id, p]));
 
   if (program.section === "single") {
-    // Individual events: check based on stage (on-stage vs off-stage)
     const sameStageRegistrations = studentRegistrations.filter((reg) => {
       const regProgram = programMap.get(reg.programId);
       return (
         regProgram?.section === "single" &&
         regProgram?.stage === program.stage &&
-        reg.programId !== program.id // Exclude current program if already registered
+        reg.programId !== program.id
       );
     });
 
@@ -311,7 +262,6 @@ export function validateParticipationLimit(
   }
 
   if (program.section === "group") {
-    // Group events: maximum 3
     const groupRegistrations = studentRegistrations.filter((reg) => {
       const regProgram = programMap.get(reg.programId);
       return regProgram?.section === "group" && reg.programId !== program.id;
@@ -336,27 +286,14 @@ export function validateParticipationLimit(
 }
 
 export async function getReplacementRequests(teamId?: string): Promise<ReplacementRequest[]> {
-  await connectDB();
-  const query = teamId ? { teamId } : {};
-  const requests = await ReplacementRequestModel.find(query).lean().sort({ submittedAt: -1 });
-  return requests.map((request) => ({
-    id: request.id,
-    programId: request.programId,
-    programName: request.programName,
-    oldStudentId: request.oldStudentId,
-    oldStudentName: request.oldStudentName,
-    oldStudentChest: request.oldStudentChest,
-    newStudentId: request.newStudentId,
-    newStudentName: request.newStudentName,
-    newStudentChest: request.newStudentChest,
-    teamId: request.teamId,
-    teamName: request.teamName,
-    reason: request.reason,
-    status: request.status,
-    submittedAt: request.submittedAt,
-    reviewedAt: request.reviewedAt,
-    reviewedBy: request.reviewedBy,
-  }));
+  let snap;
+  if (teamId) {
+    snap = await replacementRequestsCol.where("teamId", "==", teamId).get();
+  } else {
+    snap = await replacementRequestsCol.get();
+  }
+  const requests = docsToData<ReplacementRequest>(snap);
+  return requests.sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime());
 }
 
 export async function createReplacementRequest(request: {
@@ -372,80 +309,75 @@ export async function createReplacementRequest(request: {
   teamName: string;
   reason: string;
 }): Promise<ReplacementRequest> {
-  await connectDB();
+  const pendingSnap = await replacementRequestsCol
+    .where("programId", "==", request.programId)
+    .where("oldStudentId", "==", request.oldStudentId)
+    .where("status", "==", "pending")
+    .limit(1)
+    .get();
+
+  if (!pendingSnap.empty) {
+    throw new Error(`A pending replacement request already exists for "${request.oldStudentName}" in program "${request.programName}".`);
+  }
+
+  const id = randomUUID();
   const record: ReplacementRequest = {
-    id: randomUUID(),
+    id,
     ...request,
     status: "pending",
     submittedAt: new Date().toISOString(),
   };
 
-  try {
-    await ReplacementRequestModel.create(record);
-    return record;
-  } catch (error: any) {
-    // Handle MongoDB duplicate key error (code 11000) for duplicate pending replacement requests
-    if (error.code === 11000 && error.keyPattern?.programId && error.keyPattern?.oldStudentId && error.keyPattern?.status) {
-      throw new Error(`A pending replacement request already exists for "${request.oldStudentName}" in program "${request.programName}".`);
-    }
-    throw error;
-  }
+  await replacementRequestsCol.doc(id).set(record);
+  return record;
 }
 
 export async function approveReplacementRequest(
   requestId: string,
   reviewedBy: string,
 ): Promise<void> {
-  await connectDB();
-  const request = await ReplacementRequestModel.findOne({ id: requestId }).lean();
-  if (!request) {
+  const doc = await replacementRequestsCol.doc(requestId).get();
+  if (!doc.exists) {
     throw new Error("Replacement request not found");
   }
+  const request = doc.data() as ReplacementRequest;
+
   if (request.status !== "pending") {
     throw new Error("Request has already been processed");
   }
 
-  // Update the registration
-  await ProgramRegistrationModel.updateOne(
-    {
-      programId: request.programId,
-      studentId: request.oldStudentId,
-    },
-    {
-      $set: {
-        studentId: request.newStudentId,
-        studentName: request.newStudentName,
-        studentChest: request.newStudentChest,
-      },
-    },
-  );
+  const regSnap = await programRegistrationsCol
+    .where("programId", "==", request.programId)
+    .where("oldStudentId", "==", request.oldStudentId)
+    .limit(1)
+    .get();
 
-  // Update request status
-  await ReplacementRequestModel.updateOne(
-    { id: requestId },
-    {
-      $set: {
-        status: "approved",
-        reviewedAt: new Date().toISOString(),
-        reviewedBy,
-      },
-    },
-  );
+  const batch = adminDb.batch();
+
+  if (!regSnap.empty) {
+    batch.update(regSnap.docs[0].ref, {
+      studentId: request.newStudentId,
+      studentName: request.newStudentName,
+      studentChest: request.newStudentChest,
+    });
+  }
+
+  batch.update(replacementRequestsCol.doc(requestId), {
+    status: "approved",
+    reviewedAt: new Date().toISOString(),
+    reviewedBy,
+  });
+
+  await batch.commit();
 }
 
 export async function rejectReplacementRequest(
   requestId: string,
   reviewedBy: string,
 ): Promise<void> {
-  await connectDB();
-  await ReplacementRequestModel.updateOne(
-    { id: requestId },
-    {
-      $set: {
-        status: "rejected",
-        reviewedAt: new Date().toISOString(),
-        reviewedBy,
-      },
-    },
-  );
+  await replacementRequestsCol.doc(requestId).update({
+    status: "rejected",
+    reviewedAt: new Date().toISOString(),
+    reviewedBy,
+  });
 }

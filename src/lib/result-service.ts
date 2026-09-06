@@ -6,16 +6,18 @@ import {
   updateLiveScore,
   updateStudentScore,
 } from "./data";
-import { connectDB } from "./db";
 import {
-  ApprovedResultModel,
-  JuryModel,
-  PendingResultModel,
-  ProgramModel,
-  StudentModel,
-  TeamModel,
+  programsCol,
+  juriesCol,
+  studentsCol,
+  teamsCol,
+  pendingResultsCol,
+  approvedResultsCol,
+  docsToData,
+  docToData,
 } from "./models";
-import type { PenaltyEntry, ResultEntry, ResultRecord } from "./types";
+import { adminDb } from "./firebase-admin";
+import type { PenaltyEntry, ResultEntry, ResultRecord, Student, Team, Program, Jury } from "./types";
 
 type WinnerPayload = {
   position: 1 | 2 | 3;
@@ -43,8 +45,10 @@ async function buildEntries(
 ) {
   if (program.section === "single") {
     const ids = winners.map((winner) => winner.id);
-    const students = await StudentModel.find({ id: { $in: ids } }).lean();
+    const studentsSnap = await studentsCol.get();
+    const students = docsToData<Student>(studentsSnap).filter((s) => ids.includes(s.id));
     const studentMap = new Map(students.map((student) => [student.id, student]));
+
     return winners.map((winner) => {
       const student = studentMap.get(winner.id);
       if (!student) {
@@ -67,8 +71,10 @@ async function buildEntries(
   }
 
   const ids = winners.map((winner) => winner.id);
-  const teams = await TeamModel.find({ id: { $in: ids } }).lean();
+  const teamsSnap = await teamsCol.get();
+  const teams = docsToData<Team>(teamsSnap).filter((t) => ids.includes(t.id));
   const teamMap = new Map(teams.map((team) => [team.id, team]));
+
   return winners.map((winner) => {
     const team = teamMap.get(winner.id);
     if (!team) {
@@ -120,10 +126,14 @@ async function buildPenaltyEntries(penalties?: PenaltyPayload[] | null) {
     ),
   );
 
-  const [students, teams] = await Promise.all([
-    studentIds.length > 0 ? StudentModel.find({ id: { $in: studentIds } }).lean() : [],
-    teamIds.length > 0 ? TeamModel.find({ id: { $in: teamIds } }).lean() : [],
+  const [studentsSnap, teamsSnap] = await Promise.all([
+    studentIds.length > 0 ? studentsCol.get() : null,
+    teamIds.length > 0 ? teamsCol.get() : null,
   ]);
+
+  const students = studentsSnap ? docsToData<Student>(studentsSnap).filter((s) => studentIds.includes(s.id)) : [];
+  const teams = teamsSnap ? docsToData<Team>(teamsSnap).filter((t) => teamIds.includes(t.id)) : [];
+
   const studentMap = new Map(students.map((student) => [student.id, student]));
   const teamMap = new Map(teams.map((team) => [team.id, team]));
 
@@ -178,39 +188,41 @@ export async function submitResultToPending({
   winners: WinnerPayload[];
   penalties?: PenaltyPayload[] | null;
 }) {
-  await connectDB();
-  const [program, jury] = await Promise.all([
-    ProgramModel.findOne({ id: programId }).lean(),
-    JuryModel.findOne({ id: juryId }).lean(),
+  const [programDoc, juryDoc] = await Promise.all([
+    programsCol.doc(programId).get(),
+    juriesCol.doc(juryId).get(),
   ]);
 
-  if (!program) throw new Error("Program not found");
-  if (!jury) throw new Error("Jury not found");
+  if (!programDoc.exists) throw new Error("Program not found");
+  if (!juryDoc.exists) throw new Error("Jury not found");
 
-  // Check for existing results (pending or approved) for this program
-  const [pendingResult, approvedResult] = await Promise.all([
-    PendingResultModel.findOne({ program_id: programId }).lean(),
-    ApprovedResultModel.findOne({ program_id: programId }).lean(),
+  const program = programDoc.data() as Program;
+  const jury = juryDoc.data() as Jury;
+
+  const [pendingSnap, approvedSnap] = await Promise.all([
+    pendingResultsCol.where("program_id", "==", programId).limit(1).get(),
+    approvedResultsCol.where("program_id", "==", programId).limit(1).get(),
   ]);
 
-  if (pendingResult) {
-    const existingJury = await JuryModel.findOne({ id: pendingResult.jury_id }).lean();
-    const juryName = existingJury?.name || "Unknown Jury";
+  if (!pendingSnap.empty) {
+    const pendingResult = pendingSnap.docs[0].data() as ResultRecord;
+    const existingJuryDoc = await juriesCol.doc(pendingResult.jury_id).get();
+    const juryName = existingJuryDoc.exists ? (existingJuryDoc.data() as Jury).name : "Unknown Jury";
     throw new Error(
       `A pending result already exists for program "${program.name}" submitted by ${juryName}. Please wait for admin approval or contact support.`
     );
   }
 
-  if (approvedResult) {
-    // Return specific error message for published/approved programs
+  if (!approvedSnap.empty) {
     throw new Error("Program already published");
   }
 
   const entries = await buildEntries(program, winners);
   const penalties = await buildPenaltyEntries(penaltyPayloads);
 
+  const id = randomUUID();
   const record: ResultRecord = {
-    id: randomUUID(),
+    id,
     program_id: program.id,
     jury_id: jury.id,
     submitted_by: jury.name,
@@ -220,62 +232,57 @@ export async function submitResultToPending({
     status: "pending",
   };
 
-  try {
-    await PendingResultModel.create(record);
-    await updateAssignmentStatus(program.id, jury.id, "submitted");
-
-    // Emit real-time event
-    const { emitResultSubmitted } = await import("./pusher");
-    await emitResultSubmitted(record.id, program.id, jury.id);
-  } catch (error: any) {
-    // Handle MongoDB duplicate key error (code 11000) for program_id unique index
-    if (error.code === 11000 && error.keyPattern?.program_id) {
-      throw new Error(
-        `A result for program "${program.name}" already exists. This may have been submitted by another jury. Please refresh and check.`
-      );
-    }
-    throw error;
-  }
+  await pendingResultsCol.doc(id).set(record);
+  await updateAssignmentStatus(program.id, jury.id, "submitted");
 
   revalidatePath("/admin/pending-results");
   revalidatePath("/jury/programs");
 }
 
 export async function approveResult(resultId: string) {
-  await connectDB();
-  const record = await PendingResultModel.findOne({ id: resultId }).lean();
+  const doc = await pendingResultsCol.doc(resultId).get();
+  let record: ResultRecord | null = null;
+
+  if (doc.exists) {
+    record = doc.data() as ResultRecord;
+  } else {
+    const snap = await pendingResultsCol.where("id", "==", resultId).limit(1).get();
+    if (!snap.empty) {
+      record = snap.docs[0].data() as ResultRecord;
+    }
+  }
+
   if (!record) {
     throw new Error("Result not found");
   }
 
-  await PendingResultModel.deleteOne({ id: resultId });
+  await pendingResultsCol.doc(record.id).delete();
+
   const approvedRecord: ResultRecord = {
     ...record,
     status: "approved",
     submitted_at: new Date().toISOString(),
   };
-  await ApprovedResultModel.create(approvedRecord);
+
+  await approvedResultsCol.doc(record.id).set(approvedRecord);
 
   await applyEntryScores(record.entries, 1);
   await applyPenalties(record.penalties, 1);
 
   await updateAssignmentStatus(record.program_id, record.jury_id, "completed");
 
-  // Create notification for all users
-  const { createResultPublishedNotification } = await import("./notification-service");
-  await createResultPublishedNotification(resultId, record.program_id);
+  try {
+    const { createResultPublishedNotification } = await import("./notification-service");
+    await createResultPublishedNotification(resultId, record.program_id);
+  } catch (err) {
+    console.error("Failed to create notification:", err);
+  }
 
-  // Emit real-time event
-  const { emitResultApproved } = await import("./pusher");
-  await emitResultApproved(resultId, record.program_id);
-
-  // Auto-evaluate predictions
   try {
     const { evaluatePredictionsForProgram } = await import("./prediction-service");
     await evaluatePredictionsForProgram(record.program_id, record.entries);
   } catch (error) {
     console.error("Failed to auto-evaluate predictions:", error);
-    // Don't fail the approval if this fails
   }
 
   revalidatePath("/");
@@ -286,15 +293,12 @@ export async function approveResult(resultId: string) {
 }
 
 export async function rejectResult(resultId: string) {
-  await connectDB();
-  const record = await PendingResultModel.findOne({ id: resultId }).lean();
-  if (!record) return;
-  await PendingResultModel.deleteOne({ id: resultId });
-  await updateAssignmentStatus(record.program_id, record.jury_id, "pending");
+  const doc = await pendingResultsCol.doc(resultId).get();
+  if (!doc.exists) return;
+  const record = doc.data() as ResultRecord;
 
-  // Emit real-time event
-  const { emitResultRejected } = await import("./pusher");
-  await emitResultRejected(resultId, record.program_id);
+  await pendingResultsCol.doc(resultId).delete();
+  await updateAssignmentStatus(record.program_id, record.jury_id, "pending");
 
   revalidatePath("/admin/pending-results");
   revalidatePath("/jury/programs");
@@ -305,28 +309,24 @@ export async function updatePendingResultEntries(
   winners: WinnerPayload[],
   penaltiesPayload?: PenaltyPayload[] | null,
 ) {
-  await connectDB();
-  const record = await PendingResultModel.findOne({ id: resultId }).lean();
-  if (!record) {
+  const doc = await pendingResultsCol.doc(resultId).get();
+  if (!doc.exists) {
     throw new Error("Pending result not found");
   }
-  const program = await ProgramModel.findOne({ id: record.program_id }).lean();
-  if (!program) throw new Error("Program not found");
+  const record = doc.data() as ResultRecord;
+
+  const programDoc = await programsCol.doc(record.program_id).get();
+  if (!programDoc.exists) throw new Error("Program not found");
+  const program = programDoc.data() as Program;
+
   const entries = await buildEntries(program, winners);
   const penalties = await buildPenaltyEntries(penaltiesPayload);
 
-  await PendingResultModel.updateOne(
-    { id: resultId },
-    {
-      entries,
-      penalties,
-      submitted_at: new Date().toISOString(),
-    },
-  );
-
-  // Emit real-time event for pending result update
-  const { emitResultSubmitted } = await import("./pusher");
-  await emitResultSubmitted(resultId, record.program_id, record.jury_id);
+  await pendingResultsCol.doc(resultId).update({
+    entries,
+    penalties,
+    submitted_at: new Date().toISOString(),
+  });
 
   revalidatePath("/admin/pending-results");
 }
@@ -336,27 +336,31 @@ export async function updateApprovedResult(
   winners: WinnerPayload[],
   penaltiesPayload?: PenaltyPayload[] | null,
 ) {
-  await connectDB();
-  const record = await ApprovedResultModel.findOne({ id: resultId }).lean();
-  if (!record) {
+  const doc = await approvedResultsCol.doc(resultId).get();
+  if (!doc.exists) {
     throw new Error("Approved result not found");
   }
-  const program = await ProgramModel.findOne({ id: record.program_id }).lean();
-  if (!program) throw new Error("Program not found");
+  const record = doc.data() as ResultRecord;
+
+  const programDoc = await programsCol.doc(record.program_id).get();
+  if (!programDoc.exists) throw new Error("Program not found");
+  const program = programDoc.data() as Program;
+
   const entries = await buildEntries(program, winners);
   const penalties = await buildPenaltyEntries(penaltiesPayload);
+
   await applyEntryScores(record.entries, -1);
   await applyPenalties(record.penalties, -1);
-  await ApprovedResultModel.updateOne(
-    { id: resultId },
-    {
-      entries,
-      penalties,
-      submitted_at: new Date().toISOString(),
-    },
-  );
+
+  await approvedResultsCol.doc(resultId).update({
+    entries,
+    penalties,
+    submitted_at: new Date().toISOString(),
+  });
+
   await applyEntryScores(entries, 1);
   await applyPenalties(penalties, 1);
+
   revalidatePath("/");
   revalidatePath("/scoreboard");
   revalidatePath("/results");
@@ -364,16 +368,17 @@ export async function updateApprovedResult(
 }
 
 export async function deleteApprovedResult(resultId: string) {
-  await connectDB();
-  const record = await ApprovedResultModel.findOne({ id: resultId }).lean();
-  if (!record) return;
+  const doc = await approvedResultsCol.doc(resultId).get();
+  if (!doc.exists) return;
+  const record = doc.data() as ResultRecord;
+
   await applyEntryScores(record.entries, -1);
   await applyPenalties(record.penalties, -1);
-  await ApprovedResultModel.deleteOne({ id: resultId });
+  await approvedResultsCol.doc(resultId).delete();
   await updateAssignmentStatus(record.program_id, record.jury_id, "submitted");
+
   revalidatePath("/");
   revalidatePath("/scoreboard");
   revalidatePath("/results");
   revalidatePath("/admin/approved-results");
 }
-

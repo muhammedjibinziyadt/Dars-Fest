@@ -1,13 +1,10 @@
 import { cookies } from "next/headers";
 import { SignJWT, jwtVerify } from "jose";
 import { hash, compare } from "bcryptjs";
-import { ADMIN_COOKIE, ADMIN_CREDENTIALS, JURY_COOKIE, TEAM_COOKIE, JWT_SECRET } from "./config";
-import { connectDB } from "./db";
-import { AdminSettingsModel } from "./models";
-import { getJuries as loadJuries, getJuries } from "./data";
-import { getPortalTeams } from "./team-data";
-import type { Jury, PortalTeam } from "./types";
-import { TeamModel, JuryModel } from "./models";
+import { ADMIN_COOKIE, JURY_COOKIE, TEAM_COOKIE, JWT_SECRET } from "./config";
+import { juriesCol, teamsCol, docsToData } from "./models";
+import { adminAuth } from "./firebase-admin";
+import type { Jury, PortalTeam, Team } from "./types";
 
 const SECRET_KEY = new TextEncoder().encode(JWT_SECRET);
 const ALG = "HS256";
@@ -38,26 +35,194 @@ export async function verifySessionToken<T>(token: string): Promise<T | null> {
 }
 
 /**
- * Ensures admin credentials exist in DB headers (hashed).
- * Does NOT return the password.
+ * Verifies a Firebase Auth ID token string from client side.
  */
-async function ensureAdminUser() {
-  await connectDB();
-  let settings = await AdminSettingsModel.findOne();
-  if (!settings) {
-    const hashedPassword = await hashPassword(ADMIN_CREDENTIALS.password);
-    settings = await AdminSettingsModel.create({
-      username: ADMIN_CREDENTIALS.username,
-      password: hashedPassword,
-    });
+export async function verifyFirebaseAuthToken(idToken: string) {
+  try {
+    const decodedToken = await adminAuth.verifyIdToken(idToken);
+    return decodedToken;
+  } catch (error) {
+    return null;
   }
-  return settings;
 }
 
-export async function authenticateAdmin(username: string, password: string): Promise<boolean> {
-  const admin = await ensureAdminUser();
-  if (admin.username !== username) return false;
-  return await verifyPassword(password, admin.password);
+/**
+ * Resolves an identifier (either username or email) to a Firebase Auth email.
+ */
+export async function resolveAdminEmail(identifier: string): Promise<string> {
+  const clean = identifier.trim().toLowerCase();
+  if (clean.includes("@")) {
+    return clean;
+  }
+
+  try {
+    // Query Firebase Auth users to find matching displayName or email prefix
+    const list = await adminAuth.listUsers(100);
+    const match = list.users.find(
+      (u) =>
+        u.displayName?.toLowerCase() === clean ||
+        u.email?.split("@")[0].toLowerCase() === clean
+    );
+    if (match?.email) {
+      return match.email;
+    }
+  } catch (e) {
+    console.warn("Could not query Firebase Auth for email resolution:", e);
+  }
+
+  return `${clean.replace(/[^a-z0-9]/g, "") || "admin"}@darsfest.com`;
+}
+
+/**
+ * Attempts to sign in with Firebase Authentication via REST API.
+ */
+export async function signInAdminWithFirebaseAuth(email: string, password: string): Promise<{
+  success: boolean;
+  user?: { uid: string; email: string; displayName?: string };
+  error?: string;
+}> {
+  const apiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
+  if (!apiKey) {
+    return { success: false, error: "Firebase API key is not configured in .env" };
+  }
+
+  try {
+    const res = await fetch(
+      `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${apiKey}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password, returnSecureToken: true }),
+      }
+    );
+
+    const data = await res.json();
+    if (!res.ok || data.error) {
+      const errCode = data.error?.message;
+      if (errCode === "OPERATION_NOT_ALLOWED") {
+        return {
+          success: false,
+          error: "Email/Password provider is not enabled in Firebase Console. Please enable it in Firebase Console -> Authentication -> Sign-in method.",
+        };
+      }
+      return { success: false, error: "INVALID_CREDENTIALS" };
+    }
+
+    return {
+      success: true,
+      user: {
+        uid: data.localId,
+        email: data.email,
+        displayName: data.displayName,
+      },
+    };
+  } catch (err: any) {
+    return { success: false, error: err?.message || "Failed to reach Firebase Authentication." };
+  }
+}
+
+/**
+ * Stores and updates the Admin account directly in Firebase Authentication.
+ */
+export async function syncAdminToFirebaseAuth(usernameOrEmail: string, password: string): Promise<{
+  uid: string;
+  email: string;
+  displayName: string;
+}> {
+  const isEmail = usernameOrEmail.includes("@");
+  const email = isEmail
+    ? usernameOrEmail.trim().toLowerCase()
+    : `${usernameOrEmail.toLowerCase().replace(/[^a-z0-9]/g, "") || "admin"}@darsfest.com`;
+  const displayName = isEmail
+    ? usernameOrEmail.split("@")[0].trim()
+    : usernameOrEmail.trim();
+
+  // Look for existing user in Firebase Auth
+  let existingUser = await adminAuth.getUserByEmail(email).catch(() => null);
+
+  if (!existingUser) {
+    try {
+      const list = await adminAuth.listUsers(50);
+      existingUser =
+        list.users.find(
+          (u) =>
+            u.email?.toLowerCase() === email ||
+            u.displayName?.toLowerCase() === displayName.toLowerCase() ||
+            (u.customClaims as any)?.role === "admin"
+        ) || null;
+    } catch (e) {}
+  }
+
+  let uid: string;
+  if (existingUser) {
+    await adminAuth.updateUser(existingUser.uid, {
+      email,
+      password,
+      displayName,
+    });
+    uid = existingUser.uid;
+  } else {
+    const newUser = await adminAuth.createUser({
+      email,
+      password,
+      displayName,
+    });
+    uid = newUser.uid;
+  }
+
+  // Set admin custom claims
+  try {
+    await adminAuth.setCustomUserClaims(uid, { role: "admin", admin: true });
+  } catch (claimErr) {
+    console.warn("Could not set admin custom claims:", claimErr);
+  }
+
+  return { uid, email, displayName };
+}
+
+export async function authenticateAdmin(
+  identifier: string,
+  password: string
+): Promise<{ success: boolean; username?: string; email?: string; error?: string }> {
+  const targetEmail = await resolveAdminEmail(identifier);
+
+  // Sign in directly with Firebase Authentication
+  const fbResult = await signInAdminWithFirebaseAuth(targetEmail, password);
+
+  if (fbResult.success && fbResult.user) {
+    try {
+      await adminAuth.setCustomUserClaims(fbResult.user.uid, { role: "admin", admin: true });
+    } catch (e) {}
+
+    return {
+      success: true,
+      username: fbResult.user.displayName || identifier,
+      email: fbResult.user.email || targetEmail,
+    };
+  }
+
+  // If Firebase rejected due to configuration (e.g. email/password not enabled)
+  if (fbResult.error && fbResult.error.includes("Firebase Console")) {
+    return {
+      success: false,
+      error: fbResult.error,
+    };
+  }
+
+  return {
+    success: false,
+    error: "Invalid username/email or password.",
+  };
+}
+
+export async function getCurrentAdmin(): Promise<{ role: string; username: string; email?: string } | null> {
+  const store = await cookies();
+  const token = store.get(ADMIN_COOKIE)?.value;
+  if (!token) return null;
+
+  const payload = await verifySessionToken<{ role: string; username: string; email?: string }>(token);
+  if (payload?.role !== "admin") return null;
+  return payload;
 }
 
 export async function isAdminAuthenticated(): Promise<boolean> {
@@ -70,38 +235,34 @@ export async function isAdminAuthenticated(): Promise<boolean> {
 }
 
 export async function findJury(identifier: string): Promise<Jury | undefined> {
-  // Use DB directly to avoid leaking passwords via getJuries helper which might change
-  await connectDB();
   const lower = identifier.trim().toLowerCase();
-  // We need to fetch from DB because getJuries() might filter out passwords in the future
-  // But searching by ID or Name is fine.
-  const jury = await JuryModel.findOne({
-    $or: [{ id: identifier }, { id: lower }, { name: { $regex: new RegExp(`^${lower}$`, "i") } }],
-  }).lean();
 
-  if (!jury) return undefined;
-  // convert _id to string etc if needed, but lean() gives POJO. 
-  // We align with Jury type.
-  return {
-    id: jury.id,
-    name: jury.name,
-    password: jury.password, // Be careful, this is hashed now (or will be)
-    avatar: jury.avatar,
-  };
+  try {
+    const doc = await juriesCol.doc(identifier).get();
+    if (doc.exists) {
+      return doc.data() as Jury;
+    }
+
+    const snap = await juriesCol.get();
+    const juries = docsToData<Jury>(snap);
+
+    return juries.find(
+      (j) => j.id.toLowerCase() === lower || j.name.toLowerCase() === lower
+    );
+  } catch (e) {
+    return undefined;
+  }
 }
 
 export async function authenticateJury(identifier: string, password: string): Promise<Jury | undefined> {
   const jury = await findJury(identifier);
   if (!jury) return undefined;
 
-  // Check if password is hashed (starts with $2). If not, it's legacy plain text (migration support or dev seed)
   const isHashed = jury.password.startsWith("$2");
   if (isHashed) {
     if (await verifyPassword(password, jury.password)) return jury;
   } else {
-    // Fallback for plain text until migration is complete
     if (jury.password === password) {
-      // Optionally upgrade hash here? For now just allow.
       return jury;
     }
   }
@@ -117,44 +278,39 @@ export async function getCurrentJury(): Promise<Jury | undefined> {
   if (!payload || payload.role !== "jury") return undefined;
 
   const jury = await findJury(payload.id);
-  if (jury) {
-    // Strip password/hash before returning to app context if possible? 
-    // Types require password, so we keep it but it remains safe on server.
-    return jury;
-  }
-  return undefined;
+  return jury;
 }
 
 export async function authenticateTeam(teamName: string, password: string): Promise<PortalTeam | undefined> {
-  await connectDB();
   const lower = teamName.trim().toLowerCase();
+  try {
+    const snap = await teamsCol.get();
+    const teams = docsToData<Team>(snap);
 
-  // Find team by name (case-insensitive)
-  // We use regex for case-insensitive match on 'name'
-  const teamDoc = await TeamModel.findOne({
-    name: { $regex: new RegExp(`^${lower}$`, "i") }
-  }).lean();
+    const teamDoc = teams.find((t) => t.name.toLowerCase() === lower);
+    if (!teamDoc) return undefined;
 
-  if (!teamDoc) return undefined;
+    const team: PortalTeam = {
+      id: teamDoc.id,
+      teamName: teamDoc.name,
+      password: teamDoc.portal_password ?? "",
+      leaderName: teamDoc.leader,
+      themeColor: teamDoc.color,
+    };
 
-  const team: PortalTeam = {
-    id: teamDoc.id,
-    teamName: teamDoc.name,
-    password: teamDoc.portal_password ?? "", // This is now hashed
-    leaderName: teamDoc.leader,
-    themeColor: teamDoc.color,
-  };
-
-  const isHashed = team.password.startsWith("$2");
-  if (isHashed) {
-    if (await verifyPassword(password, team.password)) {
-      return team;
+    const isHashed = team.password.startsWith("$2");
+    if (isHashed) {
+      if (await verifyPassword(password, team.password)) {
+        return team;
+      }
+    } else {
+      if (team.password === password) return team;
     }
-  } else {
-    if (team.password === password) return team;
-  }
 
-  return undefined;
+    return undefined;
+  } catch (e) {
+    return undefined;
+  }
 }
 
 export async function logoutTeam() {
@@ -170,16 +326,19 @@ export async function getCurrentTeam(): Promise<PortalTeam | undefined> {
   const payload = await verifySessionToken<{ role: string; id: string }>(token);
   if (!payload || payload.role !== "team") return undefined;
 
-  await connectDB();
-  const teamDoc = await TeamModel.findOne({ id: payload.id }).lean();
-  if (!teamDoc) return undefined;
+  try {
+    const doc = await teamsCol.doc(payload.id).get();
+    if (!doc.exists) return undefined;
+    const teamDoc = doc.data() as Team;
 
-  return {
-    id: teamDoc.id,
-    teamName: teamDoc.name,
-    password: teamDoc.portal_password ?? "",
-    leaderName: teamDoc.leader,
-    themeColor: teamDoc.color,
-  };
+    return {
+      id: teamDoc.id,
+      teamName: teamDoc.name,
+      password: teamDoc.portal_password ?? "",
+      leaderName: teamDoc.leader,
+      themeColor: teamDoc.color,
+    };
+  } catch (e) {
+    return undefined;
+  }
 }
-

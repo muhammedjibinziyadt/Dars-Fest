@@ -1,15 +1,9 @@
-import Pusher from "pusher";
+/**
+ * Pusher Migration Stub:
+ * Real-time updates are now handled automatically via Firebase Firestore onSnapshot listeners.
+ * Emitting functions are no-ops to maintain compatibility with existing service calls.
+ */
 
-// Server-side Pusher instance
-export const pusherServer = new Pusher({
-  appId: process.env.PUSHER_APP_ID || "",
-  key: process.env.NEXT_PUBLIC_PUSHER_KEY || "",
-  secret: process.env.PUSHER_SECRET || "",
-  cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER || "mt1",
-  useTLS: true,
-});
-
-// Channel names
 export const CHANNELS = {
   RESULTS: "results",
   ASSIGNMENTS: "assignments",
@@ -21,7 +15,6 @@ export const CHANNELS = {
   FESTORY: "festory",
 } as const;
 
-// Event names
 export const EVENTS = {
   RESULT_APPROVED: "result-approved",
   RESULT_REJECTED: "result-rejected",
@@ -46,193 +39,25 @@ export const EVENTS = {
   FESTORY_POST_UPDATED: "festory-post-updated",
 } as const;
 
-export async function emitFestoryPostUpdated(post: any) {
-  await pusherServer.trigger(CHANNELS.FESTORY, EVENTS.FESTORY_POST_UPDATED, {
-    post,
-    timestamp: new Date().toISOString(),
-  });
-}
-
-export async function emitFestoryPostCreated(post: any) {
-  await pusherServer.trigger(CHANNELS.FESTORY, EVENTS.FESTORY_POST_CREATED, {
-    post,
-    timestamp: new Date().toISOString(),
-  });
-}
-
-export async function emitFestoryAudioBomb(sound: string, user: string) {
-  await pusherServer.trigger(CHANNELS.FESTORY, EVENTS.FESTORY_AUDIO_BOMB, {
-    sound,
-    user,
-    timestamp: new Date().toISOString(),
-  });
-}
-
-export async function emitFestoryAnnouncement(audioUrl: string, user: string) {
-  await pusherServer.trigger(CHANNELS.FESTORY, EVENTS.FESTORY_ANNOUNCEMENT, {
-    audioUrl,
-    user,
-    timestamp: new Date().toISOString(),
-  });
-}
-
-export async function emitFestoryPostDeleted(postId: string) {
-  await pusherServer.trigger(CHANNELS.FESTORY, EVENTS.FESTORY_POST_DELETED, {
-    postId,
-    timestamp: new Date().toISOString(),
-  });
-}
-
-// Helper functions to emit events
-export async function emitResultApproved(resultId: string, programId: string) {
-  await pusherServer.trigger(CHANNELS.RESULTS, EVENTS.RESULT_APPROVED, {
-    resultId,
-    programId,
-    timestamp: new Date().toISOString(),
-  });
-
-  // Also update scoreboard
-  await pusherServer.trigger(CHANNELS.SCOREBOARD, EVENTS.SCOREBOARD_UPDATED, {
-    timestamp: new Date().toISOString(),
-  });
-}
-
-export async function emitResultRejected(resultId: string, programId: string) {
-  await pusherServer.trigger(CHANNELS.RESULTS, EVENTS.RESULT_REJECTED, {
-    resultId,
-    programId,
-    timestamp: new Date().toISOString(),
-  });
-}
-
-export async function emitResultSubmitted(resultId: string, programId: string, juryId: string) {
-  await pusherServer.trigger(CHANNELS.RESULTS, EVENTS.RESULT_SUBMITTED, {
-    resultId,
-    programId,
-    juryId,
-    timestamp: new Date().toISOString(),
-  });
-}
-
-export async function emitResultUpdated(resultId: string, programId: string) {
-  await pusherServer.trigger(CHANNELS.RESULTS, EVENTS.RESULT_UPDATED, {
-    resultId,
-    programId,
-    timestamp: new Date().toISOString(),
-  });
-
-  await pusherServer.trigger(CHANNELS.SCOREBOARD, EVENTS.SCOREBOARD_UPDATED, {
-    timestamp: new Date().toISOString(),
-  });
-}
-
-export async function emitAssignmentCreated(programId: string, juryId: string) {
-  await pusherServer.trigger(CHANNELS.ASSIGNMENTS, EVENTS.ASSIGNMENT_CREATED, {
-    programId,
-    juryId,
-    timestamp: new Date().toISOString(),
-  });
-}
-
-export async function emitAssignmentDeleted(programId: string, juryId: string) {
-  await pusherServer.trigger(CHANNELS.ASSIGNMENTS, EVENTS.ASSIGNMENT_DELETED, {
-    programId,
-    juryId,
-    timestamp: new Date().toISOString(),
-  });
-}
-
-export async function emitRegistrationCreated(registrationId: string, programId: string, teamId: string) {
-  await pusherServer.trigger(CHANNELS.REGISTRATIONS, EVENTS.REGISTRATION_CREATED, {
-    registrationId,
-    programId,
-    teamId,
-    timestamp: new Date().toISOString(),
-  });
-}
-
-export async function emitRegistrationDeleted(registrationId: string, programId: string, teamId: string) {
-  await pusherServer.trigger(CHANNELS.REGISTRATIONS, EVENTS.REGISTRATION_DELETED, {
-    registrationId,
-    programId,
-    teamId,
-    timestamp: new Date().toISOString(),
-  });
-}
-
-export async function emitStudentCreated(studentId: string, teamId: string) {
-  await pusherServer.trigger(CHANNELS.STUDENTS, EVENTS.STUDENT_CREATED, {
-    studentId,
-    teamId,
-    timestamp: new Date().toISOString(),
-  });
-}
-
-export async function emitStudentUpdated(studentId: string, teamId: string) {
-  await pusherServer.trigger(CHANNELS.STUDENTS, EVENTS.STUDENT_UPDATED, {
-    studentId,
-    teamId,
-    timestamp: new Date().toISOString(),
-  });
-}
-
-export async function emitStudentDeleted(studentId: string, teamId: string) {
-  await pusherServer.trigger(CHANNELS.STUDENTS, EVENTS.STUDENT_DELETED, {
-    studentId,
-    teamId,
-    timestamp: new Date().toISOString(),
-  });
-}
-
-export async function emitNotificationCreated(notification: {
-  id: string;
-  type: string;
-  title: string;
-  message: string;
-  programId: string;
-  programName: string;
-  resultId: string;
-  createdAt: string;
-}) {
-  await pusherServer.trigger(CHANNELS.RESULTS, "notification-created", {
-    notification,
-    timestamp: new Date().toISOString(),
-  });
-}
-
-export async function emitPollUpdated(pollId: string) {
-  await pusherServer.trigger(CHANNELS.POLLS, EVENTS.POLL_UPDATED, {
-    pollId,
-    timestamp: new Date().toISOString(),
-  });
-}
-
-export async function emitPredictionOpened(predictionId: string) {
-  await pusherServer.trigger(CHANNELS.PREDICTIONS, EVENTS.PREDICTION_OPENED, {
-    predictionId,
-    timestamp: new Date().toISOString(),
-  });
-}
-
-export async function emitPredictionClosed(predictionId: string) {
-  await pusherServer.trigger(CHANNELS.PREDICTIONS, EVENTS.PREDICTION_CLOSED, {
-    predictionId,
-    timestamp: new Date().toISOString(),
-  });
-}
-
-export async function emitLeaderboardUpdated() {
-  await pusherServer.trigger(CHANNELS.PREDICTIONS, EVENTS.LEADERBOARD_UPDATED, {
-    timestamp: new Date().toISOString(),
-  });
-}
-
-
-
-
-
-
-
-
-
-
+export async function emitFestoryPostUpdated(_post?: any) {}
+export async function emitFestoryPostCreated(_post?: any) {}
+export async function emitFestoryAudioBomb(_payload?: any) {}
+export async function emitFestoryAnnouncement(_payload?: any) {}
+export async function emitFestoryPostDeleted(_postId?: string) {}
+export async function emitResultApproved(_data?: any) {}
+export async function emitResultRejected(_data?: any) {}
+export async function emitResultSubmitted(_data?: any) {}
+export async function emitResultUpdated(_data?: any) {}
+export async function emitScoreboardUpdated(_data?: any) {}
+export async function emitAssignmentCreated(_data?: any) {}
+export async function emitAssignmentDeleted(_data?: any) {}
+export async function emitRegistrationCreated(_data?: any) {}
+export async function emitRegistrationDeleted(_data?: any) {}
+export async function emitStudentCreated(_data?: any) {}
+export async function emitStudentUpdated(_data?: any) {}
+export async function emitStudentDeleted(_data?: any) {}
+export async function emitNotificationCreated(_data?: any) {}
+export async function emitPollUpdated(_poll?: any) {}
+export async function emitPredictionOpened(_event?: any) {}
+export async function emitPredictionClosed(_event?: any) {}
+export async function emitLeaderboardUpdated() {}

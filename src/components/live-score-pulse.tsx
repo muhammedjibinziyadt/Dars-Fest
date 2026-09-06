@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import Link from "next/link";
-import { Activity, Medal, TrendingUp, TrendingDown, Minus, ArrowUpRight, BarChart3, PieChart, LineChart } from "lucide-react";
+import { Activity, Medal, TrendingUp, Minus, ArrowUpRight, BarChart3, LineChart, ShieldAlert } from "lucide-react";
 import type { Team } from "@/lib/types";
 import { formatNumber } from "@/lib/utils";
 import {
@@ -23,51 +23,16 @@ interface LiveScorePulseProps {
   liveScores: Map<string, number>;
 }
 
-// Enhanced Team Colors - More Saturated & Vibrant
-const TEAM_COLORS: Record<string, { primary: string; gradient: string; light: string; stroke: string; glow: string }> = {
-  SAMARQAND: {
-    primary: "#E11D48",
-    gradient: "from-rose-600 to-rose-500",
-    light: "#FFE4E6",
-    stroke: "#9F1239",
-    glow: "shadow-rose-500/20",
-  },
-  NAHAVAND: {
-    primary: "#2563EB",
-    gradient: "from-blue-600 to-blue-500",
-    light: "#DBEAFE",
-    stroke: "#1E40AF",
-    glow: "shadow-blue-500/20",
-  },
-  YAMAMA: {
-    primary: "#7C3AED",
-    gradient: "from-violet-600 to-violet-500",
-    light: "#EDE9FE",
-    stroke: "#5B21B6",
-    glow: "shadow-violet-500/20",
-  },
-  QURTUBA: {
-    primary: "#D97706",
-    gradient: "from-amber-500 to-amber-400",
+function getTeamColors(color?: string) {
+  const primary = color && /^#([0-9A-F]{3}){1,2}$/i.test(color) ? color : "#8B4513";
+  return {
+    primary,
+    gradient: "from-amber-600 to-amber-500",
     light: "#FEF3C7",
-    stroke: "#B45309",
+    stroke: primary,
     glow: "shadow-amber-500/20",
-  },
-  MUQADDAS: {
-    primary: "#059669",
-    gradient: "from-emerald-600 to-emerald-500",
-    light: "#D1FAE5",
-    stroke: "#065F46",
-    glow: "shadow-emerald-500/20",
-  },
-  BUKHARA: {
-    primary: "#EA580C",
-    gradient: "from-orange-600 to-orange-500",
-    light: "#FFEDD5",
-    stroke: "#9A3412",
-    glow: "shadow-orange-500/20",
-  },
-};
+  };
+}
 
 function getMedalColor(rank: number): string {
   switch (rank) {
@@ -79,7 +44,7 @@ function getMedalColor(rank: number): string {
 }
 
 interface TeamCardProps {
-  team: Team & { totalPoints: number; colors: typeof TEAM_COLORS[string] };
+  team: Team & { totalPoints: number; colors: ReturnType<typeof getTeamColors> };
   index: number;
   rank: number;
   maxPoints: number;
@@ -101,16 +66,17 @@ function TeamCard({ team, index, rank, maxPoints }: TeamCardProps) {
       <div
         className={`relative overflow-hidden bg-white border border-gray-100 rounded-3xl p-5 transition-all duration-300 ${team.colors.glow} hover:shadow-2xl shadow-xl z-0`}
       >
-        {/* Dynamic Gradient Border/Glow effect */}
-        <div className={`absolute top-0 left-0 w-1.5 h-full bg-linear-to-b ${team.colors.gradient}`} />
-
-        {/* Hover Gradient Background */}
-        <div className={`absolute inset-0 bg-linear-to-br ${team.colors.gradient} opacity-0 group-hover:opacity-[0.03] transition-opacity duration-300 pointer-events-none`} />
+        <div
+          className="absolute top-0 left-0 w-1.5 h-full"
+          style={{ backgroundColor: team.colors.primary }}
+        />
 
         <div className="flex items-start justify-between mb-4">
           <div className="flex items-center gap-4">
-            {/* Rank Badge */}
-            <div className={`flex flex-col items-center justify-center w-12 h-12 rounded-2xl bg-linear-to-br ${team.colors.gradient} text-white font-bold shadow-lg`}>
+            <div
+              className="flex flex-col items-center justify-center w-12 h-12 rounded-2xl text-white font-bold shadow-lg"
+              style={{ backgroundColor: team.colors.primary }}
+            >
               <span className="text-lg leading-none">#{rank}</span>
             </div>
 
@@ -121,7 +87,6 @@ function TeamCard({ team, index, rank, maxPoints }: TeamCardProps) {
                   <Medal className="w-5 h-5 drop-shadow-md animate-pulse" style={{ color: getMedalColor(rank) }} />
                 )}
               </div>
-              {/* Mock Trend Indicator */}
               <div className="flex items-center gap-1 text-xs font-medium text-gray-500">
                 {rank === 1 ? (
                   <div className="flex items-center text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">
@@ -148,7 +113,6 @@ function TeamCard({ team, index, rank, maxPoints }: TeamCardProps) {
           </div>
         </div>
 
-        {/* Enhanced Progress Bar */}
         <div className="space-y-2">
           <div className="flex justify-between text-xs font-medium text-gray-500 mb-1">
             <span>Performance</span>
@@ -160,20 +124,19 @@ function TeamCard({ team, index, rank, maxPoints }: TeamCardProps) {
               whileInView={{ width: `${percentage}%` }}
               viewport={{ once: true }}
               transition={{ duration: 1, ease: "circOut" }}
-              className={`h-full rounded-full bg-linear-to-r ${team.colors.gradient} relative overflow-hidden`}
+              className="h-full rounded-full relative overflow-hidden"
+              style={{ backgroundColor: team.colors.primary }}
             >
               <div className="absolute inset-0 bg-white/20 animate-[shimmer_2s_infinite]" />
             </motion.div>
           </div>
         </div>
-
       </div>
     </motion.div>
   );
 }
 
-// Chart Components
-const CustomTooltip = ({ active, payload, label }: any) => {
+const CustomTooltip = ({ active, payload }: any) => {
   if (active && payload && payload.length) {
     const data = payload[0].payload;
     return (
@@ -204,23 +167,22 @@ function AnalyticsSection({ teams }: { teams: any[] }) {
           <p className="text-sm text-gray-500">Live performance breakdown</p>
         </div>
 
-        {/* Toggles */}
         <div className="flex p-1 bg-gray-100 rounded-3xl">
           <button
             onClick={() => setViewMode('total')}
-            className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${viewMode === 'total' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+            className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer ${viewMode === 'total' ? 'bg-white text-gray-900 shadow-xs' : 'text-gray-500 hover:text-gray-700'}`}
           >
             Total
           </button>
           <button
             onClick={() => setViewMode('daily')}
-            className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${viewMode === 'daily' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+            className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer ${viewMode === 'daily' ? 'bg-white text-gray-900 shadow-xs' : 'text-gray-500 hover:text-gray-700'}`}
           >
             Daily
           </button>
           <button
             onClick={() => setViewMode('category')}
-            className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${viewMode === 'category' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+            className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer ${viewMode === 'category' ? 'bg-white text-gray-900 shadow-xs' : 'text-gray-500 hover:text-gray-700'}`}
           >
             Cat.
           </button>
@@ -265,15 +227,35 @@ function AnalyticsSection({ teams }: { teams: any[] }) {
 }
 
 export function LiveScorePulse({ teams, liveScores }: LiveScorePulseProps) {
+  if (!teams || teams.length === 0) {
+    return (
+      <section className="space-y-8 relative z-10">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 px-2">
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-red-100 text-red-600 animate-pulse">
+                <div className="w-2.5 h-2.5 rounded-full bg-red-600" />
+              </span>
+              <span className="text-red-600 font-bold tracking-widest text-xs uppercase">Live Updates</span>
+            </div>
+            <h2 className="text-4xl md:text-5xl font-black text-gray-900 leading-tight">
+              <span className="text-transparent bg-clip-text bg-linear-to-r from-[#8B4513] to-amber-600">SCORE</span> PULSE
+            </h2>
+          </div>
+        </div>
+
+        <div className="bg-white border border-gray-100 rounded-3xl p-8 text-center text-gray-500 shadow-xl max-w-lg mx-auto">
+          <ShieldAlert className="w-10 h-10 text-amber-500 mx-auto mb-3 opacity-60" />
+          <h3 className="text-lg font-bold text-gray-800 mb-1">No Teams Created Yet</h3>
+          <p className="text-sm text-gray-500">Create teams in the Admin Panel to see real-time score tracking and analytics.</p>
+        </div>
+      </section>
+    );
+  }
+
   const teamsWithScores = teams.map((team) => {
-    const totalPoints = liveScores.get(team.id) ?? team.total_points;
-    const colors = TEAM_COLORS[team.name] || {
-      primary: "#6B7280",
-      gradient: "from-gray-500 to-gray-600",
-      light: "#F9FAFB",
-      stroke: "#4B5563",
-      glow: "shadow-gray-500/20",
-    };
+    const totalPoints = liveScores.get(team.id) ?? team.total_points ?? 0;
+    const colors = getTeamColors(team.color);
     return { ...team, totalPoints, colors };
   });
 
@@ -291,11 +273,9 @@ export function LiveScorePulse({ teams, liveScores }: LiveScorePulseProps) {
 
   return (
     <section className="space-y-8 relative z-10">
-      {/* Background Decor */}
       <div className="absolute -top-20 -left-20 w-64 h-64 bg-amber-500/5 blur-[100px] rounded-full pointer-events-none" />
       <div className="absolute top-40 right-0 w-96 h-96 bg-blue-500/5 blur-[120px] rounded-full pointer-events-none" />
 
-      {/* Header Section */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 px-2">
         <div className="space-y-2">
           <motion.div
@@ -319,21 +299,25 @@ export function LiveScorePulse({ teams, liveScores }: LiveScorePulseProps) {
 
         <div className="hidden md:block pb-2">
           <div className="flex -space-x-2">
-            {rankedTeams.slice(0, 3).map((t, i) => (
-              <div key={t.id} className="w-10 h-10 rounded-full border-2 border-white shadow-lg bg-gray-100 flex items-center justify-center font-bold text-xs" style={{ backgroundColor: t.colors.light, color: t.colors.primary }}>
+            {rankedTeams.slice(0, 3).map((t) => (
+              <div
+                key={t.id}
+                className="w-10 h-10 rounded-full border-2 border-white shadow-lg flex items-center justify-center font-bold text-xs"
+                style={{ backgroundColor: t.colors.light, color: t.colors.primary }}
+              >
                 {t.name[0]}
               </div>
             ))}
-            <div className="w-10 h-10 rounded-full border-2 border-white shadow-lg bg-gray-100 flex items-center justify-center font-bold text-xs text-gray-400">
-              +{rankedTeams.length - 3}
-            </div>
+            {rankedTeams.length > 3 && (
+              <div className="w-10 h-10 rounded-full border-2 border-white shadow-lg bg-gray-100 flex items-center justify-center font-bold text-xs text-gray-400">
+                +{rankedTeams.length - 3}
+              </div>
+            )}
           </div>
         </div>
       </div>
 
-      {/* Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
-        {/* Team Cards - Left Column */}
         <div className="lg:col-span-2">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {rankedTeams.map((team, index) => (
@@ -342,7 +326,6 @@ export function LiveScorePulse({ teams, liveScores }: LiveScorePulseProps) {
           </div>
         </div>
 
-        {/* Analytics - Right Side */}
         <div className="lg:col-span-1 flex flex-col gap-6">
           <motion.div
             initial={{ opacity: 0, x: 20 }}
@@ -353,7 +336,6 @@ export function LiveScorePulse({ teams, liveScores }: LiveScorePulseProps) {
             <AnalyticsSection teams={sortedTeams} />
           </motion.div>
 
-          {/* Quick Actions */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -361,7 +343,7 @@ export function LiveScorePulse({ teams, liveScores }: LiveScorePulseProps) {
             className="grid grid-cols-1 gap-3"
           >
             <Link href="/scoreboard" className="w-full">
-              <Button className="w-full h-14 text-lg font-bold bg-zinc-900 hover:bg-zinc-800 text-white shadow-lg shadow-zinc-900/20 hover:shadow-zinc-900/30 transition-all rounded-2xl group">
+              <Button className="w-full h-14 text-lg font-bold bg-zinc-900 hover:bg-zinc-800 text-white shadow-lg shadow-zinc-900/20 hover:shadow-zinc-900/30 transition-all rounded-2xl group cursor-pointer">
                 Full Scoreboard <ArrowUpRight className="ml-2 w-5 h-5 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
               </Button>
             </Link>

@@ -1,37 +1,40 @@
 import { NextResponse } from "next/server";
-import { connectDB } from "@/lib/db";
-import { PollModel } from "@/lib/models";
-import { v4 as uuidv4 } from "uuid";
+import { pollsCol, docsToData } from "@/lib/models";
+import { randomUUID } from "node:crypto";
+import type { Poll } from "@/lib/types";
 
 export async function GET() {
-    await connectDB();
-    try {
-        const polls = await PollModel.find().sort({ createdAt: -1 });
-        return NextResponse.json(polls);
-    } catch (error) {
-        return NextResponse.json({ error: "Failed to fetch polls" }, { status: 500 });
-    }
+  try {
+    const snap = await pollsCol.orderBy("createdAt", "desc").get();
+    const polls = docsToData<Poll>(snap);
+    return NextResponse.json(polls);
+  } catch (error) {
+    return NextResponse.json({ error: "Failed to fetch polls" }, { status: 500 });
+  }
 }
 
 export async function POST(request: Request) {
-    await connectDB();
-    try {
-        const body = await request.json();
-        const { question, options } = body;
+  try {
+    const body = await request.json();
+    const { question, options } = body;
 
-        const newPoll = await PollModel.create({
-            id: uuidv4(),
-            question,
-            options: options.map((opt: string) => ({
-                id: uuidv4(),
-                text: opt,
-                votes: 0,
-            })),
-            createdAt: new Date().toISOString(),
-        });
+    const id = randomUUID();
+    const newPoll: Poll = {
+      id,
+      question,
+      options: options.map((opt: string) => ({
+        id: randomUUID(),
+        text: opt,
+        votes: 0,
+      })),
+      active: true,
+      createdAt: new Date().toISOString(),
+    };
 
-        return NextResponse.json(newPoll, { status: 201 });
-    } catch (error) {
-        return NextResponse.json({ error: "Failed to create poll" }, { status: 500 });
-    }
+    await pollsCol.doc(id).set(newPoll);
+
+    return NextResponse.json(newPoll, { status: 201 });
+  } catch (error) {
+    return NextResponse.json({ error: "Failed to create poll" }, { status: 500 });
+  }
 }

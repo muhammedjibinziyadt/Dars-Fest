@@ -32,10 +32,10 @@ export function AdminLoginForm({ action }: AdminLoginFormProps) {
       className="space-y-4 rounded-3xl border border-white/10 bg-white/5 p-8 backdrop-blur-2xl"
     >
       <div>
-        <label className="text-sm font-medium text-white/80">Username</label>
+        <label className="text-sm font-medium text-white/80">Username or Email</label>
         <Input
           name="username"
-          placeholder="admin"
+          placeholder="admin or admin@darsfest.com"
           className="mt-2"
           autoComplete="username"
           required

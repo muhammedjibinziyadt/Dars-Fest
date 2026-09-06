@@ -93,11 +93,11 @@ Use these credentials to access the various portals in development mode:
 
 | Role | Username | Password |
 | :--- | :--- | :--- |
-| **Admin** | `admin` | `admin123` |
+| **Admin** | Managed in Firebase Auth | Configured in Firebase Console |
 | **Jury** | `jury-anika` | `anika@jury` |
 | **Team (Aurora)** | `Team Aurora` | `aurora@123` |
 
-> **Note**: See the `teams` collection in MongoDB for other team credentials.
+> **Note**: Admin authentication is handled exclusively through Firebase Authentication. See the `teams` collection for other team credentials.
 
 ---
 

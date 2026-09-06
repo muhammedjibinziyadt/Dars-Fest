@@ -23,10 +23,6 @@ export async function POST(req: Request) {
         // Fetch the latest data from the database
         const festData = await getFestDataForAI();
 
-        const genAI = new GoogleGenerativeAI(apiKey);
-        // Using gemini-1.5-flash as it is fast and efficient for this use case
-        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
-
         const systemPrompt = `
 You are the official AI Assistant for "Funoon Fiesta", a school arts fest.
 Your goal is to help users (students, parents, teachers) by answering questions based on the provided data.
@@ -50,15 +46,26 @@ GUIDELINES:
 User Query: ${message}
     `;
 
-        const result = await model.generateContent(systemPrompt);
-        const response = result.response;
-        const text = response.text();
+        const genAI = new GoogleGenerativeAI(apiKey);
+        const primaryModelName = process.env.GEMINI_MODEL || "gemini-3.6-flash";
+        
+        let text = "";
+        try {
+            const model = genAI.getGenerativeModel({ model: primaryModelName });
+            const result = await model.generateContent(systemPrompt);
+            text = result.response.text();
+        } catch (modelError: any) {
+            console.warn(`Primary model (${primaryModelName}) failed, attempting fallback to gemini-flash-latest:`, modelError?.message);
+            const fallbackModel = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
+            const result = await fallbackModel.generateContent(systemPrompt);
+            text = result.response.text();
+        }
 
         return NextResponse.json({ response: text });
-    } catch (error) {
+    } catch (error: any) {
         console.error("Chatbot Error:", error);
         return NextResponse.json(
-            { error: "Failed to process request" },
+            { error: error?.message || "Failed to process request" },
             { status: 500 }
         );
     }

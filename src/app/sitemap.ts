@@ -1,11 +1,19 @@
 import { MetadataRoute } from 'next'
 import { getPrograms } from '@/lib/data'
 
+export const dynamic = 'force-dynamic';
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://funoonfiesta.noorululama.org';
-    const programs = await getPrograms();
+    let programs: any[] = [];
+    
+    try {
+        programs = await getPrograms();
+    } catch (e) {
+        console.warn("Could not fetch programs for sitemap generation, using base routes:", e);
+    }
 
-    const programUrls = programs.map((program) => ({
+    const programUrls = (programs || []).map((program) => ({
         url: `${baseUrl}/results/${program.id}`,
         lastModified: new Date(),
         changeFrequency: 'hourly' as const,

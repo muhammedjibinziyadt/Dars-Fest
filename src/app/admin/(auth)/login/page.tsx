@@ -11,16 +11,24 @@ async function loginAdminAction(
 ) {
   "use server";
 
-  const username = String(formData.get("username") ?? "").trim();
+  const identifier = String(formData.get("username") ?? "").trim();
   const password = String(formData.get("password") ?? "").trim();
 
-  const isAuthenticated = await authenticateAdmin(username, password);
-
-  if (!isAuthenticated) {
-    return { error: "Invalid admin credentials." };
+  if (!identifier || !password) {
+    return { error: "Please enter your username/email and password." };
   }
 
-  const token = await createSessionToken({ role: "admin", username });
+  const authResult = await authenticateAdmin(identifier, password);
+
+  if (!authResult.success) {
+    return { error: authResult.error || "Invalid admin credentials." };
+  }
+
+  const token = await createSessionToken({
+    role: "admin",
+    username: authResult.username || identifier,
+    email: authResult.email,
+  });
 
   const store = await cookies();
   store.set(ADMIN_COOKIE, token, {

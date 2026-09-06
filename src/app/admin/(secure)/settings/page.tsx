@@ -184,9 +184,9 @@ export default function SettingsPage() {
 
             <Card className="bg-white/5 border-white/10 text-white">
                 <CardHeader>
-                    <CardTitle>Admin Credentials</CardTitle>
+                    <CardTitle>Admin Credentials (Firebase Authentication)</CardTitle>
                     <CardDescription className="text-white/60">
-                        Update your admin username and password.
+                        Update your admin credentials stored directly in Firebase Authentication. You can log in using either your username or email.
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -199,25 +199,29 @@ export default function SettingsPage() {
                                 type="password"
                                 placeholder="Enter current password"
                                 className="bg-white/5 border-white/10 text-white placeholder:text-white/40"
+                                required
                             />
                         </div>
                         <div className="grid gap-2">
-                            <Label htmlFor="username">New Username</Label>
+                            <Label htmlFor="username">New Username or Email</Label>
                             <Input
                                 id="username"
                                 name="username"
-                                placeholder="Enter new username"
+                                placeholder="e.g. admin or yourname@darsfest.com"
                                 className="bg-white/5 border-white/10 text-white placeholder:text-white/40"
+                                required
                             />
                         </div>
                         <div className="grid gap-2">
-                            <Label htmlFor="password">New Password</Label>
+                            <Label htmlFor="password">New Password (minimum 6 characters)</Label>
                             <Input
                                 id="password"
                                 name="password"
                                 type="password"
-                                placeholder="Enter new password"
+                                placeholder="Enter new password (min. 6 characters)"
                                 className="bg-white/5 border-white/10 text-white placeholder:text-white/40"
+                                required
+                                minLength={6}
                             />
                         </div>
 

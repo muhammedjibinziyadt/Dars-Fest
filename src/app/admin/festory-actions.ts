@@ -1,59 +1,58 @@
 "use server";
 
-import { connectDB } from "@/lib/db";
-import { FestoryPostModel, FestoryCommentModel, FestoryUserModel } from "@/lib/models";
+import { festoryUsersCol, festoryPostsCol, festoryCommentsCol, docsToData } from "@/lib/models";
+import { adminDb } from "@/lib/firebase-admin";
+import type { FestoryUser, FestoryPost } from "@/lib/types";
 import { revalidatePath } from "next/cache";
 
-// --- Users Management ---
-
 export async function getFestoryAdminUsers() {
-    await connectDB();
-    const users = await FestoryUserModel.find().sort({ createdAt: -1 });
+  const [usersSnap, postsSnap] = await Promise.all([
+    festoryUsersCol.orderBy("createdAt", "desc").get(),
+    festoryPostsCol.get(),
+  ]);
 
-    // Enrich with post counts
-    const enrichedUsers = await Promise.all(users.map(async (user) => {
-        const postCount = await FestoryPostModel.countDocuments({ userId: user.id });
-        return {
-            ...user.toObject(),
-            _id: user._id.toString(),
-            postCount
-        };
-    }));
+  const users = docsToData<FestoryUser>(usersSnap);
+  const posts = docsToData<FestoryPost>(postsSnap);
 
-    return enrichedUsers;
+  const enrichedUsers = users.map((user) => {
+    const postCount = posts.filter((p) => p.userId === user.id).length;
+    return {
+      ...user,
+      postCount,
+    };
+  });
+
+  return enrichedUsers;
 }
 
 export async function toggleFestoryUserBan(userId: string) {
-    await connectDB();
-    const user = await FestoryUserModel.findOne({ id: userId });
-    if (!user) return { error: "User not found" };
+  const doc = await festoryUsersCol.doc(userId).get();
+  if (!doc.exists) return { error: "User not found" };
 
-    user.isBanned = !user.isBanned;
-    await user.save();
-    revalidatePath("/admin/festory");
-    return { success: true, isBanned: user.isBanned };
+  const user = doc.data() as FestoryUser;
+  const newIsBanned = !user.isBanned;
+
+  await festoryUsersCol.doc(userId).update({ isBanned: newIsBanned });
+
+  revalidatePath("/admin/festory");
+  return { success: true, isBanned: newIsBanned };
 }
 
-// --- Posts Management ---
-
 export async function getFestoryAdminPosts() {
-    await connectDB();
-    const posts = await FestoryPostModel.find().sort({ createdAt: -1 });
-    return posts.map(post => ({
-        ...post.toObject(),
-        _id: post._id.toString(),
-    }));
+  const snap = await festoryPostsCol.orderBy("createdAt", "desc").get();
+  return docsToData<FestoryPost>(snap);
 }
 
 export async function deleteFestoryPostAdmin(postId: string) {
-    await connectDB();
+  const batch = adminDb.batch();
 
-    // Delete post
-    await FestoryPostModel.deleteOne({ id: postId });
+  batch.delete(festoryPostsCol.doc(postId));
 
-    // Delete associated comments
-    await FestoryCommentModel.deleteMany({ postId: postId });
+  const commentsSnap = await festoryCommentsCol.where("postId", "==", postId).get();
+  commentsSnap.docs.forEach((doc) => batch.delete(doc.ref));
 
-    revalidatePath("/admin/festory");
-    return { success: true };
+  await batch.commit();
+
+  revalidatePath("/admin/festory");
+  return { success: true };
 }

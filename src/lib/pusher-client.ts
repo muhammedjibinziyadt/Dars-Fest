@@ -1,27 +1,42 @@
 "use client";
 
-import Pusher from "pusher-js";
+/**
+ * Migration Stub for Client Real-Time connections.
+ * Firebase Firestore onSnapshot listeners handle real-time sync automatically.
+ */
 
-// Client-side Pusher instance (singleton)
-export const pusherClient = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY || "", {
-  cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER || "mt1",
-  forceTLS: true,
-});
+const dummyChannel = {
+  bind: (_event?: string, _callback?: any) => {},
+  unbind: (_event?: string, _callback?: any) => {},
+  unbind_all: () => {},
+  unsubscribe: () => {},
+};
 
-export function getPusherClient(): Pusher {
+export const pusherClient: any = {
+  subscribe: (_channelName?: string) => dummyChannel,
+  unsubscribe: (_channelName?: string) => {},
+  disconnect: () => {},
+  connection: {
+    bind: (_event?: string, _callback?: any) => {},
+    state: "connected",
+  },
+};
+
+export function getPusherClient(): any {
   return pusherClient;
 }
 
-// Channel names (same as server)
 export const CHANNELS = {
   RESULTS: "results",
   ASSIGNMENTS: "assignments",
   REGISTRATIONS: "registrations",
   STUDENTS: "students",
   SCOREBOARD: "scoreboard",
+  POLLS: "polls",
+  PREDICTIONS: "predictions",
+  FESTORY: "festory",
 } as const;
 
-// Event names (same as server)
 export const EVENTS = {
   RESULT_APPROVED: "result-approved",
   RESULT_REJECTED: "result-rejected",
@@ -36,13 +51,3 @@ export const EVENTS = {
   STUDENT_DELETED: "student-deleted",
   SCOREBOARD_UPDATED: "scoreboard-updated",
 } as const;
-
-
-
-
-
-
-
-
-
-

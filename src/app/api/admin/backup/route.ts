@@ -1,54 +1,88 @@
 import { NextResponse } from "next/server";
-import { connectDB } from "@/lib/db";
 import {
-    TeamModel,
-    StudentModel,
-    ProgramModel,
-    JuryModel,
-    AssignedProgramModel,
-    ProgramRegistrationModel,
-    RegistrationScheduleModel,
-    PendingResultModel,
-    ApprovedResultModel,
-    LiveScoreModel,
-    ReplacementRequestModel,
-    NotificationModel,
-    AdminSettingsModel,
+  teamsCol,
+  studentsCol,
+  programsCol,
+  juriesCol,
+  assignedProgramsCol,
+  programRegistrationsCol,
+  registrationSchedulesCol,
+  pendingResultsCol,
+  approvedResultsCol,
+  liveScoresCol,
+  replacementRequestsCol,
+  notificationsCol,
+  docsToData,
 } from "@/lib/models";
 import { isAdminAuthenticated } from "@/lib/auth";
 
 export async function GET() {
-    if (!(await isAdminAuthenticated())) {
-        return new NextResponse("Unauthorized", { status: 401 });
-    }
+  if (!(await isAdminAuthenticated())) {
+    return new NextResponse("Unauthorized", { status: 401 });
+  }
 
-    await connectDB();
+  const [
+    teamsSnap,
+    studentsSnap,
+    programsSnap,
+    juriesSnap,
+    assignedSnap,
+    regsSnap,
+    schedSnap,
+    pendingSnap,
+    approvedSnap,
+    scoresSnap,
+    reqsSnap,
+    notifsSnap,
+  ] = await Promise.all([
+    teamsCol.get(),
+    studentsCol.get(),
+    programsCol.get(),
+    juriesCol.get(),
+    assignedProgramsCol.get(),
+    programRegistrationsCol.get(),
+    registrationSchedulesCol.get(),
+    pendingResultsCol.get(),
+    approvedResultsCol.get(),
+    liveScoresCol.get(),
+    replacementRequestsCol.get(),
+    notificationsCol.get(),
+  ]);
 
-    const data = {
-        teams: await TeamModel.find({}, { portal_password: 0 }).lean(),
-        students: await StudentModel.find({}).lean(),
-        programs: await ProgramModel.find({}).lean(),
-        juries: await JuryModel.find({}, { password: 0 }).lean(),
-        assignedPrograms: await AssignedProgramModel.find({}).lean(),
-        programRegistrations: await ProgramRegistrationModel.find({}).lean(),
-        registrationSchedules: await RegistrationScheduleModel.find({}).lean(),
-        pendingResults: await PendingResultModel.find({}).lean(),
-        approvedResults: await ApprovedResultModel.find({}).lean(),
-        liveScores: await LiveScoreModel.find({}).lean(),
-        replacementRequests: await ReplacementRequestModel.find({}).lean(),
-        notifications: await NotificationModel.find({}).lean(),
-        // Security: Do NOT export admin settings (contains hashed credentials)
-        timestamp: new Date().toISOString(),
-        version: "1.1",
-    };
+  const teams = docsToData(teamsSnap).map((t: any) => {
+    const { portal_password, ...rest } = t;
+    return rest;
+  });
 
-    const json = JSON.stringify(data, null, 2);
-    const filename = `funoon-fiesta-backup-${new Date().toISOString().split("T")[0]}.json`;
+  const juries = docsToData(juriesSnap).map((j: any) => {
+    const { password, ...rest } = j;
+    return rest;
+  });
 
-    return new NextResponse(json, {
-        headers: {
-            "Content-Type": "application/json",
-            "Content-Disposition": `attachment; filename="${filename}"`,
-        },
-    });
+  const data = {
+    teams,
+    students: docsToData(studentsSnap),
+    programs: docsToData(programsSnap),
+    juries,
+    assignedPrograms: docsToData(assignedSnap),
+    programRegistrations: docsToData(regsSnap),
+    registrationSchedules: docsToData(schedSnap),
+    pendingResults: docsToData(pendingSnap),
+    approvedResults: docsToData(approvedSnap),
+    liveScores: docsToData(scoresSnap),
+    replacementRequests: docsToData(reqsSnap),
+    notifications: docsToData(notifsSnap),
+    timestamp: new Date().toISOString(),
+    version: "2.0-firestore",
+  };
+
+  const json = JSON.stringify(data, null, 2);
+  const filename = `funoon-fiesta-backup-${new Date().toISOString().split("T")[0]}.json`;
+
+  return new NextResponse(json, {
+    headers: {
+      "Content-Type": "application/json",
+      "Content-Disposition": `attachment; filename="${filename}"`,
+    },
+  });
 }

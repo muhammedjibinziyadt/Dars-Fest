@@ -1,14 +1,17 @@
 import { NextResponse } from "next/server";
-import { connectDB } from "@/lib/db";
-import { ProgramModel } from "@/lib/models";
+import { programsCol, docsToData } from "@/lib/models";
+import type { Program } from "@/lib/types";
 
 export async function GET() {
-    await connectDB();
-    try {
-        // Fetch only necessary fields for dropdown
-        const programs = await ProgramModel.find({}, { id: 1, name: 1, category: 1 }).sort({ name: 1 });
-        return NextResponse.json(programs);
-    } catch (error) {
-        return NextResponse.json({ error: "Failed to fetch programs" }, { status: 500 });
-    }
+  try {
+    const snap = await programsCol.orderBy("name", "asc").get();
+    const programs = docsToData<Program>(snap).map((p) => ({
+      id: p.id,
+      name: p.name,
+      category: p.category,
+    }));
+    return NextResponse.json(programs);
+  } catch (error) {
+    return NextResponse.json({ error: "Failed to fetch programs" }, { status: 500 });
+  }
 }
