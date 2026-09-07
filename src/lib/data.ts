@@ -24,6 +24,7 @@ import {
   docsToData,
   docToData,
 } from "./models";
+import { getSafeImageUrl, isValidImageUrl } from "./utils";
 
 export async function getTeams(): Promise<Team[]> {
   try {
@@ -32,7 +33,11 @@ export async function getTeams(): Promise<Team[]> {
     const teams = docsToData<Team>(snap);
     return teams.map((t) => {
       const { portal_password, ...rest } = t;
-      return { ...rest, portal_password: "" } as Team;
+      const safeLeaderPhoto = getSafeImageUrl(t.leader_photo, "/img/jury.webp");
+      if (t.leader_photo && t.leader_photo !== safeLeaderPhoto) {
+        teamsCol.doc(t.id).update({ leader_photo: safeLeaderPhoto }).catch(() => {});
+      }
+      return { ...rest, leader_photo: safeLeaderPhoto, portal_password: "" } as Team;
     });
   } catch (error) {
     console.error("Error fetching teams from Firestore:", error);
@@ -55,7 +60,11 @@ export async function getStudents(): Promise<Student[]> {
   try {
     const snap = await studentsCol.get();
     if (snap.empty) return [];
-    return docsToData<Student>(snap);
+    const students = docsToData<Student>(snap);
+    return students.map((s) => ({
+      ...s,
+      avatar: isValidImageUrl(s.avatar) ? getSafeImageUrl(s.avatar) : undefined,
+    }));
   } catch (error) {
     console.error("Error fetching students from Firestore:", error);
     return [];
@@ -82,7 +91,7 @@ export async function getJuries(): Promise<Jury[]> {
     const juriesWithAvatars = await Promise.all(
       juries.map(async (jury) => {
         const updatedJury = { ...jury };
-        if (!jury.avatar) {
+        if (!jury.avatar || !isValidImageUrl(jury.avatar)) {
           const avatar = getRandomJuryAvatar();
           try {
             await juriesCol.doc(jury.id).update({ avatar });

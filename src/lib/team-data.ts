@@ -55,7 +55,7 @@ export async function savePortalTeam(team: PortalTeam) {
   }
 
   if (!doc.exists) {
-    updateData.leader_photo = team.leaderName;
+    updateData.leader_photo = "/img/jury.webp";
     updateData.description = `${team.teamName} squad`;
     updateData.contact = `${team.teamName.toLowerCase().replace(/\s+/g, "")}@fest.edu`;
     updateData.total_points = 0;

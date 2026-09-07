@@ -2,9 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, ArrowUpRight, ShieldCheck } from "lucide-react";
 import { LiveScorePulse } from "@/components/live-score-pulse";
 import { TeamLeadersShowcase } from "@/components/team-leaders-showcase";
 
@@ -65,7 +63,7 @@ export function HomeRealtime({ teams: initialTeams, liveScores: initialLiveScore
           {/* Ship - Center */}
           <div className="relative w-48 h-48 sm:w-64 sm:h-64 md:w-80 md:h-80 lg:w-[300px] lg:h-[300px] mb-2">
             <Image
-              src="/img/assets/ship.webp"
+              src="/img/assets/ship.webp?v=2"
               alt="Ship"
               fill
               className="object-contain"
@@ -76,7 +74,7 @@ export function HomeRealtime({ teams: initialTeams, liveScores: initialLiveScore
           {/* Main Title - Charutha Font */}
           <div>
             <h1 className="text-[#A13A24] text-4xl sm:text-5xl md:text-6xl lg:text-7xl mb-2 font-['Charutha'] tracking-wide leading-5 md:leading-7">
-              FUNOON FIESTA '25-26
+              MAERIKA 2K26
             </h1>
 
             {/* Subtitle - Bricolage Font */}
@@ -216,38 +214,59 @@ export function HomeRealtime({ teams: initialTeams, liveScores: initialLiveScore
       </section>
 
 
-      {/* Control Room Section */}
-      <section className="bg-gradient-to-br from-[#8B4513]/5 to-[#0d7377]/5 py-12 sm:py-16 md:py-20">
-        <div className="container mx-auto max-w-7xl px-4 sm:px-5 md:px-8">
-          <div className="bg-white rounded-xl sm:rounded-2xl border border-gray-200 shadow-lg p-6 sm:p-8 md:p-12 mb-10">
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 sm:gap-8">
-              <div className="flex-1">
-                <Badge className="bg-cyan-100 text-cyan-800 border-cyan-200 mb-3 sm:mb-4 text-xs sm:text-sm">Need help?</Badge>
-                <h2 className="text-2xl sm:text-3xl md:text-4xl font-serif text-[#8B4513] mb-3 sm:mb-4">
-                  Funoon Fiesta Control Room
-                </h2>
-                <p className="text-gray-700 text-base sm:text-lg leading-relaxed max-w-2xl">
-                  Contact us for support, inquiries, or assistance with the platform.
-                  Our team is here to help ensure a smooth and enjoyable experience.
-                  {/* <Link href="/admin/login" className="">
-                    <Button variant="secondary" className="text-sm text-black font-normal ml-2">
-                      Admin Login
-                    </Button>
-                  </Link> */}
-                </p>
+      {/* Control Room / Login Box Section */}
+      <section className="py-8 sm:py-10 pb-24 sm:pb-28">
+        <div className="container mx-auto max-w-5xl px-4 sm:px-6">
+          <div className="relative rounded-2xl p-[1px] bg-gradient-to-r from-[#8B4513]/25 via-amber-500/35 to-[#8B4513]/15 shadow-[0_8px_30px_rgba(139,69,19,0.06)]">
+            <div className="bg-white/95 backdrop-blur-md rounded-[15px] p-5 sm:p-6 md:p-7 flex flex-col md:flex-row md:items-center md:justify-between gap-5">
+
+              <div className="flex items-start sm:items-center gap-3.5 flex-1">
+                <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-amber-500/15 to-[#8B4513]/10 border border-amber-500/20 flex items-center justify-center text-[#8B4513] shrink-0">
+                  <ShieldCheck className="w-5 h-5" />
+                </div>
+
+                <div className="space-y-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h2 className="text-lg sm:text-xl font-['Bricolage'] font-bold text-[#2A1810] tracking-tight">
+                      Funoon Fiesta Control Room
+                    </h2>
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                      Live Portals
+                    </span>
+                  </div>
+                  <p className="text-stone-500 text-xs sm:text-sm leading-relaxed max-w-xl">
+                    Contact us for support, inquiries, or sign in to access Jury evaluations and Team dashboards.
+                  </p>
+                </div>
               </div>
-              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 w-full sm:w-auto">
-                <Link href="/jury/login" className="w-full sm:w-auto">
-                  <Button variant="ghost" className="text-gray-700 hover:bg-gray-100 border border-gray-300 w-full sm:w-auto text-sm sm:text-base">
-                    Jury Login
-                  </Button>
+
+              <div className="flex flex-wrap items-center gap-2.5 shrink-0 pt-2 md:pt-0 border-t md:border-t-0 border-stone-100">
+                <Link
+                  href="/jury/login"
+                  className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-medium text-stone-700 bg-stone-50 hover:bg-stone-100 border border-stone-200/80 transition-all hover:-translate-y-0.5 active:translate-y-0 shadow-2xs"
+                >
+                  <span>Jury Login</span>
+                  <ArrowUpRight className="w-3.5 h-3.5 opacity-50" />
                 </Link>
-                <Link href="/team/login" className="w-full sm:w-auto">
-                  <Button className="bg-[#8B4513] hover:bg-[#6B3410] text-white w-full sm:w-auto text-sm sm:text-base">
-                    Team Portal
-                  </Button>
+
+                <Link
+                  href="/team/login"
+                  className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-4.5 py-2.5 rounded-xl text-xs sm:text-sm font-medium text-white bg-gradient-to-r from-[#8B4513] to-[#A13A24] hover:from-[#75380c] hover:to-[#8c311c] shadow-sm shadow-[#8B4513]/25 hover:shadow-md hover:shadow-[#8B4513]/35 transition-all hover:-translate-y-0.5 active:translate-y-0"
+                >
+                  <span>Team Portal</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
+
+                <Link
+                  href="/admin/login"
+                  className="inline-flex items-center justify-center px-2.5 py-2 rounded-lg text-xs font-medium text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition-colors"
+                  title="Admin Portal"
+                >
+                  Admin
                 </Link>
               </div>
+
             </div>
           </div>
         </div>

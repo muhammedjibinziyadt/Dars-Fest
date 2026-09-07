@@ -35,11 +35,11 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: "/icon-192x192.png", sizes: "192x192", type: "image/png" },
-      { url: "/icon-512x512.png", sizes: "512x512", type: "image/png" },
+      { url: "/icon-192x192.png?v=2", sizes: "192x192", type: "image/png" },
+      { url: "/icon-512x512.png?v=2", sizes: "512x512", type: "image/png" },
     ],
     apple: [
-      { url: "/icon-192x192.png", sizes: "192x192", type: "image/png" },
+      { url: "/apple-touch-icon.png?v=2", sizes: "180x180", type: "image/png" },
     ],
   },
   openGraph: {
@@ -49,7 +49,7 @@ export const metadata: Metadata = {
     siteName: "Funoon Fiesta",
     images: [
       {
-        url: "/img/hero/Fest-logo.webp",
+        url: "/img/hero/Fest-logo.webp?v=2",
         width: 800,
         height: 600,
         alt: "Funoon Fiesta Logo",
@@ -62,7 +62,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Funoon Fiesta",
     description: "Celebrating Islamic Art & Culture through student talent.",
-    images: ["/img/hero/Fest-logo.webp"],
+    images: ["/img/hero/Fest-logo.webp?v=2"],
   },
   robots: {
     index: true,

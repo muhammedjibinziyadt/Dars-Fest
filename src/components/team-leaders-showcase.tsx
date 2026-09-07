@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import { ChevronLeft, ChevronRight, Crown, Users } from "lucide-react";
 import type { Team } from "@/lib/types";
-import { cn } from "@/lib/utils";
+import { cn, getSafeImageUrl } from "@/lib/utils";
 
 interface TeamLeadersShowcaseProps {
   teams: Team[];
@@ -58,7 +58,7 @@ export function TeamLeadersShowcase({ teams }: TeamLeadersShowcaseProps) {
   }
 
   const currentTeam = teams[currentIndex] || teams[0];
-  const leaderPhoto = currentTeam?.leader_photo || "/img/jury.webp";
+  const leaderPhoto = getSafeImageUrl(currentTeam?.leader_photo, "/img/jury.webp");
 
   const variants = {
     enter: (direction: number) => ({

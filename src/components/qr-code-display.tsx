@@ -90,6 +90,7 @@ export function QRCodeDisplay({ chestNumber, participantName }: QRCodeDisplayPro
               width={200}
               height={200}
               className="w-48 h-48"
+              unoptimized
             />
           </div>
           <p className="text-sm text-muted-foreground text-center">

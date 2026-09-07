@@ -23,3 +23,35 @@ export function formatNumber(value: number) {
   }).format(value);
 }
 
+export function isValidImageUrl(url?: string | null): boolean {
+  if (!url || typeof url !== "string") return false;
+  const trimmed = url.trim();
+  if (!trimmed) return false;
+  return (
+    trimmed.startsWith("/") ||
+    trimmed.startsWith("http://") ||
+    trimmed.startsWith("https://") ||
+    trimmed.startsWith("data:image/") ||
+    trimmed.startsWith("img/") ||
+    trimmed.startsWith("assets/")
+  );
+}
+
+export function getSafeImageUrl(url?: string | null, fallback = "/img/jury.webp"): string {
+  if (!url || typeof url !== "string") return fallback;
+  const trimmed = url.trim();
+  if (!trimmed) return fallback;
+  if (
+    trimmed.startsWith("/") ||
+    trimmed.startsWith("http://") ||
+    trimmed.startsWith("https://") ||
+    trimmed.startsWith("data:image/")
+  ) {
+    return trimmed;
+  }
+  if (trimmed.startsWith("img/") || trimmed.startsWith("assets/")) {
+    return `/${trimmed}`;
+  }
+  return fallback;
+}
+

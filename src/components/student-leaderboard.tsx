@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Trophy, Medal, Search, Crown, ChevronRight } from "lucide-react";
 import type { Student, Team } from "@/lib/types";
+import { isValidImageUrl, getSafeImageUrl } from "@/lib/utils";
 import Image from "next/image";
 
 interface StudentLeaderboardProps {
@@ -150,9 +151,9 @@ export function StudentLeaderboard({ students, teams }: StudentLeaderboardProps)
                                         </div>
                                     )}
                                     <div className={`w-20 h-20 md:w-28 md:h-28 rounded-full border-4 shadow-xl overflow-hidden relative z-10 bg-white ${getPodiumStyles(topStudents[1].rank).border} ${getPodiumStyles(topStudents[1].rank).ring}`}>
-                                        {topStudents[1].avatar ? (
+                                        {isValidImageUrl(topStudents[1].avatar) ? (
                                             <Image
-                                                src={topStudents[1].avatar}
+                                                src={getSafeImageUrl(topStudents[1].avatar)}
                                                 alt={topStudents[1].name}
                                                 fill
                                                 className="object-cover"
@@ -194,9 +195,9 @@ export function StudentLeaderboard({ students, teams }: StudentLeaderboardProps)
                                         </div>
                                     )}
                                     <div className={`w-24 h-24 md:w-36 md:h-36 rounded-full border-4 shadow-2xl overflow-hidden relative z-10 bg-white ${getPodiumStyles(topStudents[0].rank).border} ${getPodiumStyles(topStudents[0].rank).ring}`}>
-                                        {topStudents[0].avatar ? (
+                                        {isValidImageUrl(topStudents[0].avatar) ? (
                                             <Image
-                                                src={topStudents[0].avatar}
+                                                src={getSafeImageUrl(topStudents[0].avatar)}
                                                 alt={topStudents[0].name}
                                                 fill
                                                 className="object-cover"
@@ -238,9 +239,9 @@ export function StudentLeaderboard({ students, teams }: StudentLeaderboardProps)
                                         </div>
                                     )}
                                     <div className={`w-20 h-20 md:w-28 md:h-28 rounded-full border-4 shadow-xl overflow-hidden relative z-10 bg-white ${getPodiumStyles(topStudents[2].rank).border} ${getPodiumStyles(topStudents[2].rank).ring}`}>
-                                        {topStudents[2].avatar ? (
+                                        {isValidImageUrl(topStudents[2].avatar) ? (
                                             <Image
-                                                src={topStudents[2].avatar}
+                                                src={getSafeImageUrl(topStudents[2].avatar)}
                                                 alt={topStudents[2].name}
                                                 fill
                                                 className="object-cover"
@@ -297,9 +298,9 @@ export function StudentLeaderboard({ students, teams }: StudentLeaderboardProps)
                                     {/* Avatar */}
                                     <div className="flex-shrink-0 relative">
                                         <div className="w-10 h-10 md:w-12 md:h-12 rounded-full overflow-hidden bg-gray-100 ring-2 ring-white shadow-sm">
-                                            {student.avatar ? (
+                                            {isValidImageUrl(student.avatar) ? (
                                                 <Image
-                                                    src={student.avatar}
+                                                    src={getSafeImageUrl(student.avatar)}
                                                     alt={student.name}
                                                     fill
                                                     className="object-cover"

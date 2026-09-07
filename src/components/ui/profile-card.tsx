@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import Image from "next/image";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { cn, getSafeImageUrl } from "@/lib/utils";
 import { Clock, Copy, Zap, Edit, Trash2 } from "lucide-react";
 
 interface ProfileCardProps {
@@ -94,7 +94,7 @@ export function ProfileCard({
           <div className="flex flex-wrap items-start gap-4 sm:gap-5">
             <div className="relative h-16 w-16 sm:h-20 sm:w-20 shrink-0 overflow-hidden rounded-full ring-2 ring-fuchsia-400/30 shadow-lg">
               <Image
-                src={avatarSrc}
+                src={getSafeImageUrl(avatarSrc, "/img/jury.webp")}
                 alt={`${name} avatar`}
                 fill
                 sizes="(max-width: 640px) 64px, 80px"
