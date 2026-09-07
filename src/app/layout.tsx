@@ -12,16 +12,16 @@ import { JsonLd } from "@/components/json-ld";
 
 export const metadata: Metadata = {
   title: {
-    default: "Funoon Fiesta - Showcasing Islamic Art & Culture",
-    template: "%s | Funoon Fiesta",
+    default: "Maerika 2K26 - കലായുഗ ഭാവുകം",
+    template: "%s | Maerika 2K26",
   },
   description:
-    "A premier platform for students to showcase their talents and highlight the rich art forms of Islamic culture. Live scoreboard, admin controls, and jury tools for Funoon Fiesta.",
+    "പുതിയൊരു കാലത്തിന്റേയും മാറ്റത്തിന്റേയും തുടക്കത്തിൽ നൽകുന്ന നല്ല പ്രതീക്ഷകൾ. കലയുടെയും സംസ്കാരത്തിന്റെയും രംഗത്ത് പുതിയൊരു വസന്തമോ അല്ലെങ്കിൽ ക്രിയാത്മകമായ മാറ്റമോ ഉണ്ടാകണമെന്ന ആശ.",
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://funoonfiesta.noorululama.org"),
-  keywords: ["Funoon Fiesta", "Islamic Art", "Culture", "Student Festival", "Live Scoreboard", "Arts Competition"],
-  authors: [{ name: "Funoon Fiesta Team" }],
-  creator: "Funoon Fiesta",
-  publisher: "Funoon Fiesta",
+  keywords: ["Maerika 2k26", "Islamic Art", "Culture", "Student Festival", "Live Scoreboard", "Arts Competition"],
+  authors: [{ name: "JDSA Media" }],
+  creator: "JDSA Media",
+  publisher: "JDSA Media",
   formatDetection: {
     email: false,
     address: false,
@@ -31,7 +31,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "Funoon Fiesta",
+    title: "Maerika 2K26",
   },
   icons: {
     icon: [
@@ -43,16 +43,16 @@ export const metadata: Metadata = {
     ],
   },
   openGraph: {
-    title: "Funoon Fiesta - Showcasing Islamic Art & Culture",
-    description: "A premier platform for students to showcase their talents and highlight the rich art forms of Islamic culture.",
+    title: "Maerika 2K26 - കലായുഗ ഭാവുകം",
+    description: "പുതിയൊരു കാലത്തിന്റേയും മാറ്റത്തിന്റേയും തുടക്കത്തിൽ നൽകുന്ന നല്ല പ്രതീക്ഷകൾ. കലയുടെയും സംസ്കാരത്തിന്റെയും രംഗത്ത് പുതിയൊരു വസന്തമോ അല്ലെങ്കിൽ ക്രിയാത്മകമായ മാറ്റമോ ഉണ്ടാകണമെന്ന ആശ.",
     url: process.env.NEXT_PUBLIC_APP_URL || "https://funoonfiesta.noorululama.org",
-    siteName: "Funoon Fiesta",
+    siteName: "Maerika 2K26",
     images: [
       {
         url: "/img/hero/Fest-logo.webp?v=2",
         width: 800,
         height: 600,
-        alt: "Funoon Fiesta Logo",
+        alt: "Maerika 2k26 Logo",
       },
     ],
     locale: "en_US",
@@ -60,8 +60,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Funoon Fiesta",
-    description: "Celebrating Islamic Art & Culture through student talent.",
+    title: "Maerika 2k26",
+    description: "പുതിയൊരു കാലത്തിന്റേയും മാറ്റത്തിന്റേയും തുടക്കത്തിൽ നൽകുന്ന നല്ല പ്രതീക്ഷകൾ. കലയുടെയും സംസ്കാരത്തിന്റെയും രംഗത്ത് പുതിയൊരു വസന്തമോ അല്ലെങ്കിൽ ക്രിയാത്മകമായ മാറ്റമോ ഉണ്ടാകണമെന്ന ആശ.",
     images: ["/img/hero/Fest-logo.webp?v=2"],
   },
   robots: {

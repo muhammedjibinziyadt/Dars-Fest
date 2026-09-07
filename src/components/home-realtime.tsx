@@ -63,11 +63,12 @@ export function HomeRealtime({ teams: initialTeams, liveScores: initialLiveScore
           {/* Ship - Center */}
           <div className="relative w-48 h-48 sm:w-64 sm:h-64 md:w-80 md:h-80 lg:w-[300px] lg:h-[300px] mb-2">
             <Image
-              src="/img/assets/ship.webp?v=2"
+              src="/img/assets/ship.webp"
               alt="Ship"
               fill
               className="object-contain"
               priority
+              unoptimized
             />
           </div>
 
