@@ -6,6 +6,7 @@ export interface Team {
   id: string;
   name: string;
   leader: string;
+  leader_email?: string;
   leader_photo: string;
   color: string;
   description: string;
@@ -88,6 +89,7 @@ export interface PortalTeam {
   teamName: string;
   password: string;
   leaderName: string;
+  leaderEmail?: string;
   themeColor?: string;
 }
 

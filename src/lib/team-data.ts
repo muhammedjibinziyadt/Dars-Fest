@@ -34,6 +34,7 @@ export async function getPortalTeams(): Promise<PortalTeam[]> {
     teamName: team.name,
     password: "", // SECURITY: Do not leak password
     leaderName: team.leader,
+    leaderEmail: team.leader_email || "",
     themeColor: sanitizeColor(team.color),
   }));
 }
@@ -42,11 +43,15 @@ export async function savePortalTeam(team: PortalTeam) {
   const ref = teamsCol.doc(team.id);
   const doc = await ref.get();
 
-  const updateData: any = {
+  const updateData: Record<string, unknown> = {
     name: team.teamName,
     leader: team.leaderName,
     color: sanitizeColor(team.themeColor),
   };
+
+  if (team.leaderEmail !== undefined) {
+    updateData.leader_email = team.leaderEmail.trim();
+  }
 
   if (team.password && team.password.trim() !== "") {
     if (!team.password.startsWith("$2")) {
@@ -57,7 +62,7 @@ export async function savePortalTeam(team: PortalTeam) {
   if (!doc.exists) {
     updateData.leader_photo = "/img/jury.webp";
     updateData.description = `${team.teamName} squad`;
-    updateData.contact = `${team.teamName.toLowerCase().replace(/\s+/g, "")}@fest.edu`;
+    updateData.contact = team.leaderEmail?.trim() || `${team.teamName.toLowerCase().replace(/\s+/g, "")}@fest.edu`;
     updateData.total_points = 0;
   }
 

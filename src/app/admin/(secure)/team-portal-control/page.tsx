@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { getPortalStudents, getPortalTeams, getProgramRegistrations, getRegistrationSchedule, savePortalTeam, deletePortalTeam, updateRegistrationSchedule } from "@/lib/team-data";
 import { TeamPortalManager } from "@/components/team-portal-manager";
 import { redirectWithToast } from "@/lib/actions";
+import { sendTeamWelcomeEmail } from "@/lib/email-service";
 
 function sanitizeColor(value: string) {
   return /^#([0-9A-F]{3}){1,2}$/i.test(value) ? value : "#0ea5e9";
@@ -18,6 +19,7 @@ async function upsertTeamAction(formData: FormData) {
     const teamName = String(formData.get("teamName") ?? "").trim();
     const password = String(formData.get("password") ?? "").trim();
     const leaderName = String(formData.get("leaderName") ?? "").trim();
+    const leaderEmail = String(formData.get("leaderEmail") ?? "").trim();
     const themeColor = sanitizeColor(String(formData.get("themeColor") ?? "#0ea5e9"));
 
     // Check if we are UPDATING an existing team (id is present in form data)
@@ -38,22 +40,53 @@ async function upsertTeamAction(formData: FormData) {
       return;
     }
 
+    if (!isUpdate && !leaderEmail) {
+      revalidatePath("/admin/team-portal-control");
+      redirectWithToast("/admin/team-portal-control", "Leader email is required to send credentials.", "error");
+      return;
+    }
+
     await savePortalTeam({
       id,
       teamName,
       password, // Function handles empty password logic internally
       leaderName,
+      leaderEmail,
       themeColor,
     });
+
+    let successMsg = isUpdate ? "Team updated successfully!" : "Team created successfully!";
+
+    // Send credentials to team leader via Resend on new team creation
+    if (!isUpdate && leaderEmail) {
+      const emailResult = await sendTeamWelcomeEmail({
+        teamName,
+        leaderName,
+        leaderEmail,
+        password,
+      });
+
+      if (emailResult.success) {
+        if (emailResult.note) {
+          successMsg = `Team created! ${emailResult.note}`;
+        } else {
+          successMsg = `Team created and credentials sent to ${leaderEmail}!`;
+        }
+      } else {
+        successMsg = `Team created, but email failed: ${emailResult.error}`;
+      }
+    }
+
     revalidatePath("/admin/team-portal-control");
-    redirectWithToast("/admin/team-portal-control", isUpdate ? "Team updated successfully!" : "Team created successfully!", "success");
-  } catch (error: any) {
+    redirectWithToast("/admin/team-portal-control", successMsg, "success");
+  } catch (error: unknown) {
     // Check if it's a redirect error - if so, re-throw it
-    if (error?.digest === "NEXT_REDIRECT" || error?.message === "NEXT_REDIRECT") {
+    const err = error as { digest?: string; message?: string };
+    if (err?.digest === "NEXT_REDIRECT" || err?.message === "NEXT_REDIRECT") {
       throw error;
     }
     revalidatePath("/admin/team-portal-control");
-    redirectWithToast("/admin/team-portal-control", error?.message || "Failed to save team", "error");
+    redirectWithToast("/admin/team-portal-control", err?.message || "Failed to save team", "error");
   }
 }
 
@@ -69,13 +102,14 @@ async function deleteTeamAction(formData: FormData) {
     await deletePortalTeam(teamId);
     revalidatePath("/admin/team-portal-control");
     redirectWithToast("/admin/team-portal-control", "Team deleted successfully!", "error");
-  } catch (error: any) {
+  } catch (error: unknown) {
     // Check if it's a redirect error - if so, re-throw it
-    if (error?.digest === "NEXT_REDIRECT" || error?.message === "NEXT_REDIRECT") {
+    const err = error as { digest?: string; message?: string };
+    if (err?.digest === "NEXT_REDIRECT" || err?.message === "NEXT_REDIRECT") {
       throw error;
     }
     revalidatePath("/admin/team-portal-control");
-    redirectWithToast("/admin/team-portal-control", error?.message || "Failed to delete team", "error");
+    redirectWithToast("/admin/team-portal-control", err?.message || "Failed to delete team", "error");
   }
 }
 
@@ -95,13 +129,14 @@ async function updateScheduleAction(formData: FormData) {
     });
     revalidatePath("/admin/team-portal-control");
     redirectWithToast("/admin/team-portal-control", "Registration schedule updated successfully!", "success");
-  } catch (error: any) {
+  } catch (error: unknown) {
     // Check if it's a redirect error - if so, re-throw it
-    if (error?.digest === "NEXT_REDIRECT" || error?.message === "NEXT_REDIRECT") {
+    const err = error as { digest?: string; message?: string };
+    if (err?.digest === "NEXT_REDIRECT" || err?.message === "NEXT_REDIRECT") {
       throw error;
     }
     revalidatePath("/admin/team-portal-control");
-    redirectWithToast("/admin/team-portal-control", error?.message || "Failed to update schedule", "error");
+    redirectWithToast("/admin/team-portal-control", err?.message || "Failed to update schedule", "error");
   }
 }
 
@@ -132,10 +167,11 @@ export default async function TeamPortalControlPage() {
           <form action={upsertTeamAction} className="mt-6 grid gap-4">
             <Input name="teamName" placeholder="Team name" required />
             <Input name="leaderName" placeholder="Leader name" required />
+            <Input name="leaderEmail" type="email" placeholder="Leader email (e.g. leader@gmail.com)" required />
             <Input name="password" type="text" placeholder="Password" required />
-            <Input name="themeColor" type="text" placeholder="#0ea5e9" />
+            <Input name="themeColor" type="text" placeholder="Theme color (e.g. #0ea5e9)" />
             <Button type="submit" className="w-full">
-              Create Team
+              Create Team &amp; Send Email
             </Button>
           </form>
         </Card>

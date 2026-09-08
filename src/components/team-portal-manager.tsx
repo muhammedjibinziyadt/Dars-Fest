@@ -288,6 +288,9 @@ export const TeamPortalManager = React.memo(function TeamPortalManager({
                         <p className="text-xs text-white/50">ID: {team.id}</p>
                         <h3 className="font-semibold text-white mt-1">{team.teamName}</h3>
                         <p className="text-sm text-white/70 mt-1">Leader: {team.leaderName}</p>
+                        {team.leaderEmail && (
+                          <p className="text-xs text-white/50 mt-0.5 font-mono">✉ {team.leaderEmail}</p>
+                        )}
                         <div className="flex gap-4 mt-2 text-xs text-white/60">
                           <span>Students: {stats.studentCount}</span>
                           <span>Registrations: {stats.registrationCount}</span>
@@ -607,6 +610,17 @@ export const TeamPortalManager = React.memo(function TeamPortalManager({
             </div>
             <div>
               <label className="text-sm font-semibold text-white/70 mb-2 block">
+                Leader Email
+              </label>
+              <Input
+                name="leaderEmail"
+                type="email"
+                defaultValue={editingTeam.leaderEmail || ""}
+                placeholder="leader@gmail.com"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-semibold text-white/70 mb-2 block">
                 Password
               </label>
               <Input
@@ -663,6 +677,12 @@ export const TeamPortalManager = React.memo(function TeamPortalManager({
               <p className="text-xs text-white/50">Leader</p>
               <p className="text-sm text-white">{viewingTeam.leaderName}</p>
             </div>
+            {viewingTeam.leaderEmail && (
+              <div>
+                <p className="text-xs text-white/50">Leader Email</p>
+                <p className="text-sm text-white font-mono">{viewingTeam.leaderEmail}</p>
+              </div>
+            )}
             <div>
               <p className="text-xs text-white/50">Theme Color</p>
               <div className="flex items-center gap-2 mt-1">
