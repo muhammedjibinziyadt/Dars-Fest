@@ -1,8 +1,21 @@
 "use client";
 
 import React, { useEffect, useMemo, useState, useCallback } from "react";
+import Link from "next/link";
 import { useFormStatus } from "react-dom";
-import { CheckCircle2, LayoutList, Search, Trash2, Eye, Pencil } from "lucide-react";
+import { 
+  CheckCircle2, 
+  LayoutList, 
+  Search, 
+  Trash2, 
+  Eye, 
+  Pencil, 
+  Download, 
+  FileText, 
+  FileSpreadsheet, 
+  Printer, 
+  ExternalLink 
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SearchSelect } from "@/components/ui/search-select";
@@ -100,6 +113,7 @@ export const ProgramManager = React.memo(function ProgramManager({
   const [pageSize, setPageSize] = useState<number>(Number(pageSizeOptions[0].value));
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showExportMenu, setShowExportMenu] = useState(false);
   const juryOptions = useMemo(
     () => juries.map((jury) => ({ value: jury.id, label: jury.name })),
     [juries],
@@ -139,6 +153,85 @@ export const ProgramManager = React.memo(function ProgramManager({
     }
     return list;
   }, [filteredPrograms, sort]);
+
+  const exportProgramsCSV = () => {
+    const headers = ["Program Name", "Section", "Stage", "Candidate Limit", "Registered Candidates"];
+    const rows = sortedPrograms.map((p) => [
+      p.name,
+      p.section,
+      p.stage ? "On-Stage" : "Off-Stage",
+      (p.candidateLimit || 1).toString(),
+      (candidateCounts?.[p.id] || 0).toString(),
+    ]);
+
+    const csvContent = [
+      headers.join(","),
+      ...rows.map((row) => row.map((cell) => `"${cell}"`).join(",")),
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `programs_${new Date().toISOString().split("T")[0]}.csv`);
+    link.style.visibility = "hidden";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const exportProgramsPDF = async () => {
+    try {
+      const { jsPDF } = await import("jspdf");
+      const doc = new jsPDF();
+      doc.setFontSize(18);
+      doc.text("Programs & Events Directory", 14, 22);
+      doc.setFontSize(11);
+      doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 30);
+
+      const headers = ["Program Name", "Section", "Stage", "Limit", "Registered"];
+      const colWidths = [70, 30, 30, 25, 25];
+      const startX = 14;
+      let yPos = 42;
+
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "bold");
+      let xPos = startX;
+      headers.forEach((header, i) => {
+        doc.text(header, xPos, yPos);
+        xPos += colWidths[i];
+      });
+
+      yPos += 6;
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9);
+
+      sortedPrograms.forEach((p) => {
+        if (yPos > 280) {
+          doc.addPage();
+          yPos = 20;
+        }
+        xPos = startX;
+        const rowData = [
+          p.name,
+          p.section,
+          p.stage ? "On-Stage" : "Off-Stage",
+          (p.candidateLimit || 1).toString(),
+          (candidateCounts?.[p.id] || 0).toString(),
+        ];
+        rowData.forEach((cell, i) => {
+          const cellText = doc.splitTextToSize(cell, colWidths[i] - 2);
+          doc.text(cellText, xPos, yPos);
+          xPos += colWidths[i];
+        });
+        yPos += 7;
+      });
+
+      doc.save(`programs_${new Date().toISOString().split("T")[0]}.pdf`);
+    } catch (error) {
+      console.error("PDF export failed:", error);
+    }
+  };
 
   useEffect(() => {
     const available = new Set(sortedPrograms.map((program) => program.id));
@@ -201,7 +294,86 @@ export const ProgramManager = React.memo(function ProgramManager({
             Search, filter, and bulk-select programs before assigning juries.
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex items-center gap-2">
+          {/* Export Dropdown */}
+          <div className="relative">
+            <Button
+              type="button"
+              variant="secondary"
+              className="gap-2"
+              onClick={() => setShowExportMenu((prev) => !prev)}
+            >
+              <Download className="h-4 w-4 text-cyan-400" />
+              Export
+            </Button>
+            {showExportMenu && (
+              <>
+                <div
+                  className="fixed inset-0 z-40"
+                  onClick={() => setShowExportMenu(false)}
+                />
+                <div className="absolute right-0 top-full mt-2 z-50">
+                  <div className="rounded-2xl border border-white/10 bg-slate-900/95 backdrop-blur-xl shadow-2xl p-2 min-w-[240px]">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowExportMenu(false);
+                        window.print();
+                      }}
+                      className="w-full flex items-center gap-3 rounded-xl px-4 py-2.5 text-left text-sm text-white transition hover:bg-white/10"
+                    >
+                      <Printer className="h-4 w-4 text-cyan-400" />
+                      <div>
+                        <p className="font-semibold">Print Directory</p>
+                        <p className="text-xs text-white/60">Official print layout</p>
+                      </div>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        exportProgramsCSV();
+                        setShowExportMenu(false);
+                      }}
+                      className="w-full flex items-center gap-3 rounded-xl px-4 py-2.5 text-left text-sm text-white transition hover:bg-white/10"
+                    >
+                      <FileSpreadsheet className="h-4 w-4 text-emerald-400" />
+                      <div>
+                        <p className="font-semibold">Export as CSV</p>
+                        <p className="text-xs text-white/60">Includes sections & limits</p>
+                      </div>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        await exportProgramsPDF();
+                        setShowExportMenu(false);
+                      }}
+                      className="w-full flex items-center gap-3 rounded-xl px-4 py-2.5 text-left text-sm text-white transition hover:bg-white/10"
+                    >
+                      <FileText className="h-4 w-4 text-red-400" />
+                      <div>
+                        <p className="font-semibold">Export as PDF</p>
+                        <p className="text-xs text-white/60">Directory document format</p>
+                      </div>
+                    </button>
+                    <div className="my-1 border-t border-white/10" />
+                    <Link
+                      href="/admin/reports"
+                      onClick={() => setShowExportMenu(false)}
+                      className="w-full flex items-center gap-3 rounded-xl px-4 py-2.5 text-left text-sm text-white transition hover:bg-white/10"
+                    >
+                      <ExternalLink className="h-4 w-4 text-amber-400" />
+                      <div>
+                        <p className="font-semibold text-amber-300">All Reports & Export Center</p>
+                        <p className="text-xs text-white/60">Teams, scores & single type</p>
+                      </div>
+                    </Link>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+
           <Button
             type="button"
             variant="secondary"

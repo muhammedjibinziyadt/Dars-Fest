@@ -16,12 +16,15 @@ async function approveResultAction(formData: FormData) {
     const id = String(formData.get("id") ?? "");
     await approveResult(id);
     revalidatePath("/admin/pending-results");
+    revalidatePath("/admin/approved-results");
+    revalidatePath("/admin/add-result");
     redirectWithToast("/admin/pending-results", "Result approved successfully!", "success");
   } catch (error: any) {
     if (error?.digest === "NEXT_REDIRECT" || error?.message === "NEXT_REDIRECT") {
       throw error;
     }
     revalidatePath("/admin/pending-results");
+    revalidatePath("/admin/add-result");
     redirectWithToast("/admin/pending-results", error?.message || "Failed to approve result", "error");
   }
 }
@@ -32,12 +35,14 @@ async function rejectResultAction(formData: FormData) {
     const id = String(formData.get("id") ?? "");
     await rejectResult(id);
     revalidatePath("/admin/pending-results");
+    revalidatePath("/admin/add-result");
     redirectWithToast("/admin/pending-results", "Result rejected successfully!", "success");
   } catch (error: any) {
     if (error?.digest === "NEXT_REDIRECT" || error?.message === "NEXT_REDIRECT") {
       throw error;
     }
     revalidatePath("/admin/pending-results");
+    revalidatePath("/admin/add-result");
     redirectWithToast("/admin/pending-results", error?.message || "Failed to reject result", "error");
   }
 }

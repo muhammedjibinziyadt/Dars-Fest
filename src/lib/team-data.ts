@@ -127,6 +127,10 @@ export async function upsertPortalStudent(input: {
   const ref = studentsCol.doc(studentId);
   const doc = await ref.get();
 
+  if (!input.teamId) {
+    throw new Error("Unable to register student: Team identity could not be verified.");
+  }
+
   const updateData: Record<string, unknown> = {
     name: input.name,
     chest_no: chestNumber,
@@ -137,11 +141,33 @@ export async function upsertPortalStudent(input: {
     updateData.avatar = input.avatar;
   }
 
-  if (!doc.exists) {
+  const isNewStudent = !doc.exists;
+  if (isNewStudent) {
     updateData.total_points = 0;
   }
 
   await ref.set(updateData, { merge: true });
+
+  if (isNewStudent) {
+    try {
+      const teamDoc = await teamsCol.doc(input.teamId).get();
+      if (teamDoc.exists) {
+        const team = teamDoc.data() as Team;
+        if (team.leader_email) {
+          const { sendStudentRegisteredEmail } = await import("./email-service");
+          await sendStudentRegisteredEmail({
+            teamName: team.name,
+            leaderName: team.leader,
+            leaderEmail: team.leader_email,
+            studentName: input.name,
+            chestNo: chestNumber,
+          });
+        }
+      }
+    } catch (err) {
+      console.error("Failed to send student registration email:", err);
+    }
+  }
 }
 
 export async function deletePortalStudent(studentId: string) {
@@ -196,6 +222,27 @@ export async function registerCandidate(entry: {
   };
 
   await programRegistrationsCol.doc(id).set(record);
+
+  try {
+    const teamDoc = await teamsCol.doc(entry.teamId).get();
+    if (teamDoc.exists) {
+      const team = teamDoc.data() as Team;
+      if (team.leader_email) {
+        const { sendProgramRegistrationEmail } = await import("./email-service");
+        await sendProgramRegistrationEmail({
+          teamName: team.name,
+          leaderName: team.leader,
+          leaderEmail: team.leader_email,
+          programName: entry.programName,
+          studentName: entry.studentName,
+          studentChest: entry.studentChest,
+        });
+      }
+    }
+  } catch (err) {
+    console.error("Failed to send program registration email:", err);
+  }
+
   return record;
 }
 

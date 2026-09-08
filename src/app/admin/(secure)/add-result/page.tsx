@@ -3,6 +3,7 @@ import { AddResultForm } from "@/components/forms/add-result-form";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
 import {
   getApprovedResults,
+  getPendingResults,
   getJuries,
   getPrograms,
   getStudents,
@@ -12,9 +13,12 @@ import {
 } from "@/lib/data";
 import { getProgramRegistrations } from "@/lib/team-data";
 import { ensureRegisteredCandidates } from "@/lib/registration-guard";
-import { submitResultToPending } from "@/lib/result-service";
+import { submitResultToPending, parseWinnersFromFormData } from "@/lib/result-service";
 import { redirectWithToast } from "@/lib/actions";
 import { revalidatePath } from "next/cache";
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 type PenaltyFormPayload = {
   id: string;
@@ -65,37 +69,7 @@ async function submitResultAction(formData: FormData) {
       }
     }
 
-    // Collect winners and validate
-    const winners = [];
-    for (const { key, gradeKey, position } of [
-      { key: "winner_1", gradeKey: "grade_1", position: 1 as const },
-      { key: "winner_2", gradeKey: "grade_2", position: 2 as const },
-      { key: "winner_3", gradeKey: "grade_3", position: 3 as const },
-    ]) {
-      const value = String(formData.get(key) ?? "");
-      if (!value) {
-        redirectWithToast("/admin/add-result", "All placements are required", "error");
-        return;
-      }
-      winners.push({
-        position,
-        id: value,
-        grade: String(formData.get(gradeKey) ?? "none") as
-          | "A"
-          | "B"
-          | "C"
-          | "none",
-      });
-    }
-
-    // Validate that all three positions have different candidates
-    const winnerIds = winners.map(w => w.id);
-    const uniqueWinnerIds = new Set(winnerIds);
-    if (uniqueWinnerIds.size !== 3) {
-      redirectWithToast("/admin/add-result", "1st, 2nd, and 3rd place must have different candidates.", "error");
-      return;
-    }
-
+    const winners = parseWinnersFromFormData(formData);
     const penalties = parsePenaltyPayloads(formData);
 
     await ensureRegisteredCandidates(programId, [
@@ -111,15 +85,18 @@ async function submitResultAction(formData: FormData) {
         penalties,
       });
       revalidatePath("/admin/pending-results");
+      revalidatePath("/admin/add-result");
       redirectWithToast("/admin/pending-results", "Result submitted successfully! Waiting for approval.", "success");
     } catch (error: any) {
       // Handle published program error
       if (error.message?.includes("Program already published") || error.message?.includes("already published")) {
+        revalidatePath("/admin/add-result");
         redirectWithToast("/admin/add-result", "Program already published", "error");
         return;
       }
       // Handle duplicate result submission error
       if (error.message?.includes("already exists") || error.message?.includes("already been approved")) {
+        revalidatePath("/admin/add-result");
         redirectWithToast("/admin/add-result", error.message, "error");
         return;
       }
@@ -134,20 +111,36 @@ async function submitResultAction(formData: FormData) {
 }
 
 export default async function AddResultPage() {
-  const [programs, students, teams, juries, registrations, approvedResults, adminJury] = await Promise.all([
+  const [
+    programs,
+    students,
+    teams,
+    juries,
+    registrations,
+    approvedResults,
+    pendingResults,
+    adminJury,
+    scoringRules,
+  ] = await Promise.all([
     getPrograms(),
     getStudents(),
     getTeams(),
     getJuries(),
     getProgramRegistrations(),
     getApprovedResults(),
+    getPendingResults(),
     getOrCreateAdminJury(),
     getScoringRules(),
   ]);
 
-  // Filter out programs that are already approved/published
-  const approvedProgramIds = new Set(approvedResults.map((result) => result.program_id));
-  const availablePrograms = programs.filter((program) => !approvedProgramIds.has(program.id));
+  // Filter out programs that are already approved/published or pending
+  const publishedOrPendingIds = new Set([
+    ...approvedResults.map((r) => String(r.program_id ?? "").trim()),
+    ...pendingResults.map((r) => String(r.program_id ?? "").trim()),
+  ]);
+  const availablePrograms = programs.filter(
+    (program) => !publishedOrPendingIds.has(String(program.id ?? "").trim())
+  );
 
   if (availablePrograms.length === 0) {
     return (
@@ -156,7 +149,7 @@ export default async function AddResultPage() {
         <Card className="border-amber-500/40 bg-amber-500/10 p-6">
           <CardTitle>No Programs Available</CardTitle>
           <CardDescription className="mt-2">
-            All programs have been published. No results can be added at this time.
+            All programs have published or pending results. No additional results can be added at this time.
           </CardDescription>
         </Card>
       </div>
@@ -173,6 +166,7 @@ export default async function AddResultPage() {
         juries={juries}
         registrations={registrations}
         approvedResults={approvedResults}
+        pendingResults={pendingResults}
         action={submitResultAction}
         defaultJuryId={adminJury.id}
         scoringRules={scoringRules}
@@ -180,4 +174,3 @@ export default async function AddResultPage() {
     </div>
   );
 }
-

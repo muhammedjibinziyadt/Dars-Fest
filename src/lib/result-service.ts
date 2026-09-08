@@ -19,8 +19,8 @@ import {
 import { adminDb } from "./firebase-admin";
 import type { PenaltyEntry, ResultEntry, ResultRecord, Student, Team, Program, Jury } from "./types";
 
-type WinnerPayload = {
-  position: 1 | 2 | 3;
+export type WinnerPayload = {
+  position: number;
   id: string;
   grade: "A" | "B" | "C" | "none";
 };
@@ -37,6 +37,55 @@ function sanitizeGrade(grade: string | undefined): "A" | "B" | "C" | "none" {
     return grade;
   }
   return "none";
+}
+
+export function parseWinnersFromFormData(formData: FormData): WinnerPayload[] {
+  const positionsRaw = formData.get("placement_positions");
+  let positions: number[] = [];
+  if (positionsRaw) {
+    positions = String(positionsRaw)
+      .split(",")
+      .map((val) => parseInt(val.trim(), 10))
+      .filter((n) => !isNaN(n) && n > 0);
+  }
+
+  if (positions.length === 0) {
+    for (let i = 1; i <= 30; i++) {
+      if (formData.has(`winner_${i}`)) {
+        positions.push(i);
+      }
+    }
+  }
+
+  if (positions.length === 0) {
+    positions = [1, 2, 3];
+  }
+
+  const winners: WinnerPayload[] = [];
+  for (const position of positions) {
+    const value = String(formData.get(`winner_${position}`) ?? "").trim();
+    if (!value) {
+      continue;
+    }
+    const grade = sanitizeGrade(String(formData.get(`grade_${position}`) ?? "none"));
+    winners.push({
+      position,
+      id: value,
+      grade,
+    });
+  }
+
+  if (winners.length === 0) {
+    throw new Error("Please select at least one placement winner.");
+  }
+
+  const winnerIds = winners.map((w) => w.id);
+  const uniqueWinnerIds = new Set(winnerIds);
+  if (uniqueWinnerIds.size !== winnerIds.length) {
+    throw new Error("Each placement must have a different candidate selected.");
+  }
+
+  return winners;
 }
 
 async function buildEntries(
@@ -62,7 +111,9 @@ async function buildEntries(
           ? scoringRules.single.first
           : winner.position === 2
             ? scoringRules.single.second
-            : scoringRules.single.third;
+            : winner.position === 3
+              ? scoringRules.single.third
+              : 0;
 
       const grdPoints =
         grade === "A"
@@ -104,12 +155,16 @@ async function buildEntries(
           ? scoringRules.group.first
           : winner.position === 2
             ? scoringRules.group.second
-            : scoringRules.group.third
+            : winner.position === 3
+              ? scoringRules.group.third
+              : 0
         : winner.position === 1
           ? scoringRules.general.first
           : winner.position === 2
             ? scoringRules.general.second
-            : scoringRules.general.third;
+            : winner.position === 3
+              ? scoringRules.general.third
+              : 0;
 
     return {
       position: winner.position,
@@ -283,6 +338,7 @@ export async function submitResultToPending({
   await updateAssignmentStatus(program.id, jury.id, "submitted");
 
   revalidatePath("/admin/pending-results");
+  revalidatePath("/admin/add-result");
   revalidatePath("/jury/programs");
 }
 
@@ -326,6 +382,13 @@ export async function approveResult(resultId: string) {
   }
 
   try {
+    const { sendResultPublishedEmails } = await import("./email-service");
+    await sendResultPublishedEmails(record);
+  } catch (err) {
+    console.error("Failed to send result published emails to team leaders:", err);
+  }
+
+  try {
     const { evaluatePredictionsForProgram } = await import("./prediction-service");
     await evaluatePredictionsForProgram(record.program_id, record.entries);
   } catch (error) {
@@ -337,6 +400,7 @@ export async function approveResult(resultId: string) {
   revalidatePath("/results");
   revalidatePath("/admin/pending-results");
   revalidatePath("/admin/approved-results");
+  revalidatePath("/admin/add-result");
 }
 
 export async function rejectResult(resultId: string) {
@@ -348,7 +412,7 @@ export async function rejectResult(resultId: string) {
   await updateAssignmentStatus(record.program_id, record.jury_id, "pending");
 
   revalidatePath("/admin/pending-results");
-  revalidatePath("/jury/programs");
+  revalidatePath("/admin/add-result");
 }
 
 export async function updatePendingResultEntries(
@@ -412,6 +476,7 @@ export async function updateApprovedResult(
   revalidatePath("/scoreboard");
   revalidatePath("/results");
   revalidatePath("/admin/approved-results");
+  revalidatePath("/admin/add-result");
 }
 
 export async function deleteApprovedResult(resultId: string) {
@@ -428,4 +493,5 @@ export async function deleteApprovedResult(resultId: string) {
   revalidatePath("/scoreboard");
   revalidatePath("/results");
   revalidatePath("/admin/approved-results");
+  revalidatePath("/admin/add-result");
 }

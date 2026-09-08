@@ -4,7 +4,7 @@ import { getCurrentJury } from "@/lib/auth";
 import { getApprovedResults, getAssignments, getPrograms, getStudents, getTeams } from "@/lib/data";
 import { getProgramRegistrations } from "@/lib/team-data";
 import { ensureRegisteredCandidates } from "@/lib/registration-guard";
-import { submitResultToPending } from "@/lib/result-service";
+import { submitResultToPending, parseWinnersFromFormData } from "@/lib/result-service";
 
 type PenaltyFormPayload = {
   id: string;
@@ -48,31 +48,7 @@ async function jurySubmitResultAction(formData: FormData) {
     redirect("/jury/login");
   }
   const programId = String(formData.get("program_id") ?? "");
-  const winners = ([
-    { key: "winner_1", gradeKey: "grade_1", position: 1 as const },
-    { key: "winner_2", gradeKey: "grade_2", position: 2 as const },
-    { key: "winner_3", gradeKey: "grade_3", position: 3 as const },
-  ] as const).map(({ key, gradeKey, position }) => {
-    const value = String(formData.get(key) ?? "");
-    if (!value) throw new Error("All placements are required");
-    return {
-      position,
-      id: value,
-      grade: String(formData.get(gradeKey) ?? "none") as
-        | "A"
-        | "B"
-        | "C"
-        | "none",
-    };
-  });
-
-  // Validate that all three positions have different candidates
-  const winnerIds = winners.map(w => w.id);
-  const uniqueWinnerIds = new Set(winnerIds);
-  if (uniqueWinnerIds.size !== 3) {
-    throw new Error("1st, 2nd, and 3rd place must have different candidates.");
-  }
-
+  const winners = parseWinnersFromFormData(formData);
   const penalties = parsePenaltyPayloads(formData);
 
   await ensureRegisteredCandidates(programId, [

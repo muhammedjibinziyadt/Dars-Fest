@@ -392,3 +392,59 @@ input[type="checkbox"]:disabled {
   -ms-overflow-style: none; /* IE and Edge */
   scrollbar-width: none; /* Firefox */
 }
+
+/* ================= PRINT MEDIA STYLES ================= */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 10mm 10mm 15mm 10mm;
+  }
+
+  html, body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    font-size: 11pt !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Force hide all non-report UI chrome */
+  aside,
+  header,
+  nav,
+  .print\:hidden {
+    display: none !important;
+  }
+
+  /* Force display of report print elements */
+  .print\:block {
+    display: block !important;
+  }
+
+  /* Reset container spacing for pure document printing */
+  main {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    background: #ffffff !important;
+    box-shadow: none !important;
+    border: none !important;
+  }
+
+  table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    page-break-inside: auto;
+  }
+
+  tr {
+    page-break-inside: avoid;
+    page-break-after: auto;
+  }
+
+  th, td {
+    color: #000000 !important;
+    border-color: #000000 !important;
+  }
+}

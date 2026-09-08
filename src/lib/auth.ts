@@ -332,7 +332,7 @@ export async function getCurrentTeam(): Promise<PortalTeam | undefined> {
     const teamDoc = doc.data() as Team;
 
     return {
-      id: teamDoc.id,
+      id: doc.id || payload.id,
       teamName: teamDoc.name,
       password: teamDoc.portal_password ?? "",
       leaderName: teamDoc.leader,

@@ -11,9 +11,10 @@ import {
   Clock,
   Award,
   TrendingUp,
-  Activity
+  Activity,
+  RefreshCw
 } from "lucide-react";
-import { Card, CardDescription, CardTitle } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { getCurrentTeam } from "@/lib/auth";
@@ -205,6 +206,20 @@ export default async function TeamDashboardPage() {
                 </div>
               </Card>
             </Link>
+            <Link href="/team/replacement-request">
+              <Card className="group border border-emerald-500/20 bg-emerald-500/5 p-4 transition-all hover:bg-emerald-500/10 active:scale-[0.98]">
+                <div className="flex items-center gap-3">
+                  <div className="rounded-lg bg-emerald-500/20 p-2">
+                    <RefreshCw className="h-4 w-4 text-emerald-400" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-white">Replacement Request</p>
+                    <p className="text-xs text-white/60 mt-0.5">Request student substitutions</p>
+                  </div>
+                  <ArrowRight className="h-4 w-4 text-white/40 group-hover:text-white group-hover:translate-x-1 transition-all shrink-0" />
+                </div>
+              </Card>
+            </Link>
           </div>
         </div>
 
@@ -268,15 +283,22 @@ export default async function TeamDashboardPage() {
                           {program?.name || "Unknown"}
                         </p>
                       </div>
-                      <Badge 
-                        tone={
-                          program?.section === "single" ? "pink" :
-                          program?.section === "group" ? "emerald" : "amber"
-                        }
-                        className="text-xs shrink-0"
-                      >
-                        {program?.section || "general"}
-                      </Badge>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        {program?.stage !== undefined && (
+                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/5 border border-white/10 text-white/70">
+                            {program.stage ? "On-Stage" : "Off-Stage"}
+                          </span>
+                        )}
+                        <Badge 
+                          tone={
+                            program?.section === "single" ? "pink" :
+                            program?.section === "group" ? "emerald" : "amber"
+                          }
+                          className="text-xs shrink-0"
+                        >
+                          {program?.section || "general"}
+                        </Badge>
+                      </div>
                     </div>
                   );
                 })}
@@ -382,6 +404,20 @@ export default async function TeamDashboardPage() {
                     </div>
                   </Card>
                 </Link>
+                <Link href="/team/replacement-request" className="block mt-4">
+                  <Card className="group border border-emerald-500/30 bg-gradient-to-br from-emerald-500/10 to-teal-500/10 p-4 transition-all hover:scale-[1.02] hover:shadow-lg cursor-pointer">
+                    <div className="flex items-center gap-4">
+                      <div className="rounded-xl bg-emerald-500/20 p-3">
+                        <RefreshCw className="h-5 w-5 text-emerald-400" />
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-white">Replacement Request</h3>
+                        <p className="text-xs text-white/70 mt-0.5">Request student substitutions</p>
+                      </div>
+                      <ArrowRight className="h-5 w-5 text-white/50 group-hover:text-white group-hover:translate-x-1 transition-all" />
+                    </div>
+                  </Card>
+                </Link>
               </div>
             </Card>
 
@@ -460,15 +496,22 @@ export default async function TeamDashboardPage() {
                             </div>
                           </div>
                         </div>
-                        <Badge 
-                          tone={
-                            program?.section === "single" ? "pink" :
-                            program?.section === "group" ? "emerald" : "amber"
-                          }
-                          className="shrink-0"
-                        >
-                          {program?.section || "general"}
-                        </Badge>
+                        <div className="flex items-center gap-2 shrink-0">
+                          {program?.stage !== undefined && (
+                            <span className="text-xs px-2.5 py-1 rounded-full bg-white/5 border border-white/10 text-white/70 font-medium">
+                              {program.stage ? "On-Stage" : "Off-Stage"}
+                            </span>
+                          )}
+                          <Badge 
+                            tone={
+                              program?.section === "single" ? "pink" :
+                              program?.section === "group" ? "emerald" : "amber"
+                            }
+                            className="shrink-0"
+                          >
+                            {program?.section || "general"}
+                          </Badge>
+                        </div>
                       </div>
                     );
                   })}

@@ -1,7 +1,21 @@
 "use client";
 
 import React, { useEffect, useMemo, useState, useCallback } from "react";
-import { CheckCircle2, Eye, Pencil, Search, Trash2, Download, FileText, FileSpreadsheet } from "lucide-react";
+import Link from "next/link";
+import { 
+  CheckCircle2, 
+  Eye, 
+  Pencil, 
+  Search, 
+  Trash2, 
+  Download, 
+  FileText, 
+  FileSpreadsheet, 
+  Printer, 
+  ExternalLink,
+  Award,
+  Trophy 
+} from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -156,12 +170,33 @@ export const StudentManager = React.memo(function StudentManager({
   const viewStudent = viewStudentId ? students.find((student) => student.id === viewStudentId) : null;
 
   const exportToCSV = () => {
-    const headers = ["Name", "Chest Number", "Team", "Total Points"];
+    const headers = [
+      "Chest Number",
+      "Student Name",
+      "Team",
+      "Total Points",
+      "Position Points",
+      "Grade Points",
+      "1st Place",
+      "2nd Place",
+      "3rd Place",
+      "Grade A",
+      "Grade B",
+      "Grade C",
+    ];
     const rows = sortedStudents.map((student) => [
-      student.name,
       student.chest_no,
+      student.name,
       teamMap.get(student.team_id) ?? "Unknown",
-      student.total_points.toString(),
+      (student.total_points ?? 0).toString(),
+      (student.position_points ?? 0).toString(),
+      (student.grade_points ?? 0).toString(),
+      (student.positions_count?.first ?? 0).toString(),
+      (student.positions_count?.second ?? 0).toString(),
+      (student.positions_count?.third ?? 0).toString(),
+      (student.grades_count?.A ?? 0).toString(),
+      (student.grades_count?.B ?? 0).toString(),
+      (student.grades_count?.C ?? 0).toString(),
     ]);
 
     const csvContent = [
@@ -173,7 +208,7 @@ export const StudentManager = React.memo(function StudentManager({
     const link = document.createElement("a");
     const url = URL.createObjectURL(blob);
     link.setAttribute("href", url);
-    link.setAttribute("download", `students_${new Date().toISOString().split("T")[0]}.csv`);
+    link.setAttribute("download", `students_with_scores_${new Date().toISOString().split("T")[0]}.csv`);
     link.style.visibility = "hidden";
     document.body.appendChild(link);
     link.click();
@@ -186,7 +221,7 @@ export const StudentManager = React.memo(function StudentManager({
       const doc = new jsPDF();
       
       doc.setFontSize(18);
-      doc.text("Students Roster", 14, 22);
+      doc.text("Students Festival Roster & Scores", 14, 22);
       
       doc.setFontSize(11);
       const dateStr = new Date().toLocaleDateString();
@@ -205,8 +240,8 @@ export const StudentManager = React.memo(function StudentManager({
       
       yPos += 4;
       
-      const headers = ["Name", "Chest Number", "Team", "Total Points"];
-      const colWidths = [60, 40, 50, 30];
+      const headers = ["Chest #", "Name", "Team", "Points", "1/2/3", "A/B/C"];
+      const colWidths = [25, 55, 45, 25, 20, 20];
       const startX = 14;
       
       doc.setFontSize(10);
@@ -221,18 +256,22 @@ export const StudentManager = React.memo(function StudentManager({
       doc.setFont("helvetica", "normal");
       doc.setFontSize(9);
       
-      sortedStudents.forEach((student, index) => {
+      sortedStudents.forEach((student) => {
         if (yPos > 280) {
           doc.addPage();
           yPos = 20;
         }
         
         xPos = startX;
+        const positions = `${student.positions_count?.first || 0}/${student.positions_count?.second || 0}/${student.positions_count?.third || 0}`;
+        const grades = `${student.grades_count?.A || 0}/${student.grades_count?.B || 0}/${student.grades_count?.C || 0}`;
         const rowData = [
-          student.name,
           student.chest_no,
+          student.name,
           teamMap.get(student.team_id) ?? "Unknown",
-          student.total_points.toString(),
+          `${student.total_points ?? 0} pts`,
+          positions,
+          grades,
         ];
         
         rowData.forEach((cell, i) => {
@@ -244,7 +283,7 @@ export const StudentManager = React.memo(function StudentManager({
         yPos += 7;
       });
 
-      doc.save(`students_${new Date().toISOString().split("T")[0]}.pdf`);
+      doc.save(`students_roster_${new Date().toISOString().split("T")[0]}.pdf`);
     } catch (error) {
       console.error("PDF export failed:", error);
       alert("PDF export requires jsPDF library. Please install it: npm install jspdf");
@@ -252,7 +291,8 @@ export const StudentManager = React.memo(function StudentManager({
   };
 
   return (
-    <div className="space-y-6 rounded-3xl border border-white/10 bg-slate-900/60 p-6 shadow-[0_20px_60px_rgba(8,47,73,0.35)]">
+    <>
+      <div className="space-y-6 rounded-3xl border border-white/10 bg-slate-900/60 p-6 shadow-[0_20px_60px_rgba(8,47,73,0.35)] print:hidden">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <p className="text-xs uppercase tracking-widest text-white/50">Students roster</p>
@@ -277,7 +317,21 @@ export const StudentManager = React.memo(function StudentManager({
                   onClick={() => setShowExportMenu(false)}
                 />
                 <div className="absolute right-0 top-full mt-2 z-50">
-                  <div className="rounded-2xl border border-white/10 bg-slate-900/95 backdrop-blur-xl shadow-2xl p-2 min-w-[180px]">
+                  <div className="rounded-2xl border border-white/10 bg-slate-900/95 backdrop-blur-xl shadow-2xl p-2 min-w-[240px]">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowExportMenu(false);
+                        window.print();
+                      }}
+                      className="w-full flex items-center gap-3 rounded-xl px-4 py-2.5 text-left text-sm text-white transition hover:bg-white/10"
+                    >
+                      <Printer className="h-4 w-4 text-cyan-400" />
+                      <div>
+                        <p className="font-semibold">Print Roster</p>
+                        <p className="text-xs text-white/60">Paper / official print layout</p>
+                      </div>
+                    </button>
                     <button
                       type="button"
                       onClick={() => {
@@ -289,7 +343,7 @@ export const StudentManager = React.memo(function StudentManager({
                       <FileSpreadsheet className="h-4 w-4 text-emerald-400" />
                       <div>
                         <p className="font-semibold">Export as CSV</p>
-                        <p className="text-xs text-white/60">Spreadsheet format</p>
+                        <p className="text-xs text-white/60">Includes scores, grades & positions</p>
                       </div>
                     </button>
                     <button
@@ -303,9 +357,21 @@ export const StudentManager = React.memo(function StudentManager({
                       <FileText className="h-4 w-4 text-red-400" />
                       <div>
                         <p className="font-semibold">Export as PDF</p>
-                        <p className="text-xs text-white/60">Document format</p>
+                        <p className="text-xs text-white/60">Includes scores, grades & positions</p>
                       </div>
                     </button>
+                    <div className="my-1 border-t border-white/10" />
+                    <Link
+                      href="/admin/reports"
+                      onClick={() => setShowExportMenu(false)}
+                      className="w-full flex items-center gap-3 rounded-xl px-4 py-2.5 text-left text-sm text-white transition hover:bg-white/10"
+                    >
+                      <ExternalLink className="h-4 w-4 text-amber-400" />
+                      <div>
+                        <p className="font-semibold text-amber-300">All Reports & Export Center</p>
+                        <p className="text-xs text-white/60">Teams, programs, scores & single type</p>
+                      </div>
+                    </Link>
                   </div>
                 </div>
               </>
@@ -437,11 +503,30 @@ export const StudentManager = React.memo(function StudentManager({
                     <p className="text-lg font-semibold text-white">{student.name}</p>
                   </div>
                 </div>
-                <div className="flex flex-wrap gap-3 text-xs font-semibold uppercase tracking-wide text-white/60 w-full xl:flex-1">
+                <div className="flex flex-wrap items-center gap-2 text-xs font-semibold uppercase tracking-wide text-white/60 w-full xl:flex-1">
                   <span className="rounded-full border border-white/15 px-3 py-1">
                     {teamMap.get(student.team_id) ?? "Unknown team"}
                   </span>
-                  <span className="rounded-full border border-white/15 px-3 py-1">Chest #{student.chest_no}</span>
+                  <span className="rounded-full border border-white/15 px-3 py-1 font-mono text-cyan-300 font-bold">
+                    Chest #{student.chest_no}
+                  </span>
+                  <span className="rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 font-bold px-3 py-1">
+                    {student.total_points ?? 0} pts
+                  </span>
+                  {((student.grades_count?.A || 0) > 0 || (student.grades_count?.B || 0) > 0 || (student.grades_count?.C || 0) > 0) && (
+                    <span className="rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 px-2.5 py-0.5 text-[11px]">
+                      {student.grades_count?.A ? `${student.grades_count.A} A ` : ""}
+                      {student.grades_count?.B ? `${student.grades_count.B} B ` : ""}
+                      {student.grades_count?.C ? `${student.grades_count.C} C` : ""}
+                    </span>
+                  )}
+                  {((student.positions_count?.first || 0) > 0 || (student.positions_count?.second || 0) > 0 || (student.positions_count?.third || 0) > 0) && (
+                    <span className="rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-300 px-2.5 py-0.5 text-[11px]">
+                      {student.positions_count?.first ? `🥇 ${student.positions_count.first} ` : ""}
+                      {student.positions_count?.second ? `🥈 ${student.positions_count.second} ` : ""}
+                      {student.positions_count?.third ? `🥉 ${student.positions_count.third}` : ""}
+                    </span>
+                  )}
                 </div>
                 <div className="flex flex-wrap gap-2 w-full xl:ml-auto xl:w-auto xl:justify-end">
                   <Button
@@ -584,6 +669,88 @@ export const StudentManager = React.memo(function StudentManager({
           </Button>
         </div>
       </div>
+    </div>
+
+      {/* ================= OFFICIAL PRINTABLE REPORT (VISIBLE ONLY WHEN PRINTING) ================= */}
+      <div className="hidden print:block text-black bg-white w-full p-2">
+        {/* Official Header */}
+        <div className="border-b-2 border-black pb-4 mb-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-black uppercase tracking-wider text-black">DARS FEST 2026</h1>
+              <h2 className="text-base font-bold text-gray-800">OFFICIAL PARTICIPANT DIRECTORY & SCORE SHEET</h2>
+              <p className="text-xs text-gray-600 mt-1">
+                Filter: {teamFilter ? (teamMap.get(teamFilter) ?? "Specific Team") : "All Teams"}
+                {programFilter ? ` | Program: ${programMap.get(programFilter) ?? "Specific Program"}` : ""}
+              </p>
+            </div>
+            <div className="text-right text-xs text-gray-700">
+              <p className="font-bold">Total Students: {sortedStudents.length}</p>
+              <p>Generated: {new Date().toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}</p>
+              <p className="font-mono text-[10px] text-gray-500">Fest Command Center</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Official Printable Table */}
+        <table className="w-full text-left text-xs border-collapse border border-black text-black">
+          <thead>
+            <tr className="bg-gray-100 border-b border-black text-black font-bold uppercase">
+              <th className="py-2.5 px-3 border border-black w-10 text-center">#</th>
+              <th className="py-2.5 px-3 border border-black w-24 font-mono">Chest No</th>
+              <th className="py-2.5 px-4 border border-black">Student Name</th>
+              <th className="py-2.5 px-4 border border-black">Team</th>
+              <th className="py-2.5 px-3 border border-black text-center w-28">Positions (1/2/3)</th>
+              <th className="py-2.5 px-3 border border-black text-center w-28">Grades (A/B/C)</th>
+              <th className="py-2.5 px-4 border border-black text-right w-24 font-bold">Total Points</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-black">
+            {sortedStudents.map((student, idx) => (
+              <tr key={student.id} className="border-b border-gray-300">
+                <td className="py-2 px-3 border border-black text-center text-gray-700">{idx + 1}</td>
+                <td className="py-2 px-3 border border-black font-mono font-bold text-black">{student.chest_no}</td>
+                <td className="py-2 px-4 border border-black font-semibold text-black">{student.name}</td>
+                <td className="py-2 px-4 border border-black text-gray-800">{teamMap.get(student.team_id) ?? "Unknown"}</td>
+                <td className="py-2 px-3 border border-black text-center font-mono">
+                  {student.positions_count?.first || 0} / {student.positions_count?.second || 0} / {student.positions_count?.third || 0}
+                </td>
+                <td className="py-2 px-3 border border-black text-center font-mono">
+                  {student.grades_count?.A || 0} / {student.grades_count?.B || 0} / {student.grades_count?.C || 0}
+                </td>
+                <td className="py-2 px-4 border border-black text-right font-black">
+                  {student.total_points ?? 0} pts
+                </td>
+              </tr>
+            ))}
+            {sortedStudents.length === 0 && (
+              <tr>
+                <td colSpan={7} className="py-8 text-center text-gray-500 italic border border-black">
+                  No student records match the selected criteria.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+
+        {/* Verification Signatures Footer */}
+        <div className="mt-12 pt-8 border-t border-gray-400 flex items-end justify-between text-xs text-gray-700">
+          <div className="text-center w-48">
+            <div className="border-b border-black mb-2 pb-6"></div>
+            <p className="font-bold text-black uppercase">Controller of Examinations</p>
+            <p className="text-[10px] text-gray-500">Sign & Date</p>
+          </div>
+          <div className="text-center text-[10px] text-gray-500">
+            <p className="font-semibold text-gray-700">Certified Official Festival Record</p>
+            <p>DARS FEST Control System</p>
+          </div>
+          <div className="text-center w-48">
+            <div className="border-b border-black mb-2 pb-6"></div>
+            <p className="font-bold text-black uppercase">General Convener / Admin</p>
+            <p className="text-[10px] text-gray-500">Sign & Date</p>
+          </div>
+        </div>
+      </div>
 
       <Modal
         open={Boolean(viewStudent)}
@@ -616,15 +783,34 @@ export const StudentManager = React.memo(function StudentManager({
                 Chest #{viewStudent.chest_no}
               </span>
             </div>
-            <div className="space-y-2 border-t border-white/10 pt-3">
-              <p>
-                <span className="text-white/50">Student ID:</span> {viewStudent.id}
+            <div className="space-y-2.5 border-t border-white/10 pt-3">
+              <p className="flex justify-between">
+                <span className="text-white/50">Student ID:</span> 
+                <span className="font-mono text-white/80">{viewStudent.id}</span>
               </p>
-              <p>
-                <span className="text-white/50">Team:</span> {teamMap.get(viewStudent.team_id) ?? "Unknown"}
+              <p className="flex justify-between">
+                <span className="text-white/50">Team:</span> 
+                <span className="font-semibold text-white">{teamMap.get(viewStudent.team_id) ?? "Unknown"}</span>
               </p>
-              <p>
-                <span className="text-white/50">Total Points:</span> {viewStudent.total_points ?? 0}
+              <p className="flex justify-between">
+                <span className="text-white/50">Total Accumulated Score:</span> 
+                <span className="font-bold text-cyan-300">{viewStudent.total_points ?? 0} pts</span>
+              </p>
+              <p className="flex justify-between">
+                <span className="text-white/50">Position Points / Grade Points:</span> 
+                <span className="text-white/80">{viewStudent.position_points ?? 0} pts / {viewStudent.grade_points ?? 0} pts</span>
+              </p>
+              <p className="flex justify-between">
+                <span className="text-white/50">Podium Finishes (1st / 2nd / 3rd):</span> 
+                <span className="text-amber-300 font-semibold">
+                  {viewStudent.positions_count?.first || 0} / {viewStudent.positions_count?.second || 0} / {viewStudent.positions_count?.third || 0}
+                </span>
+              </p>
+              <p className="flex justify-between">
+                <span className="text-white/50">Grades Awarded (A / B / C):</span> 
+                <span className="text-emerald-300 font-semibold">
+                  {viewStudent.grades_count?.A || 0} / {viewStudent.grades_count?.B || 0} / {viewStudent.grades_count?.C || 0}
+                </span>
               </p>
             </div>
           </div>
@@ -651,7 +837,7 @@ export const StudentManager = React.memo(function StudentManager({
           </Button>
         </form>
       </Modal>
-    </div>
+    </>
   );
 });
 

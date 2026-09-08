@@ -77,7 +77,7 @@ export interface AssignedProgram {
 }
 
 export interface ResultEntry {
-  position: 1 | 2 | 3;
+  position: number;
   student_id?: string;
   team_id?: string;
   grade?: GradeType;

@@ -1,3 +1,4 @@
+import { cache } from "react";
 import {
   studentsCol,
   teamsCol,
@@ -22,7 +23,7 @@ export interface ParticipantProfile {
     program: Program;
     status: "registered" | "pending_result" | "completed" | "no_result";
     result?: {
-      position?: 1 | 2 | 3;
+      position?: number;
       grade?: "A" | "B" | "C" | "none";
       position_points?: number;
       grade_points?: number;
@@ -60,12 +61,25 @@ export interface ParticipantProfile {
   };
 }
 
+let cachedStudents: { timestamp: number; data: Student[] } | null = null;
+const CACHE_TTL = 30000; // 30s cache for fast search
+
+async function getAllStudentsCached(): Promise<Student[]> {
+  const now = Date.now();
+  if (cachedStudents && now - cachedStudents.timestamp < CACHE_TTL) {
+    return cachedStudents.data;
+  }
+  const snap = await studentsCol.get();
+  const data = docsToData<Student>(snap);
+  cachedStudents = { timestamp: now, data };
+  return data;
+}
+
 export async function searchParticipant(query: string): Promise<Student[]> {
   const searchTerm = query.trim().toLowerCase();
   if (!searchTerm) return [];
 
-  const snap = await studentsCol.get();
-  const allStudents = docsToData<Student>(snap);
+  const allStudents = await getAllStudentsCached();
 
   return allStudents
     .filter(
@@ -76,33 +90,50 @@ export async function searchParticipant(query: string): Promise<Student[]> {
     .slice(0, 20);
 }
 
-export async function getParticipantProfile(
+export const getParticipantProfile = cache(async (
   identifier: string,
-): Promise<ParticipantProfile | null> {
-  const snap = await studentsCol.get();
-  const allStudents = docsToData<Student>(snap);
+): Promise<ParticipantProfile | null> => {
+  const cleanId = identifier.trim();
+  let student: Student | null = null;
 
-  const student = allStudents.find(
-    (s) => s.id === identifier || s.chest_no.toLowerCase() === identifier.toLowerCase()
-  );
+  // Direct lookup by ID first
+  const byId = await studentsCol.doc(cleanId).get();
+  if (byId.exists) {
+    student = { id: byId.id, ...byId.data() } as Student;
+  } else {
+    // Direct lookup by chest_no (case-insensitive search)
+    const byChest = await studentsCol
+      .where("chest_no", "==", cleanId.toUpperCase())
+      .limit(1)
+      .get();
+    if (!byChest.empty) {
+      student = { id: byChest.docs[0].id, ...byChest.docs[0].data() } as Student;
+    } else {
+      // Fallback in case of case differences
+      const allStudents = await getAllStudentsCached();
+      student = allStudents.find(
+        (s) => s.id === cleanId || s.chest_no.toLowerCase() === cleanId.toLowerCase()
+      ) || null;
+    }
+  }
 
   if (!student) return null;
 
-  const teamDoc = await teamsCol.doc(student.team_id).get();
-  if (!teamDoc.exists) return null;
-  const team = teamDoc.data() as Team;
-
-  const regsSnap = await programRegistrationsCol.where("studentId", "==", student.id).get();
-  const registrations = docsToData<ProgramRegistration>(regsSnap);
-
-  const programsSnap = await programsCol.get();
-  const programs = docsToData<Program>(programsSnap);
-  const programMap = new Map(programs.map((p) => [p.id, p]));
-
-  const [approvedSnap, pendingSnap] = await Promise.all([
+  // Execute all required queries in parallel instead of sequentially
+  const [teamDoc, regsSnap, programsSnap, approvedSnap, pendingSnap] = await Promise.all([
+    teamsCol.doc(student.team_id).get(),
+    programRegistrationsCol.where("studentId", "==", student.id).get(),
+    programsCol.get(),
     approvedResultsCol.get(),
     pendingResultsCol.get(),
   ]);
+
+  if (!teamDoc.exists) return null;
+  const team = { id: teamDoc.id, ...teamDoc.data() } as Team;
+
+  const registrations = docsToData<ProgramRegistration>(regsSnap);
+  const programs = docsToData<Program>(programsSnap);
+  const programMap = new Map(programs.map((p) => [p.id, p]));
 
   const approvedResults = docsToData<ResultRecord>(approvedSnap);
   const pendingResults = docsToData<ResultRecord>(pendingSnap);
@@ -126,8 +157,10 @@ export async function getParticipantProfile(
     }
 
     let resultEntry: {
-      position?: 1 | 2 | 3;
+      position?: number;
       grade?: "A" | "B" | "C" | "none";
+      position_points?: number;
+      grade_points?: number;
       score: number;
     } | undefined;
 
@@ -211,4 +244,4 @@ export async function getParticipantProfile(
     totalPoints: student.total_points,
     stats,
   };
-}
+});

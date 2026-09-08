@@ -25,11 +25,12 @@ interface AddResultFormProps {
   juries: Jury[];
   registrations?: ProgramRegistration[];
   approvedResults?: ResultRecord[]; // List of approved results to check against
+  pendingResults?: ResultRecord[]; // List of pending results to check against
   action: (formData: FormData) => Promise<void>;
   lockProgram?: boolean;
   initial?: Partial<
     Record<
-      1 | 2 | 3,
+      number,
       {
         winnerId: string;
         grade?: GradeType;
@@ -55,6 +56,7 @@ export function AddResultForm({
   juries,
   registrations,
   approvedResults = [],
+  pendingResults = [],
   action,
   lockProgram = false,
   initial,
@@ -71,14 +73,89 @@ export function AddResultForm({
     { value: "C", label: scoringRules ? `Grade C (+${scoringRules.single.gradeC})` : "Grade C (+1)" },
     { value: "none", label: "None" },
   ], [scoringRules]);
+
   const [programId, setProgramId] = useState(programs[0]?.id ?? "");
   const [showRules, setShowRules] = useState(false);
   const [showPublishedModal, setShowPublishedModal] = useState(false);
-  // State to track selected winners for each position
-  const [winner1, setWinner1] = useState<string>(initial?.[1]?.winnerId ?? "");
-  const [winner2, setWinner2] = useState<string>(initial?.[2]?.winnerId ?? "");
-  const [winner3, setWinner3] = useState<string>(initial?.[3]?.winnerId ?? "");
+
+  // Dynamic positions state (defaults to [1, 2, 3])
+  const [positions, setPositions] = useState<number[]>(() => {
+    if (initial) {
+      const keys = Object.keys(initial).map(Number).filter((n) => n > 0).sort((a, b) => a - b);
+      if (keys.length > 0) return keys;
+    }
+    return [1, 2, 3];
+  });
+
+  const [winnerValues, setWinnerValues] = useState<Record<number, string>>(() => {
+    const map: Record<number, string> = {};
+    if (initial) {
+      Object.entries(initial).forEach(([pos, val]) => {
+        if (val?.winnerId) map[Number(pos)] = val.winnerId;
+      });
+    }
+    return map;
+  });
+
+  const [gradeValues, setGradeValues] = useState<Record<number, GradeType>>(() => {
+    const map: Record<number, GradeType> = {};
+    if (initial) {
+      Object.entries(initial).forEach(([pos, val]) => {
+        if (val?.grade) map[Number(pos)] = val.grade;
+      });
+    }
+    return map;
+  });
+
   const [duplicateError, setDuplicateError] = useState<string>("");
+
+  const getOrdinal = (n: number) => {
+    const s = ["th", "st", "nd", "rd"];
+    const v = n % 100;
+    return n + (s[(v - 20) % 10] || s[v] || s[0]);
+  };
+
+  const addPlacement = () => {
+    const nextPos = positions.length > 0 ? Math.max(...positions) + 1 : 1;
+    setPositions((prev) => [...prev, nextPos]);
+  };
+
+  const addThreeBelowPlacements = () => {
+    setPositions((prev) => {
+      const maxPos = prev.length > 0 ? Math.max(...prev) : 0;
+      return [...prev, maxPos + 1, maxPos + 2, maxPos + 3];
+    });
+  };
+
+  const removePlacementAtIndex = (indexToRemove: number) => {
+    if (positions.length <= 1) return;
+
+    // Collect current values in current order
+    const currentEntries = positions.map((pos) => ({
+      winnerId: winnerValues[pos] || "",
+      grade: gradeValues[pos] || (pos <= 3 ? "A" : "none"),
+    }));
+
+    // Remove the chosen row
+    currentEntries.splice(indexToRemove, 1);
+
+    // Reconstruct sequential positions 1..N
+    const newPositions = currentEntries.map((_, i) => i + 1);
+    const newWinnerValues: Record<number, string> = {};
+    const newGradeValues: Record<number, GradeType> = {};
+
+    currentEntries.forEach((entry, i) => {
+      const pos = i + 1;
+      if (entry.winnerId) newWinnerValues[pos] = entry.winnerId;
+      if (entry.grade) newGradeValues[pos] = entry.grade as GradeType;
+    });
+
+    setPositions(newPositions);
+    setWinnerValues(newWinnerValues);
+    setGradeValues(newGradeValues);
+    setDuplicateError("");
+  };
+
   const [penaltyRows, setPenaltyRows] = useState<
     {
       id: string;
@@ -91,57 +168,62 @@ export function AddResultForm({
       return initialPenalties.map((penalty, index) => ({
         id: `penalty-${index}`,
         defaultTarget: penalty.targetId,
-        // Respect existing values; only fall back to 5 when nothing is set
         defaultPoints: typeof penalty.points === "number" ? penalty.points : 5,
         type: penalty.type,
       }));
     }
-    // No penalty rows visible until user explicitly adds one
     return [];
   });
-  const selectedProgram = useMemo(
-    () => programs.find((program) => program.id === programId) ?? programs[0],
-    [programId, programs],
-  );
 
   // Reset winners when program changes
   useEffect(() => {
-    setWinner1(initial?.[1]?.winnerId ?? "");
-    setWinner2(initial?.[2]?.winnerId ?? "");
-    setWinner3(initial?.[3]?.winnerId ?? "");
+    if (initial) {
+      const keys = Object.keys(initial).map(Number).filter((n) => n > 0).sort((a, b) => a - b);
+      setPositions(keys.length > 0 ? keys : [1, 2, 3]);
+      const wMap: Record<number, string> = {};
+      const gMap: Record<number, GradeType> = {};
+      Object.entries(initial).forEach(([pos, val]) => {
+        if (val?.winnerId) wMap[Number(pos)] = val.winnerId;
+        if (val?.grade) gMap[Number(pos)] = val.grade;
+      });
+      setWinnerValues(wMap);
+      setGradeValues(gMap);
+    } else {
+      setPositions([1, 2, 3]);
+      setWinnerValues({});
+      setGradeValues({});
+    }
     setDuplicateError("");
   }, [programId, initial]);
 
+  // Set of program IDs that are already published or pending
+  const publishedOrPendingIds = useMemo(() => {
+    const set = new Set<string>();
+    (approvedResults ?? []).forEach((r) => {
+      if (r.program_id) set.add(String(r.program_id).trim());
+    });
+    (pendingResults ?? []).forEach((r) => {
+      if (r.program_id) set.add(String(r.program_id).trim());
+    });
+    return set;
+  }, [approvedResults, pendingResults]);
+
+  // Filter programs so published/pending programs are completely excluded unless locked to an existing result (edit mode)
+  const availablePrograms = useMemo(() => {
+    if (lockProgram) return programs;
+    return programs.filter((p) => !publishedOrPendingIds.has(String(p.id).trim()));
+  }, [programs, publishedOrPendingIds, lockProgram]);
+
   const programOptions = useMemo(
     () =>
-      programs.map((program) => ({
+      availablePrograms.map((program) => ({
         value: program.id,
         label: program.name,
         meta: `${program.section} · Cat ${program.category}${
           program.stage ? " · On stage" : " · Off stage"
         }`,
       })),
-    [programs],
-  );
-
-  const studentOptions = useMemo(
-    () =>
-      students.map((student) => ({
-        value: student.id,
-        label: student.name,
-        meta: `Chest ${student.chest_no}`,
-      })),
-    [students],
-  );
-
-  const teamOptions = useMemo(
-    () =>
-      teams.map((team) => ({
-        value: team.id,
-        label: team.name,
-        meta: team.leader ? `Leader · ${team.leader}` : undefined,
-      })),
-    [teams],
+    [availablePrograms],
   );
 
   const registrationMap = useMemo(() => {
@@ -153,6 +235,15 @@ export function AddResultForm({
     });
     return map;
   }, [registrations]);
+
+  const selectedProgram = useMemo(
+    () =>
+      availablePrograms.find((program) => program.id === programId) ??
+      programs.find((program) => program.id === programId) ??
+      availablePrograms[0] ??
+      programs[0],
+    [programId, availablePrograms, programs],
+  );
 
   const isSingle = selectedProgram?.section === "single";
   const isJuryMode = mode === "jury";
@@ -177,27 +268,17 @@ export function AddResultForm({
   );
 
   const registeredOptions = isSingle ? singleCandidateOptions : teamCandidateOptions;
-  const fallbackOptions = isSingle ? studentOptions : teamOptions;
-  // Never use fallback options - always require registered candidates for both admin and jury
-  const useFallbackOptions = false;
   const placementSelectOptions = registeredOptions;
   const penaltySelectOptions = placementSelectOptions;
 
   // Filter options to exclude already-selected candidates from other positions
-  const winner1Options = useMemo(() => {
-    const selected = [winner2, winner3].filter(Boolean);
-    return placementSelectOptions.filter(opt => !selected.includes(opt.value));
-  }, [placementSelectOptions, winner2, winner3]);
+  const getOptionsForPosition = (position: number) => {
+    const otherSelectedIds = Object.entries(winnerValues)
+      .filter(([p, id]) => Number(p) !== position && Boolean(id))
+      .map(([_, id]) => id);
+    return placementSelectOptions.filter((opt) => !otherSelectedIds.includes(opt.value));
+  };
 
-  const winner2Options = useMemo(() => {
-    const selected = [winner1, winner3].filter(Boolean);
-    return placementSelectOptions.filter(opt => !selected.includes(opt.value));
-  }, [placementSelectOptions, winner1, winner3]);
-
-  const winner3Options = useMemo(() => {
-    const selected = [winner1, winner2].filter(Boolean);
-    return placementSelectOptions.filter(opt => !selected.includes(opt.value));
-  }, [placementSelectOptions, winner1, winner2]);
   const hasPenaltyOptions = penaltySelectOptions.length > 0;
   const penaltyTypeDefault =
     initialPenalties?.[0]?.type ?? (isSingle ? "student" : "team");
@@ -208,7 +289,6 @@ export function AddResultForm({
       ...rows,
       {
         id: `penalty-${Math.random().toString(36).slice(2, 9)}`,
-        // New rows default to 5 penalty points, but remain fully editable
         defaultPoints: 5,
       },
     ]);
@@ -218,200 +298,232 @@ export function AddResultForm({
     setPenaltyRows((rows) => rows.filter((row) => row.id !== rowId));
   };
   const hasEligibleCandidates = placementSelectOptions.length > 0;
-  const showProgramSelector = !(isJuryMode && lockProgram);
 
-  // Check if the selected program is already approved/published
-  const isProgramPublished = useMemo(() => {
-    if (!programId || approvedResults.length === 0) return false;
-    return approvedResults.some((result) => result.program_id === programId);
-  }, [programId, approvedResults]);
-
-  // Handle form submission - check if program is published before submitting
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    
-    // Clear previous duplicate error
-    setDuplicateError("");
-    
-    // Check if program is already published before submission
-    if (isProgramPublished) {
-      setShowPublishedModal(true);
-      return;
-    }
-
-    // Validate that all three positions have different candidates
-    const winners = [winner1, winner2, winner3].filter(Boolean);
-    const uniqueWinners = new Set(winners);
-    
-    if (winners.length !== 3) {
-      setDuplicateError("Please select candidates for all three positions.");
-      return;
-    }
-    
-    if (uniqueWinners.size !== 3) {
-      setDuplicateError("1st, 2nd, and 3rd place must have different candidates. Please select unique candidates for each position.");
-      return;
-    }
-
-    // Create FormData from the form and submit
-    const formData = new FormData(e.currentTarget);
-    try {
-      await action(formData);
-    } catch (error: any) {
-      // Handle backend error for published programs
-      const errorMessage = error?.message || String(error);
-      if (errorMessage.includes("Program already published") || errorMessage.includes("already published")) {
-        setShowPublishedModal(true);
-        return;
+  // If program is published/pending, reset to first available non-published program
+  useEffect(() => {
+    if (!lockProgram && availablePrograms.length > 0) {
+      if (!availablePrograms.some((p) => p.id === programId)) {
+        setProgramId(availablePrograms[0].id);
       }
-      // For other errors, let Next.js handle them (they'll show in the UI)
-      // Re-throw to allow Next.js error handling
-      throw error;
     }
-  };
+  }, [availablePrograms, lockProgram, programId]);
+
+  // Check if program already has an approved result
+  const isProgramPublished = useMemo(() => {
+    if (!selectedProgram || !approvedResults.length) return false;
+    return approvedResults.some((result) => String(result.program_id).trim() === String(selectedProgram.id).trim());
+  }, [selectedProgram, approvedResults]);
+
+  // Determine if program selector should be shown
+  const showProgramSelector = !lockProgram;
 
   return (
     <>
-      <form onSubmit={handleSubmit} className="space-y-8">
-      <input type="hidden" name="program_id" value={selectedProgram?.id} />
-      {isJuryMode && <input type="hidden" name="jury_id" value={activeJury?.id ?? ""} />}
+      <form action={action} className="space-y-8">
+        <input type="hidden" name="placement_positions" value={positions.join(",")} />
+        {defaultJuryId && <input type="hidden" name="default_jury_id" value={defaultJuryId} />}
+        {!showProgramSelector && <input type="hidden" name="program_id" value={programId} />}
 
-      {showProgramSelector && (
-      <Card>
-        <Badge tone="cyan">Step 1 · Program</Badge>
-          <CardTitle className="mt-4">
-            {isJuryMode && lockProgram ? "Program locked in" : "Select a program"}
-          </CardTitle>
-        <CardDescription className="mt-2">
-            {isJuryMode && lockProgram
-              ? "Admins have assigned this program to you. Review the details before entering results."
-              : "We auto-fill stage, section, and scoring rules."}
-        </CardDescription>
-        <div className="mt-6">
-            {isJuryMode && lockProgram ? (
-              <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                <p className="text-sm text-white/60">Program</p>
-                <p className="text-2xl font-semibold text-white">{selectedProgram?.name}</p>
-              </div>
-            ) : (
-          <SearchSelect
-            name="program_selector"
-            options={programOptions}
-            value={programId}
-            onValueChange={(next) => setProgramId(next)}
-            disabled={lockProgram}
-            placeholder="Search program..."
-          />
-            )}
-        </div>
-        <div className="mt-4 rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-white/80">
-          <p>Section: {selectedProgram?.section}</p>
-          <p>Stage: {selectedProgram?.stage ? "On stage" : "Off stage"}</p>
-          <p>Category: {selectedProgram?.category}</p>
-        </div>
-      </Card>
-      )}
-
-      <Card>
-        <Badge tone="pink">Step 2 · Winners</Badge>
-        <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <CardTitle>Add podium placements</CardTitle>
+        {showProgramSelector && (
+          <Card>
+            <Badge tone="cyan">Step 1 · Program & Jury</Badge>
+            <CardTitle className="mt-4">Target Program</CardTitle>
             <CardDescription className="mt-2">
-              Select {isSingle ? "students" : "teams"} for 1st, 2nd and 3rd. Grades apply
-              only to single events.
+              Select the program you are reporting results for.
             </CardDescription>
-          </div>
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={() => setShowRules(true)}
-          >
-            View scoring matrix
-          </Button>
-        </div>
-        {isJuryMode && !showProgramSelector && (
-          <div className="mt-4 rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-white/70">
-            <p className="text-xs uppercase tracking-widest text-white/50">Program</p>
-            <p className="text-xl font-semibold text-white">{selectedProgram?.name}</p>
-            <p className="text-xs text-white/50 mt-1">
-              Section: {selectedProgram?.section} · Category: {selectedProgram?.category}
-            </p>
-          </div>
-        )}
-        {!useFallbackOptions && !hasEligibleCandidates && (
-          <p className="mt-4 rounded-2xl border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
-            No registered candidates for this program yet.
-          </p>
-        )}
-        {duplicateError && (
-          <p className="mt-4 rounded-2xl border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-200">
-            {duplicateError}
-          </p>
-        )}
-        <div className="mt-6 grid gap-5">
-          {[1, 2, 3].map((position) => {
-            const slot = position as 1 | 2 | 3;
-            // Get the appropriate options and state for each position
-            const positionOptions = position === 1 ? winner1Options : position === 2 ? winner2Options : winner3Options;
-            const positionValue = position === 1 ? winner1 : position === 2 ? winner2 : winner3;
-            const positionSetter = position === 1 ? setWinner1 : position === 2 ? setWinner2 : setWinner3;
-            
-            return (
-            <div
-              key={position}
-              className="rounded-2xl border border-white/10 bg-white/5 p-4"
-            >
-              <p className="text-sm font-semibold text-white">
-                {position === 1
-                  ? "1st Place"
-                  : position === 2
-                    ? "2nd Place"
-                    : "3rd Place"}
-              </p>
-              <div className="mt-3">
-                <SearchSelect
-                  name={`winner_${position}`}
-                  required
-                  value={positionValue}
-                  onValueChange={(value) => {
-                    positionSetter(value);
-                    setDuplicateError(""); // Clear error when user changes selection
-                  }}
-                  options={positionOptions}
-                  placeholder={`Search ${isSingle ? "student" : "team"}...`}
-                  disabled={!hasEligibleCandidates}
-                />
-              </div>
-              {isSingle ? (
-                <SearchSelect
-                  className="mt-3"
-                  name={`grade_${position}`}
-                  defaultValue={initial?.[slot]?.grade ?? "A"}
-                  disabled={!hasEligibleCandidates}
-                  options={gradeOptions}
-                  placeholder="Select grade"
-                />
-              ) : (
-                <input type="hidden" name={`grade_${position}`} value="none" />
-              )}
+            <div className="mt-6 grid gap-4 md:grid-cols-2">
+              <SearchSelect
+                name="program_id"
+                required
+                options={programOptions}
+                value={programId}
+                onValueChange={(next) => setProgramId(next)}
+                disabled={lockProgram}
+                placeholder="Search program..."
+              />
             </div>
-            );
-          })}
-        </div>
-        {isJuryMode && !showProgramSelector && (
-          <div className="mt-6 space-y-3 rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-white/70">
-            <p className="text-xs uppercase tracking-widest text-white/50">Logged in as</p>
-            <p className="text-lg font-semibold text-white">{juryName ?? activeJury?.name}</p>
-            <p className="text-xs text-white/50">
-              Double-check placements before submitting — edits aren’t possible afterward.
-            </p>
-            <Button type="submit" className="mt-2 w-full" disabled={!hasEligibleCandidates}>
-              Submit evaluation
+            <div className="mt-4 rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-white/80">
+              <p>Section: {selectedProgram?.section}</p>
+              <p>Stage: {selectedProgram?.stage ? "On stage" : "Off stage"}</p>
+              <p>Category: {selectedProgram?.category}</p>
+            </div>
+          </Card>
+        )}
+
+        <Card>
+          <Badge tone="pink">Step 2 · Winners & Placements</Badge>
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <CardTitle>Placements & Scores</CardTitle>
+              <CardDescription className="mt-2">
+                Select {isSingle ? "students" : "teams"} for 1st, 2nd, 3rd and any additional below placements.
+              </CardDescription>
+            </div>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => setShowRules(true)}
+            >
+              View scoring matrix
             </Button>
           </div>
-        )}
-      </Card>
+
+          {isJuryMode && !showProgramSelector && (
+            <div className="mt-4 rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-white/70">
+              <p className="text-xs uppercase tracking-widest text-white/50">Program</p>
+              <p className="text-xl font-semibold text-white">{selectedProgram?.name}</p>
+              <p className="text-xs text-white/50 mt-1">
+                Section: {selectedProgram?.section} · Category: {selectedProgram?.category}
+              </p>
+            </div>
+          )}
+
+          {!hasEligibleCandidates && (
+            <p className="mt-4 rounded-2xl border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
+              No registered candidates for this program yet.
+            </p>
+          )}
+          {duplicateError && (
+            <p className="mt-4 rounded-2xl border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-200">
+              {duplicateError}
+            </p>
+          )}
+
+          <div className="mt-6 grid gap-5">
+            {positions.map((position, index) => {
+              const positionOptions = getOptionsForPosition(position);
+              const positionValue = winnerValues[position] ?? "";
+              const isPodium = position <= 3;
+
+              return (
+                <div
+                  key={position}
+                  className={`rounded-2xl border p-4 transition-all duration-200 ${
+                    position === 1
+                      ? "border-amber-500/40 bg-amber-500/[0.05]"
+                      : position === 2
+                        ? "border-slate-400/40 bg-slate-400/[0.05]"
+                        : position === 3
+                          ? "border-amber-700/40 bg-amber-700/[0.05]"
+                          : "border-cyan-500/30 bg-cyan-500/[0.04]"
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="text-base font-bold text-white">
+                        {position === 1
+                          ? "🥇 1st Place"
+                          : position === 2
+                            ? "🥈 2nd Place"
+                            : position === 3
+                              ? "🥉 3rd Place"
+                              : `🎖️ ${getOrdinal(position)} Place (Below 3rd)`}
+                      </span>
+                      {!isPodium && (
+                        <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+                          Additional Placement
+                        </span>
+                      )}
+                    </div>
+                    {positions.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => removePlacementAtIndex(index)}
+                        className="text-xs text-red-400 hover:text-red-200 flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-red-500/30 bg-red-500/10 hover:bg-red-500/20 transition cursor-pointer font-medium"
+                        title={`Delete this ${getOrdinal(position)} place field`}
+                      >
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                        Delete Field
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="mt-3">
+                    <SearchSelect
+                      name={`winner_${position}`}
+                      required={index === 0}
+                      value={positionValue}
+                      onValueChange={(value) => {
+                        setWinnerValues((prev) => ({ ...prev, [position]: value }));
+                        setDuplicateError("");
+                      }}
+                      options={positionOptions}
+                      placeholder={`Search ${isSingle ? "student" : "team"} for ${getOrdinal(position)} place...`}
+                      disabled={!hasEligibleCandidates}
+                    />
+                  </div>
+
+                  {isSingle ? (
+                    <div className="mt-3">
+                      <SearchSelect
+                        name={`grade_${position}`}
+                        value={gradeValues[position] ?? (isPodium ? "A" : "none")}
+                        onValueChange={(val) => {
+                          setGradeValues((prev) => ({ ...prev, [position]: val as GradeType }));
+                        }}
+                        disabled={!hasEligibleCandidates}
+                        options={gradeOptions}
+                        placeholder="Select grade"
+                      />
+                    </div>
+                  ) : (
+                    <input type="hidden" name={`grade_${position}`} value="none" />
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Action Buttons to Add More Fields, 3 Below Fields, or Delete Last Field */}
+          <div className="mt-6 flex flex-wrap items-center gap-3 pt-3 border-t border-white/10">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={addPlacement}
+              className="gap-2 border-white/20 bg-white/5 hover:bg-white/10 text-white text-xs font-semibold"
+            >
+              + Add Placement ({getOrdinal(positions.length > 0 ? Math.max(...positions) + 1 : 1)})
+            </Button>
+
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={addThreeBelowPlacements}
+              className="gap-2 border-purple-500/40 bg-purple-500/15 hover:bg-purple-500/25 text-purple-200 text-xs font-semibold"
+            >
+              + Add 3 Below Fields (
+              {getOrdinal((positions.length > 0 ? Math.max(...positions) : 0) + 1)},{" "}
+              {getOrdinal((positions.length > 0 ? Math.max(...positions) : 0) + 2)},{" "}
+              {getOrdinal((positions.length > 0 ? Math.max(...positions) : 0) + 3)})
+            </Button>
+
+            {positions.length > 1 && (
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => removePlacementAtIndex(positions.length - 1)}
+                className="gap-2 border-red-500/30 bg-red-500/10 hover:bg-red-500/20 text-red-300 text-xs font-semibold"
+              >
+                🗑️ Delete Last Field ({getOrdinal(positions[positions.length - 1])})
+              </Button>
+            )}
+          </div>
+
+          {isJuryMode && !showProgramSelector && (
+            <div className="mt-6 space-y-3 rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-white/70">
+              <p className="text-xs uppercase tracking-widest text-white/50">Logged in as</p>
+              <p className="text-lg font-semibold text-white">{juryName ?? activeJury?.name}</p>
+              <p className="text-xs text-white/50">
+                Double-check placements before submitting — edits aren’t possible afterward.
+              </p>
+              <Button type="submit" className="mt-2 w-full" disabled={!hasEligibleCandidates}>
+                Submit evaluation
+              </Button>
+            </div>
+          )}
+        </Card>
 
       <input type="hidden" name="penalty_rows" value={penaltyRowIds.join(",")} />
       {penaltyRows.length === 0 ? (

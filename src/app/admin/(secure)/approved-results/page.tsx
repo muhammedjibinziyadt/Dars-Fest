@@ -16,12 +16,14 @@ async function deleteApprovedResultAction(formData: FormData) {
     const id = String(formData.get("id") ?? "");
     await deleteApprovedResult(id);
     revalidatePath("/admin/approved-results");
+    revalidatePath("/admin/add-result");
     redirectWithToast("/admin/approved-results", "Result deleted successfully!", "error");
   } catch (error: any) {
     if (error?.digest === "NEXT_REDIRECT" || error?.message === "NEXT_REDIRECT") {
       throw error;
     }
     revalidatePath("/admin/approved-results");
+    revalidatePath("/admin/add-result");
     redirectWithToast("/admin/approved-results", error?.message || "Failed to delete result", "error");
   }
 }

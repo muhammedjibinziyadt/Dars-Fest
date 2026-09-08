@@ -50,5 +50,10 @@ if (!getApps().length) {
 const app = getApp();
 
 export const adminDb = getFirestore(app);
+try {
+  adminDb.settings({ ignoreUndefinedProperties: true });
+} catch {
+  // Settings can only be applied once during Firestore initialization
+}
 export const adminAuth = getAuth(app);
 export const adminStorage = getStorage(app);

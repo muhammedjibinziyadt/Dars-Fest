@@ -16,10 +16,11 @@ interface SectionResultsProps {
     teams: Team[];
 }
 
-type FilterType = "stage" | "non-stage" | "group" | "general";
+type FilterType = "stage" | "non-stage" | "both" | "group" | "general";
 
 export function SectionResults({ programs, results, programMap, students, teams }: SectionResultsProps) {
     const [filter, setFilter] = useState<FilterType>("stage");
+    const [bothOnlyStrict, setBothOnlyStrict] = useState<boolean>(false);
 
     const resultMap = useMemo(() => new Map(results.map((r) => [r.program_id, r])), [results]);
 
@@ -29,6 +30,9 @@ export function SectionResults({ programs, results, programMap, students, teams 
 
         return programsWithResults.filter((program) => {
             switch (filter) {
+                case "both":
+                    // All stage & non-stage single items
+                    return program.stage === true || program.stage === false;
                 case "stage":
                     return program.stage === true;
                 case "non-stage":
@@ -48,24 +52,45 @@ export function SectionResults({ programs, results, programMap, students, teams 
         const relevantProgramIds = new Set(filteredPrograms.map(p => p.id));
         const relevantResults = results.filter(r => relevantProgramIds.has(r.program_id));
 
-        if (filter === "stage" || filter === "non-stage") {
+        if (filter === "both" || filter === "stage" || filter === "non-stage") {
             // Calculate Student Points for this section
             const studentPoints = new Map<string, number>();
+            const studentStagePoints = new Map<string, number>();
+            const studentNonStagePoints = new Map<string, number>();
 
             relevantResults.forEach(result => {
+                const prog = programMap.get(result.program_id);
+                const isStage = prog?.stage === true;
+
                 result.entries.forEach(entry => {
                     if (entry.student_id) {
+                        if (filter === "stage" && !isStage) return;
+                        if (filter === "non-stage" && isStage) return;
+
                         const current = studentPoints.get(entry.student_id) || 0;
                         studentPoints.set(entry.student_id, current + entry.score);
+
+                        if (isStage) {
+                            studentStagePoints.set(entry.student_id, (studentStagePoints.get(entry.student_id) || 0) + entry.score);
+                        } else {
+                            studentNonStagePoints.set(entry.student_id, (studentNonStagePoints.get(entry.student_id) || 0) + entry.score);
+                        }
                     }
                 });
             });
 
             // Return students with updated points
-            const updatedStudents = students.map(s => ({
+            let updatedStudents = students.map(s => ({
                 ...s,
-                total_points: studentPoints.get(s.id) || 0
-            })).filter(s => s.total_points > 0); // Only show students with points in this section
+                total_points: studentPoints.get(s.id) || 0,
+            })).filter(s => s.total_points > 0);
+
+            // Filter for students who scored in BOTH stage and non-stage if strict toggle is enabled
+            if (filter === "both" && bothOnlyStrict) {
+                updatedStudents = updatedStudents.filter(
+                    s => (studentStagePoints.get(s.id) || 0) > 0 && (studentNonStagePoints.get(s.id) || 0) > 0
+                );
+            }
 
             return { type: "student", data: updatedStudents };
         } else {
@@ -73,15 +98,11 @@ export function SectionResults({ programs, results, programMap, students, teams 
             const teamPoints = new Map<string, number>();
 
             relevantResults.forEach(result => {
-                // Some results might be directly assigned to teams (group items)
-                // or aggregated from students (if needed, but usually group items have entries with team_id)
-
                 result.entries.forEach(entry => {
                     if (entry.team_id) {
                         const current = teamPoints.get(entry.team_id) || 0;
                         teamPoints.set(entry.team_id, current + entry.score);
                     } else if (entry.student_id) {
-                        // If entry is student-based, find their team and add points
                         const student = students.find(s => s.id === entry.student_id);
                         if (student?.team_id) {
                             const current = teamPoints.get(student.team_id) || 0;
@@ -98,33 +119,15 @@ export function SectionResults({ programs, results, programMap, students, teams 
 
             return { type: "team", data: updatedTeams };
         }
-    }, [filteredPrograms, results, students, teams, filter]);
-
-    const getProgramStats = (programId: string) => {
-        const program = programMap.get(programId);
-        return {
-            hasResults: true, // We only show programs with results here
-            section: program?.section || "general",
-            category: program?.category || "none",
-        };
-    };
+    }, [filteredPrograms, results, students, teams, filter, programMap, bothOnlyStrict]);
 
     const filters: { id: FilterType; label: string }[] = [
         { id: "stage", label: "Stage Items" },
         { id: "non-stage", label: "Non-Stage" },
+        { id: "both", label: "Both Sections" },
         { id: "group", label: "Group Items" },
         { id: "general", label: "General" },
     ];
-
-    const container = {
-        hidden: { opacity: 0 },
-        show: {
-            opacity: 1,
-            transition: {
-                staggerChildren: 0.1,
-            },
-        },
-    };
 
     return (
         <div className="space-y-8 md:space-y-12">
@@ -138,7 +141,7 @@ export function SectionResults({ programs, results, programMap, students, teams 
                             className={`
                               relative px-4 py-2 md:px-6 md:py-3 rounded-full md:rounded-2xl font-semibold transition-all duration-300 flex-shrink-0 text-sm md:text-base selection:bg-transparent
                               ${filter === f.id
-                                    ? "text-[#8B4513] bg-[#8B4513]/10"
+                                    ? "text-[#8B4513] bg-[#8B4513]/10 font-bold"
                                     : "bg-white text-gray-500 border border-gray-100 hover:text-[#8B4513] hover:bg-[#8B4513]/5"
                                 }
                             `}
@@ -158,16 +161,49 @@ export function SectionResults({ programs, results, programMap, students, teams 
 
             {/* Section Leaderboard */}
             <motion.div
-                key={filter} // Re-animate on filter change
+                key={filter + (bothOnlyStrict ? "-strict" : "")} // Re-animate on filter or toggle change
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 className="bg-white/50 border border-gray-200/50 rounded-3xl p-4 md:p-8"
             >
                 <div className="text-center mb-8">
                     <h3 className="text-xl md:text-2xl font-bold text-gray-800">
-                        {filter.charAt(0).toUpperCase() + filter.slice(1)} Leaderboard
+                        {filter === "both"
+                            ? "🏆 Both Sections Champions"
+                            : `${filter.charAt(0).toUpperCase() + filter.slice(1)} Leaderboard`}
                     </h3>
-                    <p className="text-gray-500 text-sm md:text-base">Top performers in {filter.replace("-", " ")} items</p>
+                    <p className="text-gray-500 text-sm md:text-base mt-1">
+                        {filter === "both"
+                            ? "Top champions and performers across both Stage and Non-Stage items"
+                            : `Top performers in ${filter.replace("-", " ")} items`}
+                    </p>
+
+                    {filter === "both" && (
+                        <div className="mt-4 inline-flex items-center gap-1.5 p-1 rounded-2xl bg-white border border-gray-200 shadow-sm text-xs">
+                            <button
+                                type="button"
+                                onClick={() => setBothOnlyStrict(false)}
+                                className={`px-3.5 py-1.5 rounded-xl font-semibold transition-all ${
+                                    !bothOnlyStrict
+                                        ? "bg-[#8B4513] text-white shadow-sm"
+                                        : "text-gray-500 hover:text-gray-800"
+                                }`}
+                            >
+                                All Combined Performers
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setBothOnlyStrict(true)}
+                                className={`px-3.5 py-1.5 rounded-xl font-semibold transition-all ${
+                                    bothOnlyStrict
+                                        ? "bg-[#8B4513] text-white shadow-sm"
+                                        : "text-gray-500 hover:text-gray-800"
+                                }`}
+                            >
+                                Scored in Both Sections Only
+                            </button>
+                        </div>
+                    )}
                 </div>
 
                 {leaderboardData.type === "student" ? (
@@ -181,8 +217,6 @@ export function SectionResults({ programs, results, programMap, students, teams 
                     />
                 )}
             </motion.div>
-
-
         </div>
     );
 }

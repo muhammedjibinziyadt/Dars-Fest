@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Award, Calculator, CheckCircle2, RotateCcw, Save, Sparkles, Trophy } from "lucide-react";
+import { Award, Calculator, RotateCcw, Save, Sparkles, Trophy, CheckCircle2 } from "lucide-react";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -82,7 +82,7 @@ export function AddGradesManager({ initialRules, saveAction }: Props) {
       try {
         const res = await saveAction(rules);
         if (res?.success) {
-          showSuccess("Grade and score rules saved successfully!");
+          showSuccess("Grade and scoring rules saved successfully!");
         } else {
           showError(res?.error || "Failed to save scoring rules.");
         }
@@ -127,17 +127,18 @@ export function AddGradesManager({ initialRules, saveAction }: Props) {
   const totalPoints = positionPoints + gradePoints;
 
   return (
-    <div className="space-y-8 text-white">
-      {/* Interactive Example & Live Score Calculator */}
-      <Card className="border-fuchsia-500/30 bg-gradient-to-br from-fuchsia-950/40 via-slate-900/60 to-purple-950/30 p-6 shadow-xl">
+    <div className="space-y-8">
+      
+      {/* 1. Interactive Example & Live Score Calculator */}
+      <Card>
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="rounded-xl border border-fuchsia-400/30 bg-fuchsia-500/20 p-2.5 text-fuchsia-300">
-              <Calculator className="h-6 w-6" />
+            <div className="rounded-xl border border-white/10 bg-white/5 p-2.5 text-white/80">
+              <Calculator className="h-5 w-5" />
             </div>
             <div>
-              <CardTitle className="text-xl">Interactive Score Preview</CardTitle>
-              <CardDescription className="text-white/70">
+              <CardTitle>Interactive Score Preview</CardTitle>
+              <CardDescription className="mt-1">
                 Preview how placement points and grade bonus combine to calculate student & team points
               </CardDescription>
             </div>
@@ -146,7 +147,7 @@ export function AddGradesManager({ initialRules, saveAction }: Props) {
         </div>
 
         {/* Live Calculation Controls */}
-        <div className="mt-6 grid gap-4 sm:grid-cols-3">
+        <div className="mt-6 grid gap-5 sm:grid-cols-3">
           <div>
             <label className="text-xs font-semibold uppercase tracking-wider text-white/60 mb-2 block">
               Event Section
@@ -157,9 +158,9 @@ export function AddGradesManager({ initialRules, saveAction }: Props) {
                   key={sec}
                   type="button"
                   onClick={() => setCalcSection(sec)}
-                  className={`flex-1 rounded-lg py-1.5 text-xs font-semibold capitalize transition ${
+                  className={`flex-1 rounded-lg py-1.5 text-xs font-semibold capitalize transition-all ${
                     calcSection === sec
-                      ? "bg-fuchsia-600 text-white shadow"
+                      ? "bg-white/15 text-white font-bold border border-white/15 shadow-sm"
                       : "text-white/60 hover:text-white"
                   }`}
                 >
@@ -179,9 +180,9 @@ export function AddGradesManager({ initialRules, saveAction }: Props) {
                   key={pos}
                   type="button"
                   onClick={() => setCalcPosition(pos)}
-                  className={`flex-1 rounded-lg py-1.5 text-xs font-semibold transition ${
+                  className={`flex-1 rounded-lg py-1.5 text-xs font-semibold transition-all ${
                     calcPosition === pos
-                      ? "bg-amber-500 text-slate-950 shadow"
+                      ? "bg-white/15 text-white font-bold border border-white/15 shadow-sm"
                       : "text-white/60 hover:text-white"
                   }`}
                 >
@@ -193,145 +194,136 @@ export function AddGradesManager({ initialRules, saveAction }: Props) {
 
           <div>
             <label className="text-xs font-semibold uppercase tracking-wider text-white/60 mb-2 block">
-              Grade Awarded {calcSection !== "single" && "(Single events only)"}
+              Grade Awarded {calcSection !== "single" && "(Single only)"}
             </label>
             <div className="flex rounded-xl border border-white/10 bg-white/5 p-1">
-              {(["A", "B", "C", "none"] as const).map((grd) => (
+              {(["A", "B", "C", "none"] as const).map((grade) => (
                 <button
-                  key={grd}
+                  key={grade}
                   type="button"
                   disabled={calcSection !== "single"}
-                  onClick={() => setCalcGrade(grd)}
-                  className={`flex-1 rounded-lg py-1.5 text-xs font-semibold transition ${
-                    calcSection !== "single"
-                      ? "opacity-40 cursor-not-allowed text-white/30"
-                      : calcGrade === grd
-                        ? "bg-emerald-500 text-slate-950 shadow"
-                        : "text-white/60 hover:text-white"
+                  onClick={() => setCalcGrade(grade)}
+                  className={`flex-1 rounded-lg py-1.5 text-xs font-semibold uppercase transition-all disabled:opacity-30 ${
+                    calcGrade === grade && calcSection === "single"
+                      ? "bg-white/15 text-white font-bold border border-white/15 shadow-sm"
+                      : "text-white/60 hover:text-white"
                   }`}
                 >
-                  {grd === "none" ? "None" : `Grade ${grd}`}
+                  {grade === "none" ? "None" : `Grade ${grade}`}
                 </button>
               ))}
             </div>
           </div>
         </div>
 
-        {/* Calculation Result Breakdown Card */}
-        <div className="mt-6 rounded-2xl border border-white/10 bg-slate-900/80 p-5">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div>
-              <p className="text-xs uppercase tracking-wider text-white/50">Point Breakdown</p>
-              <div className="mt-1 flex flex-wrap items-center gap-2 text-sm sm:text-base text-white/90">
-                <span className="font-semibold text-amber-300">
-                  {calcPosition === 1 ? "1st" : calcPosition === 2 ? "2nd" : "3rd"} Place ({positionPoints} pts)
-                </span>
-                {calcSection === "single" && (
-                  <>
-                    <span className="text-white/40">+</span>
-                    <span className="font-semibold text-emerald-300">
-                      {calcGrade === "none" ? "No Grade (0 pts)" : `Grade ${calcGrade} (+${gradePoints} pts)`}
-                    </span>
-                  </>
-                )}
-                <span className="text-white/40">=</span>
-                <span className="text-xs text-white/50">Total Awarded:</span>
-              </div>
-            </div>
+        {/* Live Calculation Output Preview Banner */}
+        <div className="mt-6 rounded-2xl border border-white/10 bg-white/[0.03] p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="space-y-1">
+            <p className="text-xs uppercase tracking-wider text-white/50 font-semibold">Point Breakdown</p>
+            <p className="text-sm font-medium text-white/90">
+              <span className="font-semibold text-white">
+                {calcPosition === 1 ? "1st Place" : calcPosition === 2 ? "2nd Place" : "3rd Place"} ({positionPoints} pts)
+              </span>
+              {calcSection === "single" && (
+                <>
+                  <span className="text-white/40 mx-2">+</span>
+                  <span className="font-semibold text-white">
+                    {calcGrade !== "none" ? `Grade ${calcGrade} (+${gradePoints} pts)` : "No Grade (+0 pts)"}
+                  </span>
+                </>
+              )}
+              <span className="text-white/40 mx-2">=</span>
+              <span className="text-white/70">Total Awarded</span>
+            </p>
+          </div>
 
-            <div className="flex items-center gap-3 rounded-xl border border-fuchsia-500/40 bg-fuchsia-500/10 px-5 py-2.5">
-              <Sparkles className="h-5 w-5 text-fuchsia-300" />
-              <div>
-                <p className="text-xs text-fuchsia-200/70 uppercase tracking-widest font-semibold">Total Points</p>
-                <p className="text-2xl font-bold text-white">{totalPoints} Points</p>
-              </div>
+          <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-4 py-2 shrink-0">
+            <Sparkles className="h-4 w-4 text-fuchsia-400" />
+            <div>
+              <p className="text-[10px] text-white/60 uppercase tracking-wider font-semibold">Total Points</p>
+              <p className="text-xl font-bold text-white">{totalPoints} Points</p>
             </div>
           </div>
         </div>
       </Card>
 
-      {/* Main Scoring Rules Configuration Cards */}
+      {/* 2. Main Scoring Rules Configuration Cards */}
       <div className="grid gap-6 lg:grid-cols-3">
+        
         {/* Card 1: Single Events */}
-        <Card className="space-y-5 border-white/10 bg-white/5 p-6">
+        <Card className="space-y-5">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
               <Award className="h-5 w-5 text-fuchsia-400" />
-              <CardTitle className="text-lg">Single Events</CardTitle>
+              <CardTitle>Single Events</CardTitle>
             </div>
-            <Badge tone="purple">Individual</Badge>
+            <Badge tone="pink">Individual</Badge>
           </div>
-          <CardDescription className="text-white/60">
+          <CardDescription>
             Points awarded to individual participants. Students get position points plus grade bonus.
           </CardDescription>
 
           <div className="space-y-4 pt-2">
-            <p className="text-xs font-semibold uppercase tracking-wider text-amber-300">Podium Points</p>
+            <p className="text-xs font-semibold uppercase tracking-wider text-white/70">Podium Points</p>
             <div className="space-y-3">
               <div>
-                <label className="text-xs text-white/70 block mb-1">🥇 1st Place Points</label>
+                <label className="text-xs text-white/70 block mb-1">1st Place Points</label>
                 <Input
                   type="number"
                   min={0}
                   value={rules.single.first}
                   onChange={(e) => handleSingleChange("first", parseInt(e.target.value, 10))}
-                  className="bg-slate-900/50 text-white"
                 />
               </div>
               <div>
-                <label className="text-xs text-white/70 block mb-1">🥈 2nd Place Points</label>
+                <label className="text-xs text-white/70 block mb-1">2nd Place Points</label>
                 <Input
                   type="number"
                   min={0}
                   value={rules.single.second}
                   onChange={(e) => handleSingleChange("second", parseInt(e.target.value, 10))}
-                  className="bg-slate-900/50 text-white"
                 />
               </div>
               <div>
-                <label className="text-xs text-white/70 block mb-1">🥉 3rd Place Points</label>
+                <label className="text-xs text-white/70 block mb-1">3rd Place Points</label>
                 <Input
                   type="number"
                   min={0}
                   value={rules.single.third}
                   onChange={(e) => handleSingleChange("third", parseInt(e.target.value, 10))}
-                  className="bg-slate-900/50 text-white"
                 />
               </div>
             </div>
 
-            <p className="text-xs font-semibold uppercase tracking-wider text-emerald-300 pt-3 border-t border-white/10">
+            <p className="text-xs font-semibold uppercase tracking-wider text-white/70 pt-3 border-t border-white/10">
               Grade Bonus Points
             </p>
             <div className="space-y-3">
               <div>
-                <label className="text-xs text-white/70 block mb-1">🌟 Grade A Bonus</label>
+                <label className="text-xs text-white/70 block mb-1">Grade A Bonus</label>
                 <Input
                   type="number"
                   min={0}
                   value={rules.single.gradeA}
                   onChange={(e) => handleSingleChange("gradeA", parseInt(e.target.value, 10))}
-                  className="bg-slate-900/50 text-white"
                 />
               </div>
               <div>
-                <label className="text-xs text-white/70 block mb-1">⭐ Grade B Bonus</label>
+                <label className="text-xs text-white/70 block mb-1">Grade B Bonus</label>
                 <Input
                   type="number"
                   min={0}
                   value={rules.single.gradeB}
                   onChange={(e) => handleSingleChange("gradeB", parseInt(e.target.value, 10))}
-                  className="bg-slate-900/50 text-white"
                 />
               </div>
               <div>
-                <label className="text-xs text-white/70 block mb-1">✨ Grade C Bonus</label>
+                <label className="text-xs text-white/70 block mb-1">Grade C Bonus</label>
                 <Input
                   type="number"
                   min={0}
                   value={rules.single.gradeC}
                   onChange={(e) => handleSingleChange("gradeC", parseInt(e.target.value, 10))}
-                  className="bg-slate-900/50 text-white"
                 />
               </div>
             </div>
@@ -339,49 +331,46 @@ export function AddGradesManager({ initialRules, saveAction }: Props) {
         </Card>
 
         {/* Card 2: Group Events */}
-        <Card className="space-y-5 border-white/10 bg-white/5 p-6">
+        <Card className="space-y-5">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
-              <Trophy className="h-5 w-5 text-sky-400" />
-              <CardTitle className="text-lg">Group Events</CardTitle>
+              <Trophy className="h-5 w-5 text-cyan-400" />
+              <CardTitle>Group Events</CardTitle>
             </div>
             <Badge tone="cyan">Team Event</Badge>
           </div>
-          <CardDescription className="text-white/60">
+          <CardDescription>
             Points awarded to teams for group performances and ensemble competitions.
           </CardDescription>
 
           <div className="space-y-4 pt-2">
-            <p className="text-xs font-semibold uppercase tracking-wider text-sky-300">Podium Points</p>
+            <p className="text-xs font-semibold uppercase tracking-wider text-white/70">Podium Points</p>
             <div className="space-y-3">
               <div>
-                <label className="text-xs text-white/70 block mb-1">🥇 1st Place Points</label>
+                <label className="text-xs text-white/70 block mb-1">1st Place Points</label>
                 <Input
                   type="number"
                   min={0}
                   value={rules.group.first}
                   onChange={(e) => handleGroupChange("first", parseInt(e.target.value, 10))}
-                  className="bg-slate-900/50 text-white"
                 />
               </div>
               <div>
-                <label className="text-xs text-white/70 block mb-1">🥈 2nd Place Points</label>
+                <label className="text-xs text-white/70 block mb-1">2nd Place Points</label>
                 <Input
                   type="number"
                   min={0}
                   value={rules.group.second}
                   onChange={(e) => handleGroupChange("second", parseInt(e.target.value, 10))}
-                  className="bg-slate-900/50 text-white"
                 />
               </div>
               <div>
-                <label className="text-xs text-white/70 block mb-1">🥉 3rd Place Points</label>
+                <label className="text-xs text-white/70 block mb-1">3rd Place Points</label>
                 <Input
                   type="number"
                   min={0}
                   value={rules.group.third}
                   onChange={(e) => handleGroupChange("third", parseInt(e.target.value, 10))}
-                  className="bg-slate-900/50 text-white"
                 />
               </div>
             </div>
@@ -389,49 +378,46 @@ export function AddGradesManager({ initialRules, saveAction }: Props) {
         </Card>
 
         {/* Card 3: General Events */}
-        <Card className="space-y-5 border-white/10 bg-white/5 p-6">
+        <Card className="space-y-5">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
               <CheckCircle2 className="h-5 w-5 text-emerald-400" />
-              <CardTitle className="text-lg">General Events</CardTitle>
+              <CardTitle>General Events</CardTitle>
             </div>
             <Badge tone="emerald">All-Fest</Badge>
           </div>
-          <CardDescription className="text-white/60">
+          <CardDescription>
             Points awarded for general events, grand ceremonies, and major competitions.
           </CardDescription>
 
           <div className="space-y-4 pt-2">
-            <p className="text-xs font-semibold uppercase tracking-wider text-emerald-300">Podium Points</p>
+            <p className="text-xs font-semibold uppercase tracking-wider text-white/70">Podium Points</p>
             <div className="space-y-3">
               <div>
-                <label className="text-xs text-white/70 block mb-1">🥇 1st Place Points</label>
+                <label className="text-xs text-white/70 block mb-1">1st Place Points</label>
                 <Input
                   type="number"
                   min={0}
                   value={rules.general.first}
                   onChange={(e) => handleGeneralChange("first", parseInt(e.target.value, 10))}
-                  className="bg-slate-900/50 text-white"
                 />
               </div>
               <div>
-                <label className="text-xs text-white/70 block mb-1">🥈 2nd Place Points</label>
+                <label className="text-xs text-white/70 block mb-1">2nd Place Points</label>
                 <Input
                   type="number"
                   min={0}
                   value={rules.general.second}
                   onChange={(e) => handleGeneralChange("second", parseInt(e.target.value, 10))}
-                  className="bg-slate-900/50 text-white"
                 />
               </div>
               <div>
-                <label className="text-xs text-white/70 block mb-1">🥉 3rd Place Points</label>
+                <label className="text-xs text-white/70 block mb-1">3rd Place Points</label>
                 <Input
                   type="number"
                   min={0}
                   value={rules.general.third}
                   onChange={(e) => handleGeneralChange("third", parseInt(e.target.value, 10))}
-                  className="bg-slate-900/50 text-white"
                 />
               </div>
             </div>
@@ -439,8 +425,8 @@ export function AddGradesManager({ initialRules, saveAction }: Props) {
         </Card>
       </div>
 
-      {/* Action Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-white/10 bg-white/5 p-4">
+      {/* 3. Action Bar */}
+      <Card className="flex flex-wrap items-center justify-between gap-4 p-4">
         <Button
           type="button"
           variant="ghost"
@@ -456,12 +442,12 @@ export function AddGradesManager({ initialRules, saveAction }: Props) {
           type="button"
           onClick={handleSave}
           disabled={isPending}
-          className="gap-2 bg-gradient-to-r from-fuchsia-600 to-purple-600 hover:from-fuchsia-500 hover:to-purple-500 text-white px-6 font-semibold"
+          className="gap-2 px-6 font-semibold shadow-lg"
         >
           <Save className="h-4 w-4" />
-          {isPending ? "Saving changes..." : "Save Grade & Score Rules"}
+          {isPending ? "Saving changes..." : "Save Grade & Scoring Rules"}
         </Button>
-      </div>
+      </Card>
     </div>
   );
 }

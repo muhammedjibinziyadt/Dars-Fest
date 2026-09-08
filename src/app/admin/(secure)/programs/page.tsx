@@ -354,7 +354,7 @@ export default async function ProgramsPage() {
 
   return (
     <div className="space-y-10">
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-6 lg:grid-cols-2 print:hidden">
       <Card className="h-full">
         <CardTitle>Create Program</CardTitle>
         <CardDescription className="mt-2">

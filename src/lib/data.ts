@@ -216,6 +216,27 @@ export async function createStudent(input: Omit<Student, "id" | "total_points">)
     total_points: 0,
   };
   await studentsCol.doc(studentId).set(student);
+
+  if (student.team_id) {
+    try {
+      const teamDoc = await teamsCol.doc(student.team_id).get();
+      if (teamDoc.exists) {
+        const team = teamDoc.data() as Team;
+        if (team.leader_email) {
+          const { sendStudentRegisteredEmail } = await import("./email-service");
+          await sendStudentRegisteredEmail({
+            teamName: team.name,
+            leaderName: team.leader,
+            leaderEmail: team.leader_email,
+            studentName: student.name,
+            chestNo: normalizedChestNo,
+          });
+        }
+      }
+    } catch (err) {
+      console.error("Failed to send student registration email:", err);
+    }
+  }
 }
 
 export async function updateStudentById(
@@ -456,7 +477,7 @@ export async function updateLiveScore(
   delta: number,
   posDelta?: number,
   grdDelta?: number,
-  position?: 1 | 2 | 3,
+  position?: number,
   grade?: GradeType,
   direction: 1 | -1 = 1,
 ) {
@@ -484,7 +505,7 @@ export async function updateStudentScore(
   delta: number,
   posDelta?: number,
   grdDelta?: number,
-  position?: 1 | 2 | 3,
+  position?: number,
   grade?: GradeType,
   direction: 1 | -1 = 1,
 ) {
@@ -499,8 +520,10 @@ export async function updateStudentScore(
     updateData.grade_points = FieldValue.increment(grdDelta);
   }
   if (position) {
-    const posKey = position === 1 ? "first" : position === 2 ? "second" : "third";
-    updateData[`positions_count.${posKey}`] = FieldValue.increment(direction);
+    const posKey = position === 1 ? "first" : position === 2 ? "second" : position === 3 ? "third" : null;
+    if (posKey) {
+      updateData[`positions_count.${posKey}`] = FieldValue.increment(direction);
+    }
   }
   if (grade && grade !== "none") {
     updateData[`grades_count.${grade}`] = FieldValue.increment(direction);
@@ -514,7 +537,7 @@ async function updateTeamTotals(
   delta: number,
   posDelta?: number,
   grdDelta?: number,
-  position?: 1 | 2 | 3,
+  position?: number,
   grade?: GradeType,
   direction: 1 | -1 = 1,
 ) {
@@ -529,8 +552,10 @@ async function updateTeamTotals(
     updateData.grade_points = FieldValue.increment(grdDelta);
   }
   if (position) {
-    const posKey = position === 1 ? "first" : position === 2 ? "second" : "third";
-    updateData[`positions_count.${posKey}`] = FieldValue.increment(direction);
+    const posKey = position === 1 ? "first" : position === 2 ? "second" : position === 3 ? "third" : null;
+    if (posKey) {
+      updateData[`positions_count.${posKey}`] = FieldValue.increment(direction);
+    }
   }
   if (grade && grade !== "none") {
     updateData[`grades_count.${grade}`] = FieldValue.increment(direction);

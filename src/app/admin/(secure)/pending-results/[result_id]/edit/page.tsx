@@ -10,7 +10,7 @@ import {
 import { getProgramRegistrations } from "@/lib/team-data";
 import type { GradeType } from "@/lib/types";
 import { ensureRegisteredCandidates } from "@/lib/registration-guard";
-import { updatePendingResultEntries } from "@/lib/result-service";
+import { updatePendingResultEntries, parseWinnersFromFormData } from "@/lib/result-service";
 import { redirectWithToast } from "@/lib/actions";
 import { revalidatePath } from "next/cache";
 
@@ -109,18 +109,7 @@ export default async function EditPendingResultPage({
   async function updatePendingAction(formData: FormData) {
     "use server";
     try {
-      const winners = [1, 2, 3].map((position) => {
-        const value = String(formData.get(`winner_${position}`) ?? "").trim();
-        if (!value) {
-          throw new Error("All placements are required.");
-        }
-        const grade = String(formData.get(`grade_${position}`) ?? "none") as GradeType;
-        return {
-          position: position as 1 | 2 | 3,
-          id: value,
-          grade,
-        };
-      });
+      const winners = parseWinnersFromFormData(formData);
       const penaltyType = String(formData.get("penalty_type") ?? "none");
       const penaltyTarget = String(formData.get("penalty_target") ?? "").trim();
       const penaltyPointsRaw = String(formData.get("penalty_points") ?? "").trim();

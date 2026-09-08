@@ -20,6 +20,7 @@ import {
   BarChart,
   Trophy,
   Award,
+  Printer,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -52,6 +53,7 @@ const ICONS = {
   pending: Hourglass,
   approved: BadgeCheck,
   grades: Award,
+  reports: Printer,
   settings: Settings,
   polls: BarChart,
   predictions: Trophy,
@@ -87,7 +89,7 @@ export default function Sidenavbar({
     <div className="flex min-h-screen flex-col gap-4">
       {/* Mobile navbar + drawer menu */}
       <div className="flex flex-col gap-4 md:hidden">
-        <header className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
+        <header className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 px-4 py-3 print:hidden">
           <span className="text-lg font-semibold text-white">{heading}</span>
           <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
             <SheetTrigger asChild>
@@ -140,7 +142,7 @@ export default function Sidenavbar({
       <div className="hidden min-h-screen gap-6 md:flex relative">
         <aside
           className={cn(
-            "fixed left-4 top-10 bottom-10 z-50 flex flex-col rounded-2xl border border-white/10 bg-slate-900 shadow-2xl transition-all duration-300 ease-in-out",
+            "fixed left-4 top-10 bottom-10 z-50 flex flex-col rounded-2xl border border-white/10 bg-slate-900 shadow-2xl transition-all duration-300 ease-in-out print:hidden",
             isOpen ? "w-64" : "w-20",
           )}
         >
@@ -266,7 +268,7 @@ export default function Sidenavbar({
           </ScrollArea>
         </aside>
         <main className={cn(
-          "flex-1 w-full transition-all duration-300 ease-in-out",
+          "flex-1 w-full transition-all duration-300 ease-in-out print:ml-0 print:p-0",
           isOpen ? "ml-[18.5rem]" : "ml-[7.5rem]"
         )}>{children}</main>
       </div>
