@@ -71,79 +71,120 @@ export async function sendTeamWelcomeEmail(
 
   const htmlContent = `
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
 <head>
   <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="dark light">
+  <meta name="supported-color-schemes" content="dark light">
   <title>Welcome to Maerika 2K26 - Team Portal Credentials</title>
+  <!--[if mso]>
+  <noscript>
+    <xml>
+      <o:OfficeDocumentSettings>
+        <o:PixelsPerInch>96</o:PixelsPerInch>
+      </o:OfficeDocumentSettings>
+    </xml>
+  </noscript>
+  <![endif]-->
+  <style>
+    /* Baseline Reset */
+    html, body { margin: 0 !important; padding: 0 !important; width: 100% !important; height: 100% !important; -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+    table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; border-collapse: collapse !important; }
+    img { -ms-interpolation-mode: bicubic; border: 0; outline: none; text-decoration: none; }
+    body { background-color: #070B14; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+
+    /* Responsive Device Rules */
+    @media only screen and (max-width: 600px) {
+      .email-wrapper { padding: 16px 8px !important; }
+      .email-card { width: 100% !important; max-width: 100% !important; border-radius: 14px !important; }
+      .header-cell { padding: 26px 18px 16px 18px !important; }
+      .body-cell { padding: 12px 18px 26px 18px !important; }
+      .card-box { padding: 16px 14px !important; }
+      .btn-container { width: 100% !important; display: block !important; }
+      .btn-cta { display: block !important; width: 100% !important; text-align: center !important; box-sizing: border-box !important; padding: 14px 16px !important; }
+      .title-h1 { font-size: 22px !important; line-height: 28px !important; }
+      .subtitle-p { font-size: 12px !important; }
+      .cred-label { display: block !important; width: 100% !important; padding: 4px 0 2px 0 !important; font-size: 11px !important; }
+      .cred-val { display: block !important; width: 100% !important; padding: 0 0 10px 0 !important; font-size: 14px !important; }
+    }
+  </style>
 </head>
 <body style="margin: 0; padding: 0; background-color: #070B14; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #e2e8f0;">
-  <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #070B14; padding: 40px 15px;">
+  <!-- Outer Wrapper Table -->
+  <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" class="email-wrapper" style="background-color: #070B14; padding: 36px 12px; margin: 0 auto; width: 100%;">
     <tr>
-      <td align="center">
-        <!-- Main Card Container -->
-        <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="max-width: 560px; background-color: #0d1527; border: 1px solid rgba(245, 158, 11, 0.25); border-radius: 20px; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.6);">
+      <td align="center" style="padding: 0;">
+        <!-- Inner Card -->
+        <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" class="email-card" style="max-width: 580px; margin: 0 auto; background-color: #0d1527; border: 1px solid rgba(245, 158, 11, 0.35); border-radius: 18px; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.6);">
           
           <!-- Top Accent Banner -->
           <tr>
-            <td style="height: 4px; background: linear-gradient(90deg, #E5A00D, #f59e0b, #0ea5e9);"></td>
+            <td style="height: 4px; background: linear-gradient(90deg, #E5A00D 0%, #f59e0b 50%, #0ea5e9 100%);"></td>
           </tr>
 
           <!-- Header Section -->
           <tr>
-            <td style="padding: 36px 36px 20px 36px; text-align: center;">
-              <span style="display: inline-block; padding: 4px 14px; border-radius: 20px; font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; background-color: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3);">
+            <td align="center" class="header-cell" style="padding: 34px 32px 18px 32px; text-align: center;">
+              <span style="display: inline-block; padding: 5px 16px; border-radius: 20px; font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; background-color: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.35);">
                 Official Fest Portal Provisioning
               </span>
-              <h1 style="margin: 16px 0 6px 0; font-size: 26px; font-weight: 800; color: #ffffff; letter-spacing: -0.5px;">
+              <h1 class="title-h1" style="margin: 14px 0 6px 0; font-size: 26px; font-weight: 800; color: #ffffff; letter-spacing: -0.5px; line-height: 1.2;">
                 Maerika 2K26
               </h1>
-              <p style="margin: 0; font-size: 13px; color: #94a3b8; font-style: italic;">
-                കലായുഗ ഭാവുകം · Arts &amp; Cultural Festival
+              <p class="subtitle-p" style="margin: 0; font-size: 13px; color: #94a3b8; font-style: italic;">
+                കലായുഗ ഭാവുകം &bull; Arts &amp; Cultural Festival
               </p>
             </td>
           </tr>
 
           <!-- Body Content -->
           <tr>
-            <td style="padding: 10px 36px 28px 36px;">
-              <p style="margin: 0 0 16px 0; font-size: 15px; line-height: 1.6; color: #cbd5e1;">
+            <td class="body-cell" style="padding: 10px 32px 30px 32px;">
+              <p style="margin: 0 0 16px 0; font-size: 15px; line-height: 1.6; color: #e2e8f0;">
                 Hello <strong>${leaderName}</strong>,
               </p>
-              <p style="margin: 0 0 24px 0; font-size: 14px; line-height: 1.6; color: #94a3b8;">
-                Congratulations! You have been appointed as the Team Leader for <strong>${teamName}</strong> at Maerika 2K26. Your squad account has been created by the Fest Administration.
+              <p style="margin: 0 0 22px 0; font-size: 14px; line-height: 1.6; color: #94a3b8;">
+                Congratulations! You have been appointed as the Team Leader for <strong style="color: #ffffff;">${teamName}</strong> at Maerika 2K26. Your squad account has been created by the Fest Administration.
               </p>
 
               <!-- Credentials Box -->
-              <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: rgba(15, 23, 42, 0.75); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 14px; margin-bottom: 24px;">
+              <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: rgba(15, 23, 42, 0.85); border: 1px solid rgba(245, 158, 11, 0.25); border-radius: 14px; margin-bottom: 24px;">
                 <tr>
-                  <td style="padding: 20px 24px;">
-                    <p style="margin: 0 0 12px 0; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #fbbf24;">
+                  <td class="card-box" style="padding: 20px 22px;">
+                    <p style="margin: 0 0 14px 0; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #fbbf24;">
                       Portal Access Credentials
                     </p>
                     <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0">
                       <tr>
-                        <td style="padding: 6px 0; font-size: 13px; color: #94a3b8; width: 40%;">Team Name:</td>
-                        <td style="padding: 6px 0; font-size: 14px; font-weight: 600; color: #ffffff;">${teamName}</td>
+                        <td class="cred-label" style="padding: 7px 0; font-size: 13px; color: #94a3b8; width: 36%;">Team Name:</td>
+                        <td class="cred-val" style="padding: 7px 0; font-size: 14px; font-weight: 700; color: #ffffff;">${teamName}</td>
                       </tr>
                       <tr>
-                        <td style="padding: 6px 0; font-size: 13px; color: #94a3b8;">Team Leader:</td>
-                        <td style="padding: 6px 0; font-size: 14px; font-weight: 600; color: #ffffff;">${leaderName}</td>
+                        <td class="cred-label" style="padding: 7px 0; font-size: 13px; color: #94a3b8; width: 36%;">Team Leader:</td>
+                        <td class="cred-val" style="padding: 7px 0; font-size: 14px; font-weight: 700; color: #ffffff;">${leaderName}</td>
                       </tr>
                       ${
                         password
                           ? `
                       <tr>
-                        <td style="padding: 6px 0; font-size: 13px; color: #94a3b8;">Access Password:</td>
-                        <td style="padding: 6px 0; font-size: 14px; font-family: monospace; font-weight: 700; color: #38bdf8; letter-spacing: 0.5px;">${password}</td>
+                        <td class="cred-label" style="padding: 7px 0; font-size: 13px; color: #94a3b8; width: 36%;">Access Password:</td>
+                        <td class="cred-val" style="padding: 7px 0;">
+                          <span style="display: inline-block; background-color: rgba(56, 189, 248, 0.12); border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 6px; padding: 4px 10px; font-size: 14px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-weight: 700; color: #38bdf8; letter-spacing: 0.5px;">
+                            ${password}
+                          </span>
+                        </td>
                       </tr>
                       `
                           : ""
                       }
                       <tr>
-                        <td style="padding: 6px 0; font-size: 13px; color: #94a3b8;">Login URL:</td>
-                        <td style="padding: 6px 0; font-size: 12px; color: #38bdf8;">
-                          <a href="${resolvedPortalUrl}" style="color: #38bdf8; text-decoration: none;">${resolvedPortalUrl}</a>
+                        <td class="cred-label" style="padding: 7px 0; font-size: 13px; color: #94a3b8; width: 36%;">Login URL:</td>
+                        <td class="cred-val" style="padding: 7px 0; font-size: 13px; word-break: break-all;">
+                          <a href="${resolvedPortalUrl}" style="color: #38bdf8; text-decoration: none; font-weight: 600;">
+                            ${resolvedPortalUrl}
+                          </a>
                         </td>
                       </tr>
                     </table>
@@ -152,10 +193,10 @@ export async function sendTeamWelcomeEmail(
               </table>
 
               <!-- Call to Action Button -->
-              <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="margin-bottom: 28px;">
+              <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" class="btn-container" style="margin-bottom: 26px;">
                 <tr>
                   <td align="center">
-                    <a href="${resolvedPortalUrl}" style="display: inline-block; padding: 14px 32px; border-radius: 12px; font-size: 14px; font-weight: 700; color: #020617; background: linear-gradient(90deg, #E5A00D, #f59e0b); text-decoration: none; box-shadow: 0 8px 24px rgba(245, 158, 11, 0.35);">
+                    <a href="${resolvedPortalUrl}" class="btn-cta" style="display: inline-block; padding: 14px 34px; border-radius: 12px; font-size: 15px; font-weight: 800; color: #070B14 !important; background: linear-gradient(90deg, #E5A00D, #f59e0b); text-decoration: none; text-align: center; box-shadow: 0 8px 24px rgba(245, 158, 11, 0.35); letter-spacing: 0.2px;">
                       Sign In to Team Portal &rarr;
                     </a>
                   </td>
@@ -163,29 +204,30 @@ export async function sendTeamWelcomeEmail(
               </table>
 
               <!-- Key Instructions -->
-              <div style="background-color: rgba(255, 255, 255, 0.03); border-radius: 12px; padding: 18px 20px; border-left: 3px solid #E5A00D;">
-                <p style="margin: 0 0 8px 0; font-size: 12px; font-weight: 700; color: #ffffff; text-transform: uppercase; letter-spacing: 0.5px;">
+              <div style="background-color: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 18px 20px; border-left: 3px solid #E5A00D;">
+                <p style="margin: 0 0 10px 0; font-size: 12px; font-weight: 700; color: #ffffff; text-transform: uppercase; letter-spacing: 0.5px;">
                   What you should do next:
                 </p>
                 <ul style="margin: 0; padding-left: 18px; font-size: 13px; line-height: 1.7; color: #94a3b8;">
-                  <li>Log in to the Team Leader Portal with your credentials.</li>
-                  <li>Register your squad participants and review assigned chest numbers.</li>
-                  <li>Submit stage &amp; off-stage program registrations within the scheduled window.</li>
+                  <li style="margin-bottom: 4px;">Log in to the Team Leader Portal with your credentials.</li>
+                  <li style="margin-bottom: 4px;">Register your squad participants and review assigned chest numbers.</li>
+                  <li style="margin-bottom: 4px;">Submit stage &amp; off-stage program registrations within the scheduled window.</li>
                   <li>Monitor live podium standings and scoring in real time.</li>
                 </ul>
               </div>
 
-              <p style="margin: 24px 0 0 0; font-size: 12px; color: #64748b; line-height: 1.5;">
-                Security Note: Please do not forward or share this email. If you did not expect this communication or have trouble accessing your account, please contact the Maerika 2K26 Administration Desk.
+              <!-- Security Note -->
+              <p style="margin: 22px 0 0 0; font-size: 12px; color: #64748b; line-height: 1.5;">
+                Security Note: Please keep these credentials confidential. If you did not expect this communication or need assistance, contact the Maerika 2K26 Festival Desk.
               </p>
             </td>
           </tr>
 
           <!-- Footer -->
           <tr>
-            <td style="padding: 20px 36px; background-color: #080d19; border-top: 1px solid rgba(255, 255, 255, 0.05); text-align: center;">
-              <p style="margin: 0; font-size: 11px; color: #475569;">
-                &copy; 2026 Maerika Fest Organising Committee. All rights reserved.
+            <td style="padding: 18px 24px; background-color: #080d19; border-top: 1px solid rgba(255, 255, 255, 0.06); text-align: center;">
+              <p style="margin: 0; font-size: 11px; color: #475569; line-height: 1.5;">
+                &copy; 2026 Maerika Fest Organising Committee &bull; All rights reserved.
               </p>
             </td>
           </tr>
@@ -400,68 +442,94 @@ export async function sendStudentRegisteredEmail(
 
   const html = `
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
 <head>
   <meta charset="UTF-8">
-  <title>New Student Registered</title>
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="dark light">
+  <meta name="supported-color-schemes" content="dark light">
+  <title>New Student Registered - ${teamName}</title>
+  <style>
+    html, body { margin: 0 !important; padding: 0 !important; width: 100% !important; height: 100% !important; -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+    table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; border-collapse: collapse !important; }
+    img { -ms-interpolation-mode: bicubic; border: 0; outline: none; text-decoration: none; }
+    body { background-color: #070B14; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+    @media only screen and (max-width: 600px) {
+      .email-wrapper { padding: 16px 8px !important; }
+      .email-card { width: 100% !important; max-width: 100% !important; border-radius: 14px !important; }
+      .header-cell { padding: 26px 18px 16px 18px !important; }
+      .body-cell { padding: 12px 18px 24px 18px !important; }
+      .card-box { padding: 16px 14px !important; }
+      .btn-container { width: 100% !important; display: block !important; }
+      .btn-cta { display: block !important; width: 100% !important; text-align: center !important; box-sizing: border-box !important; padding: 14px 16px !important; }
+      .title-h1 { font-size: 22px !important; line-height: 28px !important; }
+      .cred-label { display: block !important; width: 100% !important; padding: 4px 0 2px 0 !important; font-size: 11px !important; }
+      .cred-val { display: block !important; width: 100% !important; padding: 0 0 10px 0 !important; font-size: 14px !important; }
+    }
+  </style>
 </head>
-<body style="margin: 0; padding: 0; background-color: #070B14; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #e2e8f0;">
-  <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #070B14; padding: 40px 15px;">
+<body style="margin: 0; padding: 0; background-color: #070B14; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #e2e8f0;">
+  <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" class="email-wrapper" style="background-color: #070B14; padding: 36px 12px; margin: 0 auto; width: 100%;">
     <tr>
-      <td align="center">
-        <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="max-width: 560px; background-color: #0d1527; border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 20px; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.6);">
+      <td align="center" style="padding: 0;">
+        <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" class="email-card" style="max-width: 580px; margin: 0 auto; background-color: #0d1527; border: 1px solid rgba(16, 185, 129, 0.35); border-radius: 18px; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.6);">
           <tr>
-            <td style="height: 4px; background: linear-gradient(90deg, #10b981, #059669, #0ea5e9);"></td>
+            <td style="height: 4px; background: linear-gradient(90deg, #10b981 0%, #059669 50%, #0ea5e9 100%);"></td>
           </tr>
           <tr>
-            <td style="padding: 32px 36px 20px 36px; text-align: center;">
-              <span style="display: inline-block; padding: 4px 14px; border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase; background-color: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3);">
+            <td align="center" class="header-cell" style="padding: 32px 32px 18px 32px; text-align: center;">
+              <span style="display: inline-block; padding: 5px 16px; border-radius: 20px; font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; background-color: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.35);">
                 Squad Roster Update
               </span>
-              <h1 style="margin: 16px 0 6px 0; font-size: 24px; font-weight: 800; color: #ffffff;">
+              <h1 class="title-h1" style="margin: 14px 0 6px 0; font-size: 24px; font-weight: 800; color: #ffffff; line-height: 1.25;">
                 Student Registered Successfully
               </h1>
               <p style="margin: 0; font-size: 13px; color: #94a3b8;">
-                ${teamName} · Maerika 2K26
+                ${teamName} &bull; Maerika 2K26
               </p>
             </td>
           </tr>
           <tr>
-            <td style="padding: 10px 36px 28px 36px;">
-              <p style="margin: 0 0 16px 0; font-size: 15px; color: #cbd5e1;">
+            <td class="body-cell" style="padding: 10px 32px 28px 32px;">
+              <p style="margin: 0 0 16px 0; font-size: 15px; line-height: 1.6; color: #e2e8f0;">
                 Hello <strong>${leaderName}</strong>,
               </p>
               <p style="margin: 0 0 20px 0; font-size: 14px; color: #94a3b8; line-height: 1.6;">
-                A new participant has been successfully registered under your team squad. Below are the enrolled student details:
+                A new participant has been successfully registered under your squad. Below are the enrolled student details:
               </p>
-              <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: rgba(15, 23, 42, 0.75); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 14px; margin-bottom: 24px;">
+              <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: rgba(15, 23, 42, 0.85); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: 14px; margin-bottom: 24px;">
                 <tr>
-                  <td style="padding: 18px 24px;">
+                  <td class="card-box" style="padding: 20px 22px;">
                     <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0">
                       <tr>
-                        <td style="padding: 6px 0; font-size: 13px; color: #94a3b8; width: 40%;">Student Name:</td>
-                        <td style="padding: 6px 0; font-size: 15px; font-weight: 700; color: #ffffff;">${studentName}</td>
+                        <td class="cred-label" style="padding: 7px 0; font-size: 13px; color: #94a3b8; width: 36%;">Student Name:</td>
+                        <td class="cred-val" style="padding: 7px 0; font-size: 15px; font-weight: 700; color: #ffffff;">${studentName}</td>
                       </tr>
                       <tr>
-                        <td style="padding: 6px 0; font-size: 13px; color: #94a3b8;">Chest Number:</td>
-                        <td style="padding: 6px 0; font-size: 16px; font-family: monospace; font-weight: 800; color: #34d399;">${chestNo}</td>
+                        <td class="cred-label" style="padding: 7px 0; font-size: 13px; color: #94a3b8; width: 36%;">Chest Number:</td>
+                        <td class="cred-val" style="padding: 7px 0;">
+                          <span style="display: inline-block; background-color: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.35); border-radius: 6px; padding: 4px 10px; font-size: 15px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-weight: 800; color: #34d399;">
+                            ${chestNo}
+                          </span>
+                        </td>
                       </tr>
                       <tr>
-                        <td style="padding: 6px 0; font-size: 13px; color: #94a3b8;">Team Squad:</td>
-                        <td style="padding: 6px 0; font-size: 14px; font-weight: 600; color: #ffffff;">${teamName}</td>
+                        <td class="cred-label" style="padding: 7px 0; font-size: 13px; color: #94a3b8; width: 36%;">Team Squad:</td>
+                        <td class="cred-val" style="padding: 7px 0; font-size: 14px; font-weight: 600; color: #ffffff;">${teamName}</td>
                       </tr>
                       <tr>
-                        <td style="padding: 6px 0; font-size: 13px; color: #94a3b8;">Status:</td>
-                        <td style="padding: 6px 0; font-size: 13px; font-weight: 600; color: #38bdf8;">Enrolled & Ready</td>
+                        <td class="cred-label" style="padding: 7px 0; font-size: 13px; color: #94a3b8; width: 36%;">Enrollment Status:</td>
+                        <td class="cred-val" style="padding: 7px 0; font-size: 13px; font-weight: 600; color: #38bdf8;">Verified & Enrolled</td>
                       </tr>
                     </table>
                   </td>
                 </tr>
               </table>
-              <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="margin-bottom: 24px;">
+              <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" class="btn-container" style="margin-bottom: 24px;">
                 <tr>
                   <td align="center">
-                    <a href="${portalUrl}" style="display: inline-block; padding: 13px 28px; border-radius: 12px; font-size: 14px; font-weight: 700; color: #020617; background: linear-gradient(90deg, #10b981, #34d399); text-decoration: none; box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3);">
+                    <a href="${portalUrl}" class="btn-cta" style="display: inline-block; padding: 14px 34px; border-radius: 12px; font-size: 14px; font-weight: 800; color: #020617 !important; background: linear-gradient(90deg, #10b981, #34d399); text-decoration: none; box-shadow: 0 8px 24px rgba(16, 185, 129, 0.35); letter-spacing: 0.2px;">
                       View Team Roster &rarr;
                     </a>
                   </td>
@@ -470,9 +538,9 @@ export async function sendStudentRegisteredEmail(
             </td>
           </tr>
           <tr>
-            <td style="padding: 16px 36px; background-color: #080d19; border-top: 1px solid rgba(255, 255, 255, 0.05); text-align: center;">
+            <td style="padding: 16px 24px; background-color: #080d19; border-top: 1px solid rgba(255, 255, 255, 0.05); text-align: center;">
               <p style="margin: 0; font-size: 11px; color: #475569;">
-                &copy; 2026 Maerika Fest Organising Committee. Automated notification.
+                &copy; 2026 Maerika Fest Organising Committee &bull; Automated notification.
               </p>
             </td>
           </tr>
@@ -517,20 +585,45 @@ export async function sendProgramRegistrationEmail(
 
   const html = `
 <!DOCTYPE html>
-<html lang="en">
-<head><meta charset="UTF-8"><title>Program Registration Confirmed</title></head>
-<body style="margin: 0; padding: 0; background-color: #070B14; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #e2e8f0;">
-  <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #070B14; padding: 40px 15px;">
+<html lang="en" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="dark light">
+  <meta name="supported-color-schemes" content="dark light">
+  <title>Program Entry Confirmed - ${programName}</title>
+  <style>
+    html, body { margin: 0 !important; padding: 0 !important; width: 100% !important; height: 100% !important; -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+    table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; border-collapse: collapse !important; }
+    img { -ms-interpolation-mode: bicubic; border: 0; outline: none; text-decoration: none; }
+    body { background-color: #070B14; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+    @media only screen and (max-width: 600px) {
+      .email-wrapper { padding: 16px 8px !important; }
+      .email-card { width: 100% !important; max-width: 100% !important; border-radius: 14px !important; }
+      .header-cell { padding: 26px 18px 16px 18px !important; }
+      .body-cell { padding: 12px 18px 24px 18px !important; }
+      .card-box { padding: 16px 14px !important; }
+      .btn-container { width: 100% !important; display: block !important; }
+      .btn-cta { display: block !important; width: 100% !important; text-align: center !important; box-sizing: border-box !important; padding: 14px 16px !important; }
+      .title-h1 { font-size: 22px !important; line-height: 28px !important; }
+      .cred-label { display: block !important; width: 100% !important; padding: 4px 0 2px 0 !important; font-size: 11px !important; }
+      .cred-val { display: block !important; width: 100% !important; padding: 0 0 10px 0 !important; font-size: 14px !important; }
+    }
+  </style>
+</head>
+<body style="margin: 0; padding: 0; background-color: #070B14; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #e2e8f0;">
+  <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" class="email-wrapper" style="background-color: #070B14; padding: 36px 12px; margin: 0 auto; width: 100%;">
     <tr>
-      <td align="center">
-        <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="max-width: 560px; background-color: #0d1527; border: 1px solid rgba(14, 165, 233, 0.3); border-radius: 20px; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.6);">
-          <tr><td style="height: 4px; background: linear-gradient(90deg, #0284c7, #0ea5e9, #38bdf8);"></td></tr>
+      <td align="center" style="padding: 0;">
+        <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" class="email-card" style="max-width: 580px; margin: 0 auto; background-color: #0d1527; border: 1px solid rgba(14, 165, 233, 0.35); border-radius: 18px; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.6);">
+          <tr><td style="height: 4px; background: linear-gradient(90deg, #0284c7 0%, #0ea5e9 50%, #38bdf8 100%);"></td></tr>
           <tr>
-            <td style="padding: 32px 36px 20px 36px; text-align: center;">
-              <span style="display: inline-block; padding: 4px 14px; border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase; background-color: rgba(14, 165, 233, 0.15); color: #38bdf8; border: 1px solid rgba(14, 165, 233, 0.3);">
+            <td align="center" class="header-cell" style="padding: 32px 32px 18px 32px; text-align: center;">
+              <span style="display: inline-block; padding: 5px 16px; border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase; background-color: rgba(14, 165, 233, 0.15); color: #38bdf8; border: 1px solid rgba(14, 165, 233, 0.35); letter-spacing: 1px;">
                 Competition Entry Confirmed
               </span>
-              <h1 style="margin: 16px 0 6px 0; font-size: 24px; font-weight: 800; color: #ffffff;">
+              <h1 class="title-h1" style="margin: 14px 0 6px 0; font-size: 24px; font-weight: 800; color: #ffffff; line-height: 1.25;">
                 ${programName}
               </h1>
               <p style="margin: 0; font-size: 13px; color: #94a3b8;">
@@ -539,35 +632,39 @@ export async function sendProgramRegistrationEmail(
             </td>
           </tr>
           <tr>
-            <td style="padding: 10px 36px 28px 36px;">
-              <p style="margin: 0 0 16px 0; font-size: 15px; color: #cbd5e1;">Hello <strong>${leaderName}</strong>,</p>
+            <td class="body-cell" style="padding: 10px 32px 28px 32px;">
+              <p style="margin: 0 0 16px 0; font-size: 15px; line-height: 1.6; color: #e2e8f0;">Hello <strong>${leaderName}</strong>,</p>
               <p style="margin: 0 0 20px 0; font-size: 14px; color: #94a3b8; line-height: 1.6;">
-                Your entry for <strong>${programName}</strong> has been officially confirmed:
+                Your participant entry for <strong style="color: #ffffff;">${programName}</strong> has been officially confirmed:
               </p>
-              <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: rgba(15, 23, 42, 0.75); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 14px; margin-bottom: 24px;">
+              <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: rgba(15, 23, 42, 0.85); border: 1px solid rgba(14, 165, 233, 0.25); border-radius: 14px; margin-bottom: 24px;">
                 <tr>
-                  <td style="padding: 18px 24px;">
+                  <td class="card-box" style="padding: 20px 22px;">
                     <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0">
                       <tr>
-                        <td style="padding: 6px 0; font-size: 13px; color: #94a3b8; width: 40%;">Program:</td>
-                        <td style="padding: 6px 0; font-size: 14px; font-weight: 700; color: #ffffff;">${programName}</td>
+                        <td class="cred-label" style="padding: 7px 0; font-size: 13px; color: #94a3b8; width: 36%;">Program:</td>
+                        <td class="cred-val" style="padding: 7px 0; font-size: 14px; font-weight: 700; color: #ffffff;">${programName}</td>
                       </tr>
                       <tr>
-                        <td style="padding: 6px 0; font-size: 13px; color: #94a3b8;">Candidate:</td>
-                        <td style="padding: 6px 0; font-size: 14px; font-weight: 700; color: #38bdf8;">${studentName}</td>
+                        <td class="cred-label" style="padding: 7px 0; font-size: 13px; color: #94a3b8; width: 36%;">Candidate:</td>
+                        <td class="cred-val" style="padding: 7px 0; font-size: 14px; font-weight: 700; color: #38bdf8;">${studentName}</td>
                       </tr>
                       <tr>
-                        <td style="padding: 6px 0; font-size: 13px; color: #94a3b8;">Chest Number:</td>
-                        <td style="padding: 6px 0; font-size: 15px; font-family: monospace; font-weight: 800; color: #fbbf24;">${studentChest}</td>
+                        <td class="cred-label" style="padding: 7px 0; font-size: 13px; color: #94a3b8; width: 36%;">Chest Number:</td>
+                        <td class="cred-val" style="padding: 7px 0;">
+                          <span style="display: inline-block; background-color: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.35); border-radius: 6px; padding: 4px 10px; font-size: 15px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-weight: 800; color: #fbbf24;">
+                            ${studentChest}
+                          </span>
+                        </td>
                       </tr>
                     </table>
                   </td>
                 </tr>
               </table>
-              <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="margin-bottom: 24px;">
+              <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" class="btn-container" style="margin-bottom: 24px;">
                 <tr>
                   <td align="center">
-                    <a href="${portalUrl}" style="display: inline-block; padding: 13px 28px; border-radius: 12px; font-size: 14px; font-weight: 700; color: #ffffff; background: linear-gradient(90deg, #0284c7, #0ea5e9); text-decoration: none;">
+                    <a href="${portalUrl}" class="btn-cta" style="display: inline-block; padding: 14px 34px; border-radius: 12px; font-size: 14px; font-weight: 800; color: #020617 !important; background: linear-gradient(90deg, #0ea5e9, #38bdf8); text-decoration: none; box-shadow: 0 8px 24px rgba(14, 165, 233, 0.35); letter-spacing: 0.2px;">
                       Manage Program Entries &rarr;
                     </a>
                   </td>
@@ -576,8 +673,8 @@ export async function sendProgramRegistrationEmail(
             </td>
           </tr>
           <tr>
-            <td style="padding: 16px 36px; background-color: #080d19; border-top: 1px solid rgba(255, 255, 255, 0.05); text-align: center;">
-              <p style="margin: 0; font-size: 11px; color: #475569;">&copy; 2026 Maerika Fest Organising Committee.</p>
+            <td style="padding: 16px 24px; background-color: #080d19; border-top: 1px solid rgba(255, 255, 255, 0.05); text-align: center;">
+              <p style="margin: 0; font-size: 11px; color: #475569;">&copy; 2026 Maerika Fest Organising Committee &bull; Automated notification.</p>
             </td>
           </tr>
         </table>
@@ -686,54 +783,79 @@ export async function sendResultPublishedEmails(record: ResultRecord): Promise<v
 
         const html = `
 <!DOCTYPE html>
-<html lang="en">
-<head><meta charset="UTF-8"><title>Official Result: ${program.name}</title></head>
+<html lang="en" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="dark light">
+  <meta name="supported-color-schemes" content="dark light">
+  <title>Official Result: ${program.name}</title>
+  <style>
+    html, body { margin: 0 !important; padding: 0 !important; width: 100% !important; height: 100% !important; -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+    table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; border-collapse: collapse !important; }
+    img { -ms-interpolation-mode: bicubic; border: 0; outline: none; text-decoration: none; }
+    body { background-color: #070B14; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+    @media only screen and (max-width: 600px) {
+      .email-wrapper { padding: 16px 8px !important; }
+      .email-card { width: 100% !important; max-width: 100% !important; border-radius: 14px !important; }
+      .header-cell { padding: 26px 16px 14px 16px !important; }
+      .body-cell { padding: 12px 14px 24px 14px !important; }
+      .btn-container { width: 100% !important; display: block !important; }
+      .btn-cta { display: block !important; width: 100% !important; text-align: center !important; box-sizing: border-box !important; padding: 14px 16px !important; }
+      .title-h1 { font-size: 21px !important; line-height: 27px !important; }
+      .results-table th, .results-table td { padding: 8px 4px !important; font-size: 11px !important; }
+    }
+  </style>
+</head>
 <body style="margin: 0; padding: 0; background-color: #070B14; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #e2e8f0;">
-  <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #070B14; padding: 40px 15px;">
+  <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" class="email-wrapper" style="background-color: #070B14; padding: 36px 12px; margin: 0 auto; width: 100%;">
     <tr>
-      <td align="center">
-        <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="max-width: 600px; background-color: #0d1527; border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 20px; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.6);">
-          <tr><td style="height: 4px; background: linear-gradient(90deg, #E5A00D, #f59e0b, #0ea5e9);"></td></tr>
+      <td align="center" style="padding: 0;">
+        <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" class="email-card" style="max-width: 600px; margin: 0 auto; background-color: #0d1527; border: 1px solid rgba(245, 158, 11, 0.35); border-radius: 18px; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.6);">
+          <tr><td style="height: 4px; background: linear-gradient(90deg, #E5A00D 0%, #f59e0b 50%, #0ea5e9 100%);"></td></tr>
           <tr>
-            <td style="padding: 32px 36px 16px 36px; text-align: center;">
-              <span style="display: inline-block; padding: 4px 14px; border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase; background-color: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3);">
+            <td align="center" class="header-cell" style="padding: 32px 32px 16px 32px; text-align: center;">
+              <span style="display: inline-block; padding: 5px 16px; border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase; background-color: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.35); letter-spacing: 1px;">
                 Official Fest Result Announcement
               </span>
-              <h1 style="margin: 16px 0 6px 0; font-size: 24px; font-weight: 800; color: #ffffff;">
+              <h1 class="title-h1" style="margin: 14px 0 6px 0; font-size: 24px; font-weight: 800; color: #ffffff; line-height: 1.25;">
                 ${program.name}
               </h1>
               <p style="margin: 0; font-size: 13px; color: #94a3b8;">
-                Section: ${program.section} · Category: ${program.category} · ${program.stage ? "On Stage" : "Off Stage"}
+                Section: ${program.section} &bull; Category: ${program.category} &bull; ${program.stage ? "On Stage" : "Off Stage"}
               </p>
             </td>
           </tr>
           <tr>
-            <td style="padding: 10px 32px 28px 32px;">
-              <p style="margin: 0 0 16px 0; font-size: 14px; color: #cbd5e1;">
+            <td class="body-cell" style="padding: 10px 30px 28px 30px;">
+              <p style="margin: 0 0 16px 0; font-size: 14px; line-height: 1.6; color: #e2e8f0;">
                 Hello <strong>${team.leader}</strong> (${team.name}),
               </p>
               ${squadHighlightsHtml}
-              <p style="margin: 0 0 12px 0; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #fbbf24;">
-                Official Placements & Winners:
+              <p style="margin: 0 0 12px 0; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #fbbf24;">
+                Official Placements &amp; Winners:
               </p>
-              <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: rgba(15, 23, 42, 0.75); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 14px; margin-bottom: 24px; overflow: hidden;">
-                <thead>
-                  <tr style="background-color: rgba(255,255,255,0.03); border-bottom: 1px solid rgba(255,255,255,0.1);">
-                    <th style="padding: 10px 8px; text-align: left; font-size: 11px; text-transform: uppercase; color: #94a3b8;">Place</th>
-                    <th style="padding: 10px 8px; text-align: left; font-size: 11px; text-transform: uppercase; color: #94a3b8;">Candidate</th>
-                    <th style="padding: 10px 8px; text-align: left; font-size: 11px; text-transform: uppercase; color: #94a3b8;">Team</th>
-                    <th style="padding: 10px 8px; text-align: left; font-size: 11px; text-transform: uppercase; color: #94a3b8;">Grade</th>
-                    <th style="padding: 10px 8px; text-align: right; font-size: 11px; text-transform: uppercase; color: #94a3b8;">PTS</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  ${winnersHtml}
-                </tbody>
-              </table>
-              <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="margin-bottom: 24px;">
+              <div style="width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; margin-bottom: 24px;">
+                <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" class="results-table" style="background-color: rgba(15, 23, 42, 0.85); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 14px; overflow: hidden; min-width: 100%;">
+                  <thead>
+                    <tr style="background-color: rgba(255,255,255,0.04); border-bottom: 1px solid rgba(255,255,255,0.1);">
+                      <th style="padding: 10px 8px; text-align: left; font-size: 11px; text-transform: uppercase; color: #94a3b8;">Place</th>
+                      <th style="padding: 10px 8px; text-align: left; font-size: 11px; text-transform: uppercase; color: #94a3b8;">Candidate</th>
+                      <th style="padding: 10px 8px; text-align: left; font-size: 11px; text-transform: uppercase; color: #94a3b8;">Squad</th>
+                      <th style="padding: 10px 8px; text-align: left; font-size: 11px; text-transform: uppercase; color: #94a3b8;">Grade</th>
+                      <th style="padding: 10px 8px; text-align: right; font-size: 11px; text-transform: uppercase; color: #94a3b8;">PTS</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${winnersHtml}
+                  </tbody>
+                </table>
+              </div>
+              <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" class="btn-container" style="margin-bottom: 24px;">
                 <tr>
                   <td align="center">
-                    <a href="${resultsUrl}" style="display: inline-block; padding: 13px 28px; border-radius: 12px; font-size: 14px; font-weight: 700; color: #020617; background: linear-gradient(90deg, #E5A00D, #f59e0b); text-decoration: none; box-shadow: 0 8px 24px rgba(245, 158, 11, 0.35);">
+                    <a href="${resultsUrl}" class="btn-cta" style="display: inline-block; padding: 14px 34px; border-radius: 12px; font-size: 14px; font-weight: 800; color: #020617 !important; background: linear-gradient(90deg, #E5A00D, #f59e0b); text-decoration: none; box-shadow: 0 8px 24px rgba(245, 158, 11, 0.35); letter-spacing: 0.2px;">
                       View Full Live Results & Scoreboard &rarr;
                     </a>
                   </td>
@@ -742,8 +864,8 @@ export async function sendResultPublishedEmails(record: ResultRecord): Promise<v
             </td>
           </tr>
           <tr>
-            <td style="padding: 16px 36px; background-color: #080d19; border-top: 1px solid rgba(255, 255, 255, 0.05); text-align: center;">
-              <p style="margin: 0; font-size: 11px; color: #475569;">&copy; 2026 Maerika Fest Organising Committee.</p>
+            <td style="padding: 16px 24px; background-color: #080d19; border-top: 1px solid rgba(255, 255, 255, 0.05); text-align: center;">
+              <p style="margin: 0; font-size: 11px; color: #475569;">&copy; 2026 Maerika Fest Organising Committee &bull; Official Announcement</p>
             </td>
           </tr>
         </table>
