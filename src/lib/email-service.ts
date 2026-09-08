@@ -3,8 +3,34 @@ import { Resend } from "resend";
 import { programsCol, teamsCol, studentsCol, docsToData } from "./models";
 import type { ResultRecord, Program, Team, Student } from "./types";
 
-const resendApiKey = process.env.RESEND_API_KEY;
-const resend = resendApiKey ? new Resend(resendApiKey) : null;
+const DEFAULT_FROM_EMAIL =
+  "Maerika 2K26 <noreply@maerika2k26.jawharathululoomsuffadars.online>";
+
+/**
+ * Returns a freshly initialized Resend client using the current RESEND_API_KEY environment variable.
+ * Ensures the client is never stale across runtime requests.
+ */
+export function getResendClient(): Resend | null {
+  const apiKey = process.env.RESEND_API_KEY?.trim();
+  if (!apiKey) return null;
+  return new Resend(apiKey);
+}
+
+/**
+ * Returns the verified Resend sender address from environment or default,
+ * ensuring quotes are stripped and common transliteration typos are normalized.
+ */
+export function getResendFromEmail(): string {
+  let from = process.env.RESEND_FROM_EMAIL?.trim() || DEFAULT_FROM_EMAIL;
+  from = from.replace(/^["']|["']$/g, "").trim();
+  if (from.includes("jawharathuloomsuffadars.online")) {
+    from = from.replace(
+      "jawharathuloomsuffadars.online",
+      "jawharathululoomsuffadars.online"
+    );
+  }
+  return from || DEFAULT_FROM_EMAIL;
+}
 
 export interface SendTeamWelcomeEmailOptions {
   teamName: string;
@@ -30,13 +56,12 @@ export async function sendTeamWelcomeEmail(
     portalUrl ||
     `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/team/login`;
 
-  const fromEmail =
-    process.env.RESEND_FROM_EMAIL || "Maerika 2K26 <onboarding@resend.dev>";
+  const fromEmail = getResendFromEmail();
+  const resend = getResendClient();
 
   if (!resend) {
     console.warn(
-      "[Resend Email Service] RESEND_API_KEY is not set in environment variables. Email could not be sent to:",
-      leaderEmail
+      `[Resend Email Service] RESEND_API_KEY is not set in environment variables. Email could not be sent to: ${leaderEmail}`
     );
     return {
       success: false,
@@ -200,7 +225,7 @@ Maerika 2K26 Organising Committee
   try {
     const result = await resend.emails.send({
       from: fromEmail,
-      to: [leaderEmail],
+      to: [leaderEmail.trim()],
       replyTo: replyToEmail,
       headers: {
         "X-Entity-Ref-ID": `team-${teamName.toLowerCase().replace(/[^a-z0-9]/g, "-")}`,
@@ -211,52 +236,13 @@ Maerika 2K26 Organising Committee
     });
 
     if (result.error) {
-      const errorMsg = result.error.message || "";
-      const isSandboxRestriction =
-        errorMsg.includes("only send testing emails") ||
-        errorMsg.includes("resend.com/domains");
-
-      if (isSandboxRestriction) {
-        // Extract allowed account email from error message e.g. "(jawharathululoomsuffadars@gmail.com)"
-        const match = errorMsg.match(/\(([^)]+@.+?)\)/);
-        const sandboxOwnerEmail = match
-          ? match[1]
-          : process.env.RESEND_TEST_EMAIL || "jawharathululoomsuffadars@gmail.com";
-
-        console.warn(
-          `[Resend Sandbox Warning] Domain unverified. Re-routing test email to registered account: ${sandboxOwnerEmail} (intended for: ${leaderEmail})`
-        );
-
-        const sandboxNotice = `
-          <div style="background-color: #451a03; border: 1px solid #f59e0b; padding: 14px 18px; border-radius: 12px; margin-bottom: 22px; font-family: sans-serif; font-size: 13px; color: #fef3c7; line-height: 1.5;">
-            <strong style="color: #fbbf24;">⚠️ Sandbox Test Mode Notice:</strong><br/>
-            This email was generated for Team Leader: <strong>${leaderName}</strong> (&lt;${leaderEmail}&gt;).<br/>
-            Because your Resend account is currently using the test address (<em>${fromEmail}</em>), Resend delivered this copy to your registered inbox: <strong>${sandboxOwnerEmail}</strong>.<br/>
-            <em>To send directly to external recipients, verify your domain at <a href="https://resend.com/domains" style="color: #38bdf8;">resend.com/domains</a> and update RESEND_FROM_EMAIL.</em>
-          </div>
-        `;
-
-        const fallbackResult = await resend.emails.send({
-          from: fromEmail,
-          to: [sandboxOwnerEmail],
-          replyTo: replyToEmail,
-          subject: `[TEST FOR ${leaderEmail}] Welcome to Maerika 2K26 - Credentials for ${teamName}`,
-          html: `${sandboxNotice}${htmlContent}`,
-          text: `[Sandbox Test for ${leaderEmail}]\n\n${textContent}`,
-        });
-
-        if (!fallbackResult.error) {
-          console.log(
-            `[Resend Email Success] Delivered sandbox test email to ${sandboxOwnerEmail} (ID: ${fallbackResult.data?.id})`
-          );
-          return {
-            success: true,
-            note: `Test email delivered to your Resend account (${sandboxOwnerEmail})! To send to any recipient, verify your domain at resend.com/domains.`,
-          };
-        }
-      }
-
-      console.error("[Resend Email Error]", result.error);
+      console.error("[Resend Email Error]", {
+        action: "sendTeamWelcomeEmail",
+        to: leaderEmail,
+        from: fromEmail,
+        name: result.error.name,
+        message: result.error.message,
+      });
       return { success: false, error: result.error.message };
     }
 
@@ -265,7 +251,12 @@ Maerika 2K26 Organising Committee
     );
     return { success: true };
   } catch (err: unknown) {
-    console.error("[Resend Send Failed]", err);
+    console.error("[Resend Send Failed]", {
+      action: "sendTeamWelcomeEmail",
+      to: leaderEmail,
+      from: fromEmail,
+      error: err instanceof Error ? err.message : String(err),
+    });
     return {
       success: false,
       error:
@@ -334,15 +325,14 @@ export async function sendEmailNotification(options: {
     return { success: false, error: "A valid recipient email is required." };
   }
 
-  const fromEmail =
-    process.env.RESEND_FROM_EMAIL || "Maerika 2K26 <onboarding@resend.dev>";
+  const fromEmail = getResendFromEmail();
   const replyToEmail =
     process.env.RESEND_REPLY_TO || "jawharathululoomsuffadars@gmail.com";
+  const resend = getResendClient();
 
   if (!resend) {
     console.warn(
-      "[Resend Email Service] RESEND_API_KEY is not set. Email could not be sent to:",
-      to
+      `[Resend Email Service] RESEND_API_KEY is not set. Email could not be sent to: ${to}`
     );
     return {
       success: false,
@@ -353,7 +343,7 @@ export async function sendEmailNotification(options: {
   try {
     const result = await resend.emails.send({
       from: fromEmail,
-      to: [to],
+      to: [to.trim()],
       replyTo: replyToEmail,
       headers: entityRefId ? { "X-Entity-Ref-ID": entityRefId } : undefined,
       subject,
@@ -362,58 +352,25 @@ export async function sendEmailNotification(options: {
     });
 
     if (result.error) {
-      const errorMsg = result.error.message || "";
-      const isSandboxRestriction =
-        errorMsg.includes("only send testing emails") ||
-        errorMsg.includes("resend.com/domains");
-
-      if (isSandboxRestriction) {
-        const match = errorMsg.match(/\(([^)]+@.+?)\)/);
-        const sandboxOwnerEmail = match
-          ? match[1]
-          : process.env.RESEND_TEST_EMAIL || "jawharathululoomsuffadars@gmail.com";
-
-        console.warn(
-          `[Resend Sandbox Warning] Domain unverified. Re-routing test email to registered account: ${sandboxOwnerEmail} (intended for: ${to})`
-        );
-
-        const sandboxNotice = `
-          <div style="background-color: #451a03; border: 1px solid #f59e0b; padding: 14px 18px; border-radius: 12px; margin-bottom: 22px; font-family: sans-serif; font-size: 13px; color: #fef3c7; line-height: 1.5;">
-            <strong style="color: #fbbf24;">⚠️ Sandbox Test Mode Notice:</strong><br/>
-            This email was generated for recipient: <strong>&lt;${to}&gt;</strong>.<br/>
-            Delivered copy to your registered Resend inbox: <strong>${sandboxOwnerEmail}</strong>.<br/>
-            <em>To send directly to external recipients, verify your domain at <a href="https://resend.com/domains" style="color: #38bdf8;">resend.com/domains</a>.</em>
-          </div>
-        `;
-
-        const fallbackResult = await resend.emails.send({
-          from: fromEmail,
-          to: [sandboxOwnerEmail],
-          replyTo: replyToEmail,
-          subject: `[TEST FOR ${to}] ${subject}`,
-          html: `${sandboxNotice}${html}`,
-          text: `[Sandbox Test for ${to}]\n\n${text}`,
-        });
-
-        if (!fallbackResult.error) {
-          console.log(
-            `[Resend Email Success] Delivered sandbox test email to ${sandboxOwnerEmail}`
-          );
-          return {
-            success: true,
-            note: `Test email delivered to Resend account (${sandboxOwnerEmail})!`,
-          };
-        }
-      }
-
-      console.error("[Resend Email Error]", result.error);
+      console.error("[Resend Email Error]", {
+        action: "sendEmailNotification",
+        to,
+        from: fromEmail,
+        name: result.error.name,
+        message: result.error.message,
+      });
       return { success: false, error: result.error.message };
     }
 
     console.log(`[Resend Email Success] Sent email to ${to} (ID: ${result.data?.id})`);
     return { success: true };
   } catch (err: unknown) {
-    console.error("[Resend Send Failed]", err);
+    console.error("[Resend Send Failed]", {
+      action: "sendEmailNotification",
+      to,
+      from: fromEmail,
+      error: err instanceof Error ? err.message : String(err),
+    });
     return {
       success: false,
       error: err instanceof Error ? err.message : "Failed to send email via Resend.",
