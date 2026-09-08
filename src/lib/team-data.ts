@@ -26,17 +26,38 @@ function sanitizeColor(color?: string) {
   return /^#([0-9A-F]{3}){1,2}$/i.test(color) ? color : "#0ea5e9";
 }
 
+async function withRetry<T>(fn: () => Promise<T>, retries = 2, delayMs = 300): Promise<T> {
+  try {
+    return await fn();
+  } catch (error: any) {
+    const isTransient =
+      error?.code === 14 ||
+      error?.message?.includes("EHOSTUNREACH") ||
+      error?.message?.includes("ECONNRESET") ||
+      error?.message?.includes("ETIMEDOUT") ||
+      error?.message?.includes("UNAVAILABLE");
+
+    if (retries > 0 && isTransient) {
+      await new Promise((res) => setTimeout(res, delayMs));
+      return withRetry(fn, retries - 1, delayMs * 1.5);
+    }
+    throw error;
+  }
+}
+
 export async function getPortalTeams(): Promise<PortalTeam[]> {
-  const snap = await teamsCol.get();
-  const teams = docsToData<Team>(snap);
-  return teams.map((team) => ({
-    id: team.id,
-    teamName: team.name,
-    password: "", // SECURITY: Do not leak password
-    leaderName: team.leader,
-    leaderEmail: team.leader_email || "",
-    themeColor: sanitizeColor(team.color),
-  }));
+  return withRetry(async () => {
+    const snap = await teamsCol.get();
+    const teams = docsToData<Team>(snap);
+    return teams.map((team) => ({
+      id: team.id,
+      teamName: team.name,
+      password: "", // SECURITY: Do not leak password
+      leaderName: team.leader,
+      leaderEmail: team.leader_email || "",
+      themeColor: sanitizeColor(team.color),
+    }));
+  });
 }
 
 export async function savePortalTeam(team: PortalTeam) {
@@ -86,24 +107,26 @@ export async function deletePortalTeam(teamId: string) {
 }
 
 export async function getPortalStudents(): Promise<PortalStudent[]> {
-  const [studentsSnap, teamsSnap] = await Promise.all([
-    studentsCol.get(),
-    teamsCol.get(),
-  ]);
+  return withRetry(async () => {
+    const [studentsSnap, teamsSnap] = await Promise.all([
+      studentsCol.get(),
+      teamsCol.get(),
+    ]);
 
-  const students = docsToData<Student>(studentsSnap);
-  const teams = docsToData<Team>(teamsSnap);
-  const teamMap = new Map(teams.map((team) => [team.id, team.name]));
+    const students = docsToData<Student>(studentsSnap);
+    const teams = docsToData<Team>(teamsSnap);
+    const teamMap = new Map(teams.map((team) => [team.id, team.name]));
 
-  return students.map((student) => ({
-    id: student.id,
-    name: student.name,
-    chestNumber: student.chest_no,
-    teamId: student.team_id,
-    teamName: teamMap.get(student.team_id) ?? "Unknown",
-    score: student.total_points ?? 0,
-    avatar: student.avatar,
-  }));
+    return students.map((student) => ({
+      id: student.id,
+      name: student.name,
+      chestNumber: student.chest_no,
+      teamId: student.team_id,
+      teamName: teamMap.get(student.team_id) ?? "Unknown",
+      score: student.total_points ?? 0,
+      avatar: student.avatar,
+    }));
+  });
 }
 
 export async function upsertPortalStudent(input: {
@@ -191,8 +214,10 @@ export async function getProgramsWithLimits(): Promise<Program[]> {
 }
 
 export async function getProgramRegistrations(): Promise<ProgramRegistration[]> {
-  const snap = await programRegistrationsCol.get();
-  return docsToData<ProgramRegistration>(snap);
+  return withRetry(async () => {
+    const snap = await programRegistrationsCol.get();
+    return docsToData<ProgramRegistration>(snap);
+  });
 }
 
 export async function registerCandidate(entry: {
@@ -258,17 +283,19 @@ export async function removeRegistrationsByProgram(programId: string) {
 }
 
 export async function getRegistrationSchedule(): Promise<RegistrationSchedule> {
-  const doc = await registrationSchedulesCol.doc("global").get();
-  if (doc.exists) {
-    const data = doc.data() as RegistrationSchedule;
-    return { startDateTime: data.startDateTime, endDateTime: data.endDateTime };
-  }
-  const schedule = {
-    startDateTime: new Date().toISOString(),
-    endDateTime: new Date(Date.now() + 3600_000).toISOString(),
-  };
-  await registrationSchedulesCol.doc("global").set(schedule);
-  return schedule;
+  return withRetry(async () => {
+    const doc = await registrationSchedulesCol.doc("global").get();
+    if (doc.exists) {
+      const data = doc.data() as RegistrationSchedule;
+      return { startDateTime: data.startDateTime, endDateTime: data.endDateTime };
+    }
+    const schedule = {
+      startDateTime: new Date().toISOString(),
+      endDateTime: new Date(Date.now() + 3600_000).toISOString(),
+    };
+    await registrationSchedulesCol.doc("global").set(schedule);
+    return schedule;
+  });
 }
 
 export async function updateRegistrationSchedule(schedule: RegistrationSchedule) {

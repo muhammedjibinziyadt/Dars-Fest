@@ -24,25 +24,46 @@ function loadEnvFile() {
 
 loadEnvFile();
 
-const projectId = process.env.FIREBASE_PROJECT_ID || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
+const projectId = process.env.FIREBASE_PROJECT_ID || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "dars-fest-61b92";
 const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
 const rawPrivateKey = process.env.FIREBASE_PRIVATE_KEY;
-const privateKey = rawPrivateKey
-  ? rawPrivateKey.replace(/\\n/g, "\n")
-  : undefined;
+
+let privateKey: string | undefined = undefined;
+if (rawPrivateKey) {
+  let key = rawPrivateKey.trim();
+  // Strip outer quotes if pasted with quotes
+  if (
+    (key.startsWith('"') && key.endsWith('"')) ||
+    (key.startsWith("'") && key.endsWith("'"))
+  ) {
+    key = key.slice(1, -1).trim();
+  }
+  // Convert escaped literal \n to real newlines
+  privateKey = key.replace(/\\n/g, "\n");
+}
 
 if (!getApps().length) {
   if (projectId && clientEmail && privateKey) {
-    initializeApp({
-      credential: cert({
+    try {
+      initializeApp({
+        credential: cert({
+          projectId,
+          clientEmail,
+          privateKey,
+        }),
+      });
+    } catch (err) {
+      console.error("[Firebase Admin] Failed to initialize with cert:", err);
+      initializeApp({
         projectId,
-        clientEmail,
-        privateKey,
-      }),
-    });
+      });
+    }
   } else {
+    console.warn(
+      "[Firebase Admin] Missing service account credentials (FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY) in environment variables."
+    );
     initializeApp({
-      projectId: projectId || "funoon-fiesta-dev",
+      projectId,
     });
   }
 }
