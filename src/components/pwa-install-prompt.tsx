@@ -115,7 +115,7 @@ export function PWAInstallPrompt() {
               
               <div className="flex-1 min-w-0">
                 <h3 className="text-sm font-semibold text-white mb-1">
-                  Install Funoon Fiesta
+                  Install Maerika 2K26
                 </h3>
                 <p className="text-xs text-white/70 mb-3">
                   Install our app for a better experience with offline access and faster loading.

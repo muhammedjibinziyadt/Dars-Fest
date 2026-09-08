@@ -43,6 +43,22 @@
 }
 
 @font-face {
+  font-family: "Moga";
+  src: url("/img/assets/fonts/moga.otf") format("opentype");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "THUMBA";
+  src: url("/img/assets/fonts/THUMBA.ttf") format("truetype");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
   font-family: "Charutha";
   src: url("/img/assets/fonts/FN-Charutha-Regular.ttf") format("truetype");
   font-weight: normal;

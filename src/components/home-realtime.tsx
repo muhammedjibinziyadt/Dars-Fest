@@ -48,7 +48,7 @@ export function HomeRealtime({ teams: initialTeams, liveScores: initialLiveScore
         </div>
 
         {/* Content Container */}
-        <div className="relative z-40 flex flex-col items-center text-center px-4 max-w-5xl -mt-10">
+        <div className="relative z-40 flex flex-col items-center text-center px-4 max-w-5xl -mt-2 sm:-mt-4 md:-mt-6">
 
           {/* Small Star above Ship */}
           {/* <div className="relative w-8 h-8 sm:w-12 sm:h-12 mb-4 animate-[spin_12s_linear_infinite]">
@@ -61,7 +61,7 @@ export function HomeRealtime({ teams: initialTeams, liveScores: initialLiveScore
           </div> */}
 
           {/* Ship - Center */}
-          <div className="relative w-48 h-48 sm:w-64 sm:h-64 md:w-80 md:h-80 lg:w-[300px] lg:h-[300px] mb-2">
+          <div className="relative w-40 h-40 sm:w-52 sm:h-52 md:w-60 md:h-60 lg:w-[230px] lg:h-[230px] mb-3 sm:mb-4">
             <Image
               src="/img/assets/ship.webp"
               alt="Ship"
@@ -72,23 +72,22 @@ export function HomeRealtime({ teams: initialTeams, liveScores: initialLiveScore
             />
           </div>
 
-          {/* Main Title - Charutha Font */}
-          <div>
-            <h1 className="text-[#A13A24] text-4xl sm:text-5xl md:text-6xl lg:text-7xl mb-2 font-['Charutha'] tracking-wide leading-5 md:leading-7">
+          {/* Main Title & Theme Container */}
+          <div className="mb-2 sm:mb-3 space-y-2 sm:space-y-2.5">
+            <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-['Moga'] tracking-[0.25em] text-[#A13A24]/90 uppercase font-semibold">
               MAERIKA 2K26
             </h1>
 
-            {/* Subtitle - Bricolage Font */}
-            <h2 className="text-black text-xl sm:text-xl md:text-3xl font-['Bricolage'] mb-6 font-semibold tracking-tight">
-              Showcasing Islamic Art & Culture
+            {/* Two-Line Highlighted Theme Title - THUMBA Font */}
+            <h2 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl xl:text-9xl font-['THUMBA'] text-[#b91c1c] tracking-normal flex flex-col items-center leading-none -space-y-3 sm:-space-y-5 md:-space-y-7 lg:-space-y-8 xl:-space-y-10 select-none drop-shadow-xs">
+              <span>കലായുഗ</span>
+              <span>ഭാവുകം</span>
             </h2>
           </div>
 
-          {/* Description */}
-          <p className="text-gray-600 text-sm sm:text-base md:text-lg max-w-3xl mx-auto mb-8 px-4 leading-5 font-light">
-            For a hundred years, the Malabar coast has echoed with knowledge, faith, and art. Funoon
-            Fiesta 2025–26 bridges this rich legacy with a new generation, honoring Samastha’s
-            centenary under the theme “Shathakam Saakshi.”
+          {/* Description - THUMBA Font */}
+          <p className="text-gray-600 text-sm sm:text-base md:text-lg max-w-3xl mx-auto mb-6 sm:mb-7 px-4 leading-relaxed font-['THUMBA'] font-light">
+            പുതിയൊരു കാലത്തിന്റേയും മാറ്റത്തിന്റേയും തുടക്കത്തിൽ നൽകുന്ന നല്ല പ്രതീക്ഷകൾ. കലയുടെയും സംസ്കാരത്തിന്റെയും രംഗത്ത് പുതിയൊരു വസന്തമോ അല്ലെങ്കിൽ ക്രിയാത്മകമായ മാറ്റമോ ഉണ്ടാകണമെന്ന ആശ.
           </p>
 
           {/* CTA Buttons */}
@@ -107,7 +106,7 @@ export function HomeRealtime({ teams: initialTeams, liveScores: initialLiveScore
           <svg className="absolute bottom-0 left-0 w-[200%] h-full" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none" viewBox="0 0 2880 320">
             {/* Wave 3 (Back) - Period 720px (4 cycles) */}
             <path
-              fill="#0891b2"
+              fill="#E5A00D"
               fillOpacity="1"
               d="M0,230 
                  C240,180 480,280 720,230 
@@ -120,7 +119,7 @@ export function HomeRealtime({ teams: initialTeams, liveScores: initialLiveScore
             />
             {/* Wave 2 (Middle) - Period 480px (6 cycles) */}
             <path
-              fill="#0e7490"
+              fill="#DF0F17"
               fillOpacity="1"
               d="M0,260 
                  C160,220 320,300 480,260 
@@ -135,7 +134,7 @@ export function HomeRealtime({ teams: initialTeams, liveScores: initialLiveScore
             />
             {/* Wave 1 (Front) - Period 720px (4 cycles), Offset Phase */}
             <path
-              fill="#155e75"
+              fill="#015AA0"
               fillOpacity="1"
               d="M0,290 
                  C240,340 480,240 720,290 
@@ -153,7 +152,7 @@ export function HomeRealtime({ teams: initialTeams, liveScores: initialLiveScore
           <svg className="absolute bottom-0 left-0 w-[2880px] h-full" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none" viewBox="0 0 2880 320">
             {/* Wave 3 (Back) */}
             <path
-              fill="#0891b2"
+              fill="#E5A00D"
               fillOpacity="1"
               d="M0,230 C240,180 480,280 720,230 C960,180 1200,280 1440,230 C1680,180 1920,280 2160,230 C2400,180 2640,280 2880,230 V320 H0 Z"
               className="animate-[wave-slide_20s_linear_infinite]"
@@ -161,7 +160,7 @@ export function HomeRealtime({ teams: initialTeams, liveScores: initialLiveScore
             />
             {/* Wave 2 (Middle) */}
             <path
-              fill="#0e7490"
+              fill="#DF0F17"
               fillOpacity="1"
               d="M0,260 C160,220 320,300 480,260 C640,220 800,300 960,260 C1120,220 1280,300 1440,260 C1600,220 1760,300 1920,260 C2080,220 2240,300 2400,260 C2560,220 2720,300 2880,260 V320 H0 Z"
               className="animate-[wave-slide_15s_linear_infinite]"
@@ -169,7 +168,7 @@ export function HomeRealtime({ teams: initialTeams, liveScores: initialLiveScore
             />
             {/* Wave 1 (Front) */}
             <path
-              fill="#155e75"
+              fill="#015AA0"
               fillOpacity="1"
               d="M0,290 C240,340 480,240 720,290 C960,340 1200,240 1440,290 C1680,340 1920,240 2160,290 C2400,340 2640,240 2880,290 V320 H0 Z"
               className="animate-[wave-slide_12s_linear_infinite]"
@@ -229,7 +228,7 @@ export function HomeRealtime({ teams: initialTeams, liveScores: initialLiveScore
                 <div className="space-y-1">
                   <div className="flex flex-wrap items-center gap-2">
                     <h2 className="text-lg sm:text-xl font-['Bricolage'] font-bold text-[#2A1810] tracking-tight">
-                      Funoon Fiesta Control Room
+                      Maerika 2K26 Control Room
                     </h2>
                     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />

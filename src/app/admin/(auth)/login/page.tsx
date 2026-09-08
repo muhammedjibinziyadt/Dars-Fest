@@ -1,9 +1,11 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import Link from "next/link";
+import Image from "next/image";
 import { AdminLoginForm } from "@/components/forms/admin-login-form";
-import { Badge } from "@/components/ui/badge";
 import { authenticateAdmin, createSessionToken } from "@/lib/auth";
 import { ADMIN_COOKIE, SESSION_MAX_AGE } from "@/lib/config";
+import { ArrowLeft, Scale, Shield, Users } from "lucide-react";
 
 async function loginAdminAction(
   _state: { error?: string },
@@ -44,19 +46,79 @@ async function loginAdminAction(
 
 export default function AdminLoginPage() {
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-4xl flex-col justify-center gap-10 px-5 py-16 md:px-8">
-      <div className="space-y-4 text-center">
-        <Badge tone="pink" className="mx-auto">
-          Admin Control
-        </Badge>
-        <h1 className="text-4xl font-bold text-white">Welcome back, Commander</h1>
-        <p className="text-white/70">
-          Manage programs, students, jury assignments, and fest-wide approvals from a
-          single cockpit.
+    <main className="relative min-h-screen w-full flex flex-col justify-center items-center px-4 py-12 sm:py-16 overflow-hidden">
+      {/* Ambient Lighting */}
+      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-rose-500/10 rounded-full blur-[120px] pointer-events-none" />
+      <div className="absolute bottom-10 left-10 w-96 h-96 bg-amber-500/10 rounded-full blur-[100px] pointer-events-none" />
+
+      {/* Back to Home Link */}
+      <div className="w-full max-w-md mx-auto mb-6 flex justify-between items-center z-10">
+        <Link
+          href="/"
+          className="inline-flex items-center gap-2 text-xs font-medium text-slate-400 hover:text-white transition-colors py-1.5 px-3 rounded-full bg-white/5 border border-white/10 hover:bg-white/10"
+        >
+          <ArrowLeft className="w-3.5 h-3.5" />
+          <span>Return to Fest</span>
+        </Link>
+        <span className="text-[11px] font-mono text-rose-400/80 tracking-wider">
+          PORTAL_ADMIN
+        </span>
+      </div>
+
+      {/* Header Container */}
+      <div className="w-full max-w-md mx-auto text-center space-y-3 mb-7 z-10">
+        {/* Fest Emblem Avatar */}
+        <div className="inline-flex p-2 rounded-2xl bg-white/5 border border-white/10 shadow-inner mb-1">
+          <div className="relative w-12 h-12 flex items-center justify-center">
+            <Image
+              src="/img/assets/ship.webp"
+              alt="Maerika Fest Logo"
+              fill
+              className="object-contain"
+              priority
+            />
+          </div>
+        </div>
+
+        {/* Portal Pill */}
+        <div>
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-rose-500/15 text-rose-300 border border-rose-500/30">
+            <Shield className="w-3.5 h-3.5" />
+            <span>Admin Control Cockpit</span>
+          </span>
+        </div>
+
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white font-['Bricolage']">
+          Welcome back, Commander
+        </h1>
+        <p className="text-xs sm:text-sm text-slate-400 leading-relaxed max-w-sm mx-auto">
+          Manage programs, participants, jury assignments, and fest-wide scoring approvals.
         </p>
       </div>
-      <AdminLoginForm action={loginAdminAction} />
+
+      {/* Form Box */}
+      <div className="w-full max-w-md z-10">
+        <AdminLoginForm action={loginAdminAction} />
+      </div>
+
+      {/* Portal Switcher Navigation */}
+      <div className="w-full max-w-md mx-auto mt-8 pt-6 border-t border-white/5 flex items-center justify-center gap-6 text-xs text-slate-400 z-10">
+        <Link
+          href="/team/login"
+          className="hover:text-amber-300 transition-colors flex items-center gap-1.5"
+        >
+          <Users className="w-3.5 h-3.5" />
+          <span>Team Portal</span>
+        </Link>
+        <span className="text-slate-600">•</span>
+        <Link
+          href="/jury/login"
+          className="hover:text-cyan-300 transition-colors flex items-center gap-1.5"
+        >
+          <Scale className="w-3.5 h-3.5" />
+          <span>Jury Login</span>
+        </Link>
+      </div>
     </main>
   );
 }
-

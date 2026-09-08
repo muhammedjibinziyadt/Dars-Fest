@@ -122,7 +122,7 @@ export default function ChatbotClient() {
                                 <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#8B4513] to-[#A0522D] flex items-center justify-center shadow-lg shadow-[#8B4513]/20">
                                     <Sparkles size={16} className="text-white" />
                                 </div>
-                                <span className="font-bold text-gray-900 tracking-tight text-sm md:text-base">Funoon AI</span>
+                                <span className="font-bold text-gray-900 tracking-tight text-sm md:text-base">Festo AI</span>
                             </motion.div>
                         )}
                     </div>
@@ -186,7 +186,7 @@ export default function ChatbotClient() {
                                 <div className="flex items-center px-4 pt-3 pb-1">
                                     <div className="flex items-center gap-2 bg-gray-50 border border-gray-100 px-3 py-1.5 rounded-full">
                                         <Sparkles size={12} className="text-[#8B4513]" />
-                                        <h3 className="text-xs font-semibold text-gray-600 tracking-wide uppercase">Ask Funoon AI</h3>
+                                        <h3 className="text-xs font-semibold text-gray-600 tracking-wide uppercase">Ask Festo AI</h3>
                                     </div>
                                 </div>
 
@@ -297,7 +297,7 @@ export default function ChatbotClient() {
                                     value={input}
                                     onChange={(e) => setInput(e.target.value)}
                                     onKeyDown={handleKeyDown}
-                                    placeholder="Message Funoon AI..."
+                                    placeholder="Message Festo AI..."
                                     className="bg-transparent text-gray-900 placeholder:text-gray-400 w-full pl-3 md:pl-4 py-2 md:py-3 max-h-32 focus:outline-none resize-none text-sm md:text-base"
                                     rows={1}
                                     style={{ minHeight: "24px" }}

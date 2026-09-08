@@ -29,10 +29,9 @@ export function PublicPageWrapper({ children }: PublicPageWrapperProps) {
     );
   }
 
-  // For admin/jury/team pages, use the original dark background
+  // For admin/jury/team pages, use sleek midnight background
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top,_#3b0764,_#020617_55%)]">
-
+    <div className="min-h-screen bg-[#070B14] text-white selection:bg-[#015AA0] selection:text-white">
       {children}
     </div>
   );

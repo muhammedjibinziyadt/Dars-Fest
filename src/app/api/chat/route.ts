@@ -24,13 +24,12 @@ export async function POST(req: Request) {
         const festData = await getFestDataForAI();
 
         const systemPrompt = `
-You are the official AI Assistant for "Funoon Fiesta", a school arts fest.
-Your goal is to help users (students, parents, teachers) by answering questions based on the provided data.
+You are "Festo AI", the official AI Assistant for "Maerika 2K26 Arts Fest" (കലായുഗ ഭാവുകം).
+Your goal is to help users (students, participants, audience, judges) by answering questions based on the provided data.
 
 EVENT INFORMATION:
-FUNOON FIESTA is an engaging arts festival hosted by the Noorul Ulama Students Association at Jumia Nooriyya Arabbiya. This celebration of creativity showcases the diverse talents of students through a variety of artistic expressions. The festival aims to foster a love for the arts, provide a platform for young artists to shine, and bring the community together to experience the vibrant cultural atmosphere created by the students.
-
-For a hundred years, the Malabar coast has carried the rhythm of a community shaped by knowledge, faith, and artistic expression. Funoon Fiesta 2025-26 is the creative bridge that connects this century-long legacy to a new generation. Rooted in the centenary of Samastha Kerala Jamiyyathul Ulama, this edition proudly carries the theme "Shathakam Saakshi" – a tribute to the scholars, institutions, and countless individuals who illuminated our path.
+MAERIKA 2K26 is a premier arts and cultural festival hosted by Jawharathul Uloom Suffa Dars Students Association Valamangalam.
+The festival theme is "കലായുഗ ഭാവുകം" (Kalayuga Bhavukam) - celebrating positive expectations, cultural renaissance, and vibrant artistic expression.
 
 DATA CONTEXT:
 ${festData}
@@ -47,18 +46,39 @@ User Query: ${message}
     `;
 
         const genAI = new GoogleGenerativeAI(apiKey);
-        const primaryModelName = process.env.GEMINI_MODEL || "gemini-3.6-flash";
-        
+        const candidateModels = [
+            process.env.GEMINI_MODEL || "gemini-3.6-flash",
+            "gemini-flash-latest",
+            "gemini-3.7-flash",
+        ].filter(Boolean);
+
         let text = "";
-        try {
-            const model = genAI.getGenerativeModel({ model: primaryModelName });
-            const result = await model.generateContent(systemPrompt);
-            text = result.response.text();
-        } catch (modelError: any) {
-            console.warn(`Primary model (${primaryModelName}) failed, attempting fallback to gemini-flash-latest:`, modelError?.message);
-            const fallbackModel = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
-            const result = await fallbackModel.generateContent(systemPrompt);
-            text = result.response.text();
+        let lastError: any = null;
+
+        for (const modelName of candidateModels) {
+            // Try up to 2 attempts per model (for transient network drops)
+            for (let attempt = 1; attempt <= 2; attempt++) {
+                try {
+                    const model = genAI.getGenerativeModel({ model: modelName });
+                    const result = await model.generateContent(systemPrompt);
+                    text = result.response.text();
+                    if (text) break;
+                } catch (err: any) {
+                    lastError = err;
+                    console.warn(`[Chatbot] Model ${modelName} (attempt ${attempt}) failed:`, err?.message || err);
+                    if (attempt < 2) {
+                        await new Promise((r) => setTimeout(r, 600));
+                    }
+                }
+            }
+            if (text) break;
+        }
+
+        if (!text) {
+            console.error("All Gemini models failed:", lastError);
+            return NextResponse.json({
+                response: "ക്ഷമിക്കണം, കണക്ഷനിൽ ഒരു താൽക്കാലിക തടസ്സം നേരിട്ടു. ദയവായി അല്പം കഴിഞ്ഞ് വീണ്ടും ശ്രമിക്കുക. (Sorry, there was a temporary network issue connecting to the AI service. Please try again shortly.)",
+            });
         }
 
         return NextResponse.json({ response: text });

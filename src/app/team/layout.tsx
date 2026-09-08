@@ -14,6 +14,10 @@ async function logoutAction() {
 export default async function TeamLayout({ children }: { children: ReactNode }) {
   const team = await getCurrentTeam();
 
+  if (!team) {
+    return <>{children}</>;
+  }
+
   return (
     <div className="dark min-h-screen bg-slate-950 text-white">
       <div className="mx-auto flex max-w-5xl flex-col gap-4 sm:gap-6 lg:gap-8 px-4 sm:px-5 md:px-8 py-6 sm:py-8 lg:py-10">
