@@ -12,6 +12,18 @@ export interface Team {
   description: string;
   contact: string;
   total_points: number;
+  position_points?: number;
+  grade_points?: number;
+  grades_count?: {
+    A: number;
+    B: number;
+    C: number;
+  };
+  positions_count?: {
+    first: number;
+    second: number;
+    third: number;
+  };
   portal_password?: string;
 }
 
@@ -22,6 +34,18 @@ export interface Student {
   chest_no: string;
   avatar?: string;
   total_points: number;
+  position_points?: number;
+  grade_points?: number;
+  grades_count?: {
+    A: number;
+    B: number;
+    C: number;
+  };
+  positions_count?: {
+    first: number;
+    second: number;
+    third: number;
+  };
   phone_number?: string; // Added for Festory verification
 }
 
@@ -57,6 +81,8 @@ export interface ResultEntry {
   student_id?: string;
   team_id?: string;
   grade?: GradeType;
+  position_points?: number;
+  grade_points?: number;
   score: number;
 }
 
@@ -82,6 +108,8 @@ export interface ResultRecord {
 export interface LiveScore {
   team_id: string;
   total_points: number;
+  position_points?: number;
+  grade_points?: number;
 }
 
 export interface PortalTeam {

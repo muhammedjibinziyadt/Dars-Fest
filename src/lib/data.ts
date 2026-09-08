@@ -451,32 +451,92 @@ export function calculateScore(
       : rules.general.third;
 }
 
-export async function updateLiveScore(teamId: string, delta: number) {
+export async function updateLiveScore(
+  teamId: string,
+  delta: number,
+  posDelta?: number,
+  grdDelta?: number,
+  position?: 1 | 2 | 3,
+  grade?: GradeType,
+  direction: 1 | -1 = 1,
+) {
   const { FieldValue } = await import("firebase-admin/firestore");
   
+  const updateData: Record<string, unknown> = {
+    team_id: teamId,
+    total_points: FieldValue.increment(delta),
+  };
+  if (posDelta !== undefined) {
+    updateData.position_points = FieldValue.increment(posDelta);
+  }
+  if (grdDelta !== undefined) {
+    updateData.grade_points = FieldValue.increment(grdDelta);
+  }
+
   const scoreRef = liveScoresCol.doc(teamId);
-  await scoreRef.set(
-    { team_id: teamId, total_points: FieldValue.increment(delta) },
-    { merge: true }
-  );
+  await scoreRef.set(updateData, { merge: true });
 
-  await updateTeamTotals(teamId, delta);
+  await updateTeamTotals(teamId, delta, posDelta, grdDelta, position, grade, direction);
 }
 
-export async function updateStudentScore(studentId: string, delta: number) {
+export async function updateStudentScore(
+  studentId: string,
+  delta: number,
+  posDelta?: number,
+  grdDelta?: number,
+  position?: 1 | 2 | 3,
+  grade?: GradeType,
+  direction: 1 | -1 = 1,
+) {
   const { FieldValue } = await import("firebase-admin/firestore");
-  await studentsCol.doc(studentId).set(
-    { total_points: FieldValue.increment(delta) },
-    { merge: true }
-  );
+  const updateData: Record<string, unknown> = {
+    total_points: FieldValue.increment(delta),
+  };
+  if (posDelta !== undefined) {
+    updateData.position_points = FieldValue.increment(posDelta);
+  }
+  if (grdDelta !== undefined) {
+    updateData.grade_points = FieldValue.increment(grdDelta);
+  }
+  if (position) {
+    const posKey = position === 1 ? "first" : position === 2 ? "second" : "third";
+    updateData[`positions_count.${posKey}`] = FieldValue.increment(direction);
+  }
+  if (grade && grade !== "none") {
+    updateData[`grades_count.${grade}`] = FieldValue.increment(direction);
+  }
+
+  await studentsCol.doc(studentId).set(updateData, { merge: true });
 }
 
-async function updateTeamTotals(teamId: string, delta: number) {
+async function updateTeamTotals(
+  teamId: string,
+  delta: number,
+  posDelta?: number,
+  grdDelta?: number,
+  position?: 1 | 2 | 3,
+  grade?: GradeType,
+  direction: 1 | -1 = 1,
+) {
   const { FieldValue } = await import("firebase-admin/firestore");
-  await teamsCol.doc(teamId).set(
-    { total_points: FieldValue.increment(delta) },
-    { merge: true }
-  );
+  const updateData: Record<string, unknown> = {
+    total_points: FieldValue.increment(delta),
+  };
+  if (posDelta !== undefined) {
+    updateData.position_points = FieldValue.increment(posDelta);
+  }
+  if (grdDelta !== undefined) {
+    updateData.grade_points = FieldValue.increment(grdDelta);
+  }
+  if (position) {
+    const posKey = position === 1 ? "first" : position === 2 ? "second" : "third";
+    updateData[`positions_count.${posKey}`] = FieldValue.increment(direction);
+  }
+  if (grade && grade !== "none") {
+    updateData[`grades_count.${grade}`] = FieldValue.increment(direction);
+  }
+
+  await teamsCol.doc(teamId).set(updateData, { merge: true });
 }
 
 export async function resetLiveScores() {

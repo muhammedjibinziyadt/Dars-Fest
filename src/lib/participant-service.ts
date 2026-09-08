@@ -24,6 +24,8 @@ export interface ParticipantProfile {
     result?: {
       position?: 1 | 2 | 3;
       grade?: "A" | "B" | "C" | "none";
+      position_points?: number;
+      grade_points?: number;
       score: number;
       programName: string;
       submittedAt: string;
@@ -137,6 +139,8 @@ export async function getParticipantProfile(
         resultEntry = {
           position: entry.position,
           grade: entry.grade,
+          position_points: entry.position_points ?? entry.score,
+          grade_points: entry.grade_points ?? 0,
           score: entry.score,
         };
       }
@@ -186,10 +190,13 @@ export async function getParticipantProfile(
     ),
     pointsByCategory: {
       position: enrichedRegistrations.reduce(
-        (sum, r) => sum + (r.result?.score || 0),
+        (sum, r) => sum + (r.result?.position_points ?? r.result?.score ?? 0),
         0,
       ),
-      grade: 0,
+      grade: enrichedRegistrations.reduce(
+        (sum, r) => sum + (r.result?.grade_points ?? 0),
+        0,
+      ),
       penalty: enrichedRegistrations.reduce(
         (sum, r) => sum + (r.penalty?.points || 0),
         0,

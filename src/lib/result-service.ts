@@ -1,7 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import {
-  calculateScore,
   getScoringRules,
   updateAssignmentStatus,
   updateLiveScore,
@@ -58,18 +57,32 @@ async function buildEntries(
         throw new Error("Invalid student selected");
       }
       const grade = sanitizeGrade(winner.grade);
+      const posPoints =
+        winner.position === 1
+          ? scoringRules.single.first
+          : winner.position === 2
+            ? scoringRules.single.second
+            : scoringRules.single.third;
+
+      const grdPoints =
+        grade === "A"
+          ? scoringRules.single.gradeA
+          : grade === "B"
+            ? scoringRules.single.gradeB
+            : grade === "C"
+              ? scoringRules.single.gradeC
+              : 0;
+
+      const totalScore = posPoints + grdPoints;
+
       return {
         position: winner.position,
         student_id: student.id,
         team_id: student.team_id,
         grade,
-        score: calculateScore(
-          program.section as "single",
-          program.category as "A" | "B" | "C" | "none",
-          winner.position,
-          grade,
-          scoringRules,
-        ),
+        position_points: posPoints,
+        grade_points: grdPoints,
+        score: totalScore,
       };
     });
   }
@@ -84,17 +97,27 @@ async function buildEntries(
     if (!team) {
       throw new Error("Invalid team selected");
     }
+
+    const posPoints =
+      program.section === "group"
+        ? winner.position === 1
+          ? scoringRules.group.first
+          : winner.position === 2
+            ? scoringRules.group.second
+            : scoringRules.group.third
+        : winner.position === 1
+          ? scoringRules.general.first
+          : winner.position === 2
+            ? scoringRules.general.second
+            : scoringRules.general.third;
+
     return {
       position: winner.position,
       team_id: team.id,
       grade: "none" as const,
-      score: calculateScore(
-        program.section as "group" | "general",
-        "none",
-        winner.position,
-        "none",
-        scoringRules,
-      ),
+      position_points: posPoints,
+      grade_points: 0,
+      score: posPoints,
     };
   });
 }
@@ -102,11 +125,30 @@ async function buildEntries(
 async function applyEntryScores(entries: ResultEntry[], direction: 1 | -1) {
   for (const entry of entries) {
     const delta = entry.score * direction;
+    const posDelta = (entry.position_points ?? entry.score) * direction;
+    const grdDelta = (entry.grade_points ?? 0) * direction;
+
     if (entry.student_id) {
-      await updateStudentScore(entry.student_id, delta);
+      await updateStudentScore(
+        entry.student_id,
+        delta,
+        posDelta,
+        grdDelta,
+        entry.position,
+        entry.grade,
+        direction,
+      );
     }
     if (entry.team_id) {
-      await updateLiveScore(entry.team_id, delta);
+      await updateLiveScore(
+        entry.team_id,
+        delta,
+        posDelta,
+        grdDelta,
+        entry.position,
+        entry.grade,
+        direction,
+      );
     }
   }
 }
