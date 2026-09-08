@@ -1,124 +1,187 @@
-# 🎨 Funoon Fiesta 2.0
+# 🌟 Maerika 2K26 
+### കലായുഗ ഭാവുകം &bull; Arts & Cultural Festival Management Platform
+**Organized by Jawharathul Uloom Suffa Dars**
 
-![Funoon Fiesta Banner](public/img/hero/Fest-logo.webp)
-
-> **A Premier Digital Platform for Managing Islamic Art & Culture Festivals**
-
-**Funoon Fiesta** is a comprehensive, full-stack web application designed to streamline the management of large-scale arts festivals. From real-time scoreboards and jury grading to team registrations and admin controls, this platform digitizes the entire festival experience.
-
-Built with modern web technologies, it ensures a seamless, responsive, and engaging experience for organizers, participants, and the audience.
-
----
-
-## 🚀 Key Features
-
-### 🏆 Live Scoreboard & Results
-- **Real-time Updates**: Scores and rankings update instantly without page refreshes.
-- **Dynamic Leaderboards**: Visualizes team standings with animated charts and progress bars.
-- **Public Results**: detailed result pages for every program with podium highlights.
-- **Poster Generation**: Auto-generate and share beautiful result posters directly from the app.
-
-### 🔐 Secure Portals
-- **Admin Dashboard**: Complete control over teams, students, programs, and scheduling.
-- **Jury Portal**: dedicated interface for judges to grade performances securely.
-- **Team Portal**: Team leaders can manage their rosters and register candidates for events.
-
-### 📱 Modern User Experience
-- **PWA Support**: Installable as a native-like app on mobile devices.
-- **Responsive Design**: Optimized for everything from large projection screens to mobile phones.
-- **Dark Mode**: Sleek, accessible UI with dark mode support.
-- **AI Chatbot**: Integrated AI assistant to answer queries about the festival.
+[![Next.js](https://img.shields.io/badge/Next.js-16.0-black?style=for-the-badge&logo=next.js)](https://nextjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue?style=for-the-badge&logo=typescript)](https://www.typescriptlang.org/)
+[![Firebase](https://img.shields.io/badge/Firebase-Firestore-orange?style=for-the-badge&logo=firebase)](https://firebase.google.com/)
+[![Resend](https://img.shields.io/badge/Resend-Email_API-black?style=for-the-badge&logo=resend)](https://resend.com/)
+[![Gemini AI](https://img.shields.io/badge/Google_Gemini-2.5_Flash-8E75B2?style=for-the-badge&logo=google)](https://ai.google.dev/)
+[![PWA](https://img.shields.io/badge/PWA-Ready-green?style=for-the-badge&logo=pwa)](https://web.dev/progressive-web-apps/)
 
 ---
 
-## 🛠️ Tech Stack
+## 📖 Overview
 
-*   **Framework**: [Next.js 14](https://nextjs.org/) (App Router)
-*   **Language**: [TypeScript](https://www.typescriptlang.org/)
-*   **Styling**: [Tailwind CSS](https://tailwindcss.com/) + [shadcn/ui](https://ui.shadcn.com/)
-*   **Database**: [MongoDB](https://www.mongodb.com/) (via Mongoose)
-*   **Real-time**: [Pusher](https://pusher.com/)
-*   **Animations**: [Framer Motion](https://www.framer.com/motion/)
-*   **PDF Generation**: [jsPDF](https://github.com/parallax/jsPDF)
+**Maerika 2K26** is an enterprise-grade, full-stack festival automation platform built for managing large-scale Arts and Cultural Competitions. The platform unifies real-time scoring, jury evaluations, team squad management, automated participant verification, live public scoreboards, interactive audience features, and transactional email communications into a single, high-performance web application.
 
 ---
 
-## 🏁 Getting Started
+## 🏛️ Dedicated Portals & Architecture
 
-Follow these steps to set up the project locally.
+```mermaid
+graph TD
+    A[Public Portal / Audience] -->|Live Scores & Standings| S[Scoreboard & Results]
+    A -->|Interactive| P[Polls, Predictions & AI Chatbot]
+    B[Team Leader Portal] -->|Roster & Entries| T[Student & Program Registration]
+    C[Jury Deck] -->|Live Judging| J[Program Evaluation & Scoring]
+    D[Admin Command Center] -->|Approval & Controls| M[Fest Oversight & Publishing]
+    M -->|Email Dispatch via Resend| E[Automated Email Notification Engine]
+    M -->|Reports & PDF Exports| R[Printable Reports & Scorecards]
+```
+
+### 1. 👑 Admin Command Center (`/admin`)
+- **Fest Dashboard**: Real-time statistical overview of teams, participants, programs, and approved results.
+- **Team Provisioning**: Provision squad accounts and automatically dispatch portal credentials to team leaders via Resend.
+- **Program & Registration Oversight**: Manage stage & off-stage events with category rules, section filters, and strict candidate entry limit validation.
+- **Jury Management & Assignments**: Create jury profiles and assign judges to specific competitions.
+- **Results Review & Publishing**: Multi-stage approval workflow (Pending ➔ Approved ➔ Live Published) with automated squad point recalculations.
+- **Reports & PDF Exports**: High-resolution printable reports, candidate rosters, scoreboard summaries, and exportable data tables.
+- **Interactive Management**: Admin controls for community polls, audience predictions evaluation, and festival schedules.
+
+### 2. ⚖️ Jury Scoring Deck (`/jury`)
+- **Secure Evaluation Interface**: Judges sign in with credentials to access assigned programs.
+- **Chest Number Grading**: Enter candidate marks with instant automated grade calculation (Grade A/B/C/none) and position allocation.
+- **Approval Dispatch**: One-click submission directly into the Admin review queue.
+
+### 3. 🛡️ Team Leader Squad Portal (`/team`)
+- **Squad Dashboard**: Overview of team points, enrolled participants, and registered programs.
+- **Participant Registration**: Register students with unique chest numbers. Automated notification emails sent upon enrollment.
+- **Program Entry Submission**: Submit candidate entries within active registration time windows with real-time rule validation.
+- **Candidate Replacement Requests**: Submit replacement requests with administrative approval tracking.
+
+### 4. 🌐 Public Audience Portal (`/`)
+- **Live Scoreboard**: Real-time overall standings, top team champions, and category-wise points tally.
+- **Program Results**: Instant access to detailed winners lists with podium highlights, candidate chest numbers, grades, and points.
+- **Participant Search & QR Passports**: Lookup candidate profiles, registered events, and individual scores with downloadable digital badges and QR codes.
+- **Audience Polls & Predictions**: Live voting polls with animated outcome charts and event predictions with an audience leaderboard.
+- **AI Chatbot**: Festival assistant powered by Google Gemini AI capable of answering fest inquiries in English and Malayalam.
+
+---
+
+## 📧 Automated Resend Email Engine
+
+Integrated with **Resend Transactional Email API** using the verified custom domain `maerika2k26.jawharathululoomsuffadars.online`:
+- 🔐 **Team Welcome & Portal Credentials**: Automated credentials delivery to new team leaders.
+- ✅ **Student Registration Confirmations**: Live receipts when participants are added to squads.
+- 📋 **Program Entry Receipts**: Official confirmation of competition entries.
+- 🏆 **Result Announcement Notifications**: Branded placement notifications with squad highlights sent immediately upon result approval.
+- 📱 **Responsive Design**: All email templates feature adaptive responsive layouts optimized for mobile inboxes (Gmail, Outlook, Apple Mail) and desktop.
+
+---
+
+## 🛠️ Technology Stack
+
+| Layer | Technology |
+| :--- | :--- |
+| **Framework** | [Next.js 16](https://nextjs.org/) (App Router, Server Components & Server Actions) |
+| **Language** | [TypeScript](https://www.typescriptlang.org/) |
+| **Styling** | Vanilla CSS Design Tokens + [Tailwind CSS](https://tailwindcss.com/) + Glassmorphism |
+| **Database** | [Google Cloud Firestore](https://firebase.google.com/docs/firestore) (Firebase Admin SDK & Web Client) |
+| **Authentication** | [Firebase Auth](https://firebase.google.com/docs/auth) & JWT Session Tokens |
+| **Email Delivery** | [Resend](https://resend.com/) with Verified Custom Domain |
+| **Artificial Intelligence** | [Google Gemini](https://ai.google.dev/) (`@google/generative-ai`) |
+| **Offline & Mobile** | Progressive Web App (PWA) with Service Worker Caching & Offline Fallback |
+| **Icons & UI** | [Lucide React](https://lucide.dev/) |
+
+---
+
+## 🚀 Getting Started
 
 ### Prerequisites
-- Node.js (v18+)
-- MongoDB (Local or Atlas)
+- Node.js (v18.17 or higher)
+- npm or pnpm or yarn
+- Firebase Project with Firestore enabled
+- Resend Account with a verified domain (or API key)
 
-### Installation
+### Local Installation
 
-1.  **Clone the repository**
-    ```bash
-    git clone https://github.com/mishabvibes/Funoon-Fiesta2.0.git
-    cd Funoon-Fiesta2.0
-    ```
+1. **Clone the repository**:
+   ```bash
+   git clone https://github.com/muhammedjibinziyadt/Dars-Fest.git
+   cd dars-fest
+   ```
 
-2.  **Install dependencies**
-    ```bash
-    npm install
-    ```
+2. **Install dependencies**:
+   ```bash
+   npm install
+   ```
 
-3.  **Configure Environment**
-    Create a `.env.local` file in the root directory:
-    ```env
-    MONGODB_URI=mongodb://127.0.0.1:27017/fest_app
-    NEXT_PUBLIC_APP_URL=http://localhost:3000
-    
-    # Pusher Credentials (Optional for local dev)
-    PUSHER_APP_ID=your_app_id
-    PUSHER_KEY=your_key
-    PUSHER_SECRET=your_secret
-    PUSHER_CLUSTER=ap2
-    ```
+3. **Configure Environment Variables**:
+   Create a `.env` file in the project root:
+   ```env
+   # Base Application URLs
+   NEXT_PUBLIC_APP_URL=http://localhost:3000
+   NEXT_PUBLIC_BASE_URL=http://localhost:3000
 
-4.  **Run the development server**
-    ```bash
-    npm run dev
-    ```
+   # Authentication & Security
+   JWT_SECRET=your_jwt_secret_key_here
 
-5.  **Open the app**
-    Visit `http://localhost:3000` in your browser.
+   # Google Gemini AI Key
+   GEMINI_API_KEY=your_gemini_api_key_here
+
+   # Firebase Public Web Configuration
+   NEXT_PUBLIC_FIREBASE_API_KEY=your_firebase_api_key
+   NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
+   NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
+   NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your_project.firebasestorage.app
+   NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
+   NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
+
+   # Firebase Admin Service Account (Server-side)
+   FIREBASE_PROJECT_ID=your_project_id
+   FIREBASE_CLIENT_EMAIL=firebase-adminsdk@your_project.iam.gserviceaccount.com
+   FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
+
+   # Resend Transactional Email
+   RESEND_API_KEY=re_your_resend_api_key
+   RESEND_FROM_EMAIL=
+   RESEND_REPLY_TO=
+   ```
+
+4. **Run the local development server**:
+   ```bash
+   npm run dev
+   ```
+
+5. **Access the application**:
+   - Public Fest Portal: `http://localhost:3000`
+   - Admin Command Center: `http://localhost:3000/admin`
+   - Jury Deck: `http://localhost:3000/jury/login`
+   - Team Leader Portal: `http://localhost:3000/team/login`
 
 ---
 
-## 🔑 Default Credentials
+## 🌐 Deploying to Vercel
 
-Use these credentials to access the various portals in development mode:
+1. Push your repository to GitHub.
+2. Import the project in [Vercel](https://vercel.com).
+3. In **Settings ➔ Environment Variables**, add the environment variables listed in the `.env` section above.
+4. Deploy the project. The application will automatically optimize builds and configure serverless functions.
 
-| Role | Username | Password |
+---
+
+## 📜 Available Scripts
+
+| Script | Command | Purpose |
 | :--- | :--- | :--- |
-| **Admin** | Managed in Firebase Auth | Configured in Firebase Console |
-| **Jury** | `jury-anika` | `anika@jury` |
-| **Team (Aurora)** | `Team Aurora` | `aurora@123` |
-
-> **Note**: Admin authentication is handled exclusively through Firebase Authentication. See the `teams` collection for other team credentials.
-
----
-
-## 🤝 Contribution
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-1.  Fork the project
-2.  Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3.  Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4.  Push to the branch (`git push origin feature/AmazingFeature`)
-5.  Open a Pull Request
+| **Dev** | `npm run dev` | Starts the Next.js local development server with hot-reloading |
+| **Build** | `npm run build` | Builds the production bundle with Webpack, PWA, and static route optimization |
+| **Start** | `npm start` | Runs the compiled production server |
+| **Lint** | `npm run lint` | Checks codebase for linting issues |
+| **PWA Icons** | `npm run generate-icons` | Generates all PWA icons across standard sizes |
 
 ---
 
-## 📄 License
+## 🔒 Security & Privacy Practices
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+- **Zero Client Leakage**: Sensitive environment variables (`FIREBASE_PRIVATE_KEY`, `RESEND_API_KEY`, `JWT_SECRET`) are strictly scoped to server-side executions and never bundled into client assets.
+- **Role-Based Access Control**: Route handlers and server actions are guarded with cryptographic session verification.
+- **Input Sanitization**: Database inputs and chest numbers are strictly sanitized and deduplicated before committing to Firestore.
 
 ---
 
 <div align="center">
-  <p>Made with ❤️ for Art & Culture</p>
+  <p><strong>Maerika 2K26 &bull; കലായുഗ ഭാവുകം</strong></p>
+  <p>&copy; 2026 Jawharathul Uloom Suffa Dars Fest Committee. All rights reserved.</p>
 </div>
