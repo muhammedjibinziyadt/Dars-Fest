@@ -102,6 +102,7 @@ export async function getPortalStudents(): Promise<PortalStudent[]> {
     teamId: student.team_id,
     teamName: teamMap.get(student.team_id) ?? "Unknown",
     score: student.total_points ?? 0,
+    avatar: student.avatar,
   }));
 }
 
@@ -110,6 +111,7 @@ export async function upsertPortalStudent(input: {
   name: string;
   chestNumber: string;
   teamId: string;
+  avatar?: string;
 }) {
   const chestNumber = input.chestNumber.trim().toUpperCase();
 
@@ -125,11 +127,15 @@ export async function upsertPortalStudent(input: {
   const ref = studentsCol.doc(studentId);
   const doc = await ref.get();
 
-  const updateData: any = {
+  const updateData: Record<string, unknown> = {
     name: input.name,
     chest_no: chestNumber,
     team_id: input.teamId,
   };
+
+  if (input.avatar) {
+    updateData.avatar = input.avatar;
+  }
 
   if (!doc.exists) {
     updateData.total_points = 0;

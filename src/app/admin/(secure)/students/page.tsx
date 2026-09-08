@@ -15,6 +15,7 @@ import {
 } from "@/lib/data";
 import { getProgramRegistrations } from "@/lib/team-data";
 import { redirectWithToast } from "@/lib/actions";
+import { uploadStudentPhoto } from "@/lib/upload";
 
 function generateNextChestNumber(teamName: string, existingStudents: Array<{ chest_no: string }>): string {
   const prefix = teamName.slice(0, 2).toUpperCase();
@@ -45,6 +46,7 @@ const studentSchema = z.object({
   name: z.string().min(2),
   team_id: z.string().min(2),
   chest_no: z.string().optional(),
+  avatar: z.string().optional(),
 });
 
 const csvStudentSchema = z.object({
@@ -52,6 +54,7 @@ const csvStudentSchema = z.object({
   team_id: z.string().min(2).optional(),
   team_name: z.string().min(2).optional(),
   chest_no: z.string().optional(),
+  avatar: z.string().optional(),
 }).refine((data) => data.team_id || data.team_name, {
   message: "Either team_id or team_name is required",
   path: ["team_id"],
@@ -69,6 +72,12 @@ async function upsertStudent(formData: FormData, mode: "create" | "update") {
   }
   const payload = parsed.data;
 
+  const photoFile = formData.get("photo");
+  let avatar = payload.avatar;
+  if (photoFile instanceof File && photoFile.size > 0 && photoFile.name) {
+    avatar = await uploadStudentPhoto(photoFile);
+  }
+
   let chest_no = payload.chest_no;
   
   if (mode === "create" && !chest_no) {
@@ -85,6 +94,9 @@ async function upsertStudent(formData: FormData, mode: "create" | "update") {
       throw new Error("Student not found");
     }
     chest_no = current.chest_no;
+    if (!avatar) {
+      avatar = current.avatar;
+    }
   }
 
   if (mode === "create") {
@@ -92,6 +104,7 @@ async function upsertStudent(formData: FormData, mode: "create" | "update") {
       name: payload.name,
       team_id: payload.team_id,
       chest_no: chest_no!,
+      ...(avatar ? { avatar } : {}),
     });
   } else {
     if (!payload.id) throw new Error("Student ID missing");
@@ -99,6 +112,7 @@ async function upsertStudent(formData: FormData, mode: "create" | "update") {
       name: payload.name,
       team_id: payload.team_id,
       chest_no: chest_no!,
+      ...(avatar ? { avatar } : {}),
     });
   }
 
@@ -205,15 +219,30 @@ function parseStudentCsv(content: string) {
       throw new Error(`Missing "${column}" column in CSV header.`);
     }
   }
+
+  // Check for optional columns
+  const chestNoIndex = headers.indexOf("chest_no");
+  const avatarIndex = headers.indexOf("avatar") !== -1
+    ? headers.indexOf("avatar")
+    : headers.indexOf("photo") !== -1
+    ? headers.indexOf("photo")
+    : headers.indexOf("image");
+
   const indexes = requiredHeaders.map((column) => headers.indexOf(column));
   return rows.map((row, index) => {
     const cells = row.split(",").map((cell) => cell.trim());
     if (cells.length < headers.length) {
       throw new Error(`Row ${index + 2} is incomplete.`);
     }
-    const data = Object.fromEntries(
+    const data: Record<string, string> = Object.fromEntries(
       requiredHeaders.map((column, idx) => [column, cells[indexes[idx]] ?? ""]),
     );
+    if (chestNoIndex !== -1 && cells[chestNoIndex]) {
+      data.chest_no = cells[chestNoIndex];
+    }
+    if (avatarIndex !== -1 && cells[avatarIndex]) {
+      data.avatar = cells[avatarIndex];
+    }
     return { row: index + 2, data };
   });
 }
@@ -319,6 +348,7 @@ async function importStudentsAction(formData: FormData) {
         name: parsed.data.name,
         team_id: resolvedTeamId,
         chest_no,
+        ...(parsed.data.avatar ? { avatar: parsed.data.avatar } : {}),
       });
       
       // Add to existing set to prevent duplicates in subsequent rows of the same import
@@ -380,6 +410,17 @@ export default async function StudentsPage() {
             options={teams.map((team) => ({ value: team.id, label: team.name }))}
             placeholder="Select team"
           />
+          <div className="md:col-span-2">
+            <label className="text-xs font-semibold uppercase tracking-wider text-white/70 block mb-1.5">
+              Student Photo (Optional)
+            </label>
+            <input
+              type="file"
+              name="photo"
+              accept="image/*"
+              className="w-full text-xs text-white/70 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-white/10 file:text-white hover:file:bg-white/15 file:cursor-pointer cursor-pointer rounded-2xl border border-white/10 bg-white/5 p-2"
+            />
+          </div>
           <Button type="submit" className="md:col-span-2">
             Save Student
           </Button>

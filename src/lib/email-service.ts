@@ -17,7 +17,7 @@ export interface SendTeamWelcomeEmailOptions {
  */
 export async function sendTeamWelcomeEmail(
   options: SendTeamWelcomeEmailOptions
-): Promise<{ success: boolean; error?: string }> {
+): Promise<{ success: boolean; error?: string; note?: string }> {
   const { teamName, leaderName, leaderEmail, password, portalUrl } = options;
 
   if (!leaderEmail || !leaderEmail.includes("@")) {

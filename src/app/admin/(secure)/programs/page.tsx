@@ -25,7 +25,7 @@ const programSchema = z.object({
   name: z.string().min(2, "Program name is required"),
   section: z.enum(["single", "group", "general"]),
   stage: z.enum(["true", "false"]),
-  category: z.enum(["A", "B", "C", "none"]),
+  category: z.enum(["A", "B", "C", "none"]).default("none"),
   candidateLimit: z
     .coerce.number()
     .min(1, "candidateLimit must be at least 1")
@@ -44,7 +44,7 @@ const csvRowSchema = z.object({
     })
     .transform((value) => value === "true")
     .pipe(z.boolean()),
-  category: z.enum(["A", "B", "C", "none"]),
+  category: z.enum(["A", "B", "C", "none"]).default("none").optional(),
   candidate_limit: z
     .coerce.number()
     .min(1, "candidate_limit must be at least 1")
@@ -68,7 +68,7 @@ async function mutateProgram(
     name: nameValue ? String(nameValue).trim() : "",
     section: sectionValue ? String(sectionValue) : "single",
     stage: stageValue ? String(stageValue) : "true",
-    category: categoryValue ? String(categoryValue) : "A",
+    category: categoryValue ? String(categoryValue) : "none",
     candidateLimit: candidateLimitValue ? String(candidateLimitValue) : "1",
   });
 
@@ -267,21 +267,25 @@ function parseCsv(content: string) {
   const headers = headerLine
     .split(",")
     .map((header) => header.trim().toLowerCase());
-  const requiredHeaders = ["name", "section", "stage", "category", "candidate_limit"];
+  const requiredHeaders = ["name", "section", "stage", "candidate_limit"];
   for (const column of requiredHeaders) {
     if (!headers.includes(column)) {
       throw new Error(`Missing "${column}" column in CSV header.`);
     }
   }
-  const indices = requiredHeaders.map((column) => headers.indexOf(column));
+  const allHeaders = [...requiredHeaders, ...(headers.includes("category") ? ["category"] : [])];
+  const indices = allHeaders.map((column) => headers.indexOf(column));
   return rows.map((row, index) => {
     const cells = row.split(",").map((cell) => cell.trim());
     if (cells.length < headers.length) {
       throw new Error(`Row ${index + 2} is incomplete.`);
     }
     const data = Object.fromEntries(
-      requiredHeaders.map((column, idx) => [column, cells[indices[idx]] ?? ""]),
+      allHeaders.map((column, idx) => [column, cells[indices[idx]] ?? ""]),
     );
+    if (!data.category) {
+      data.category = "none";
+    }
     return { row: index + 2, data };
   });
 }
@@ -315,7 +319,7 @@ async function importProgramsAction(formData: FormData) {
         name: parsed.data.name,
         section: parsed.data.section,
         stage: parsed.data.stage,
-        category: parsed.data.category,
+        category: parsed.data.category ?? "none",
         candidateLimit: parsed.data.candidate_limit,
       });
       successCount++;
@@ -354,7 +358,7 @@ export default async function ProgramsPage() {
       <Card className="h-full">
         <CardTitle>Create Program</CardTitle>
         <CardDescription className="mt-2">
-          Add programs with section, stage and category metadata.
+          Add programs with section and stage metadata.
         </CardDescription>
         <form
           action={createProgramAction}
@@ -371,17 +375,6 @@ export default async function ProgramsPage() {
               { value: "general", label: "General" },
             ]}
             placeholder="Select section"
-          />
-          <SearchSelect
-            name="category"
-            defaultValue="A"
-            options={[
-              { value: "A", label: "Category A" },
-              { value: "B", label: "Category B" },
-              { value: "C", label: "Category C" },
-              { value: "none", label: "None" },
-            ]}
-            placeholder="Select category"
           />
           <SearchSelect
             name="stage"
@@ -408,7 +401,7 @@ export default async function ProgramsPage() {
       <Card className="h-full">
         <CardTitle>Bulk Import (CSV)</CardTitle>
         <CardDescription className="mt-2">
-          Required columns: <code>name, section, stage, category, candidate_limit</code>
+          Required columns: <code>name, section, stage, candidate_limit</code>
         </CardDescription>
         <form
           action={importProgramsAction}

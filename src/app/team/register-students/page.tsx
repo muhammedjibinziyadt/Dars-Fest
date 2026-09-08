@@ -13,7 +13,9 @@ import {
   isRegistrationOpen,
 } from "@/lib/team-data";
 
-function redirectWithMessage(message: string, type: "error" | "success" = "error") {
+import { uploadStudentPhoto } from "@/lib/upload";
+
+function redirectWithMessage(message: string, type: "error" | "success" = "error"): never {
   const params = new URLSearchParams({ [type]: message });
   redirect(`/team/register-students?${params.toString()}`);
 }
@@ -46,14 +48,14 @@ async function createStudentAction(formData: FormData) {
   "use server";
   const team = await getCurrentTeam();
   if (!team) redirect("/team/login");
-  
+
   const isOpen = await isRegistrationOpen();
   if (!isOpen) {
     redirectWithMessage("Registration window is closed. You cannot add students at this time.");
   }
 
   const name = String(formData.get("name") ?? "").trim();
-  
+
   if (!name) {
     redirectWithMessage("Student name is required.");
   }
@@ -72,11 +74,19 @@ async function createStudentAction(formData: FormData) {
   ) {
     redirectWithMessage("Student name already exists for this team.");
   }
+
+  const photoFile = formData.get("photo");
+  let avatar: string | undefined;
+  if (photoFile instanceof File && photoFile.size > 0 && photoFile.name) {
+    avatar = await uploadStudentPhoto(photoFile);
+  }
+
   try {
     await upsertPortalStudent({
       name,
       chestNumber,
       teamId: team.id,
+      ...(avatar ? { avatar } : {}),
     });
   } catch (error) {
     redirectWithMessage((error as Error).message);
@@ -89,12 +99,12 @@ async function updateStudentAction(formData: FormData) {
   "use server";
   const team = await getCurrentTeam();
   if (!team) redirect("/team/login");
-  
+
   const isOpen = await isRegistrationOpen();
   if (!isOpen) {
     redirectWithMessage("Registration window is closed. You cannot edit students at this time.");
   }
-  
+
   const studentId = String(formData.get("studentId") ?? "");
   const name = String(formData.get("name") ?? "").trim();
   const chestNumber = String(formData.get("chestNumber") ?? "").trim().toUpperCase();
@@ -104,16 +114,26 @@ async function updateStudentAction(formData: FormData) {
   const current = students.find((student) => student.id === studentId);
   if (!current || current.teamId !== team.id) {
     redirectWithMessage("You can only edit your own students.");
+    return;
   }
   if (students.some((student) => student.id !== studentId && student.chestNumber === chestNumber)) {
     redirectWithMessage("Chest number already registered.");
+    return;
   }
+
+  const photoFile = formData.get("photo");
+  let avatar = current.avatar;
+  if (photoFile instanceof File && photoFile.size > 0 && photoFile.name) {
+    avatar = await uploadStudentPhoto(photoFile);
+  }
+
   try {
     await upsertPortalStudent({
       id: studentId,
       name,
       chestNumber,
       teamId: team.id,
+      ...(avatar ? { avatar } : {}),
     });
   } catch (error) {
     redirectWithMessage((error as Error).message);
@@ -126,12 +146,12 @@ async function deleteStudentAction(formData: FormData) {
   "use server";
   const team = await getCurrentTeam();
   if (!team) redirect("/team/login");
-  
+
   const isOpen = await isRegistrationOpen();
   if (!isOpen) {
     redirectWithMessage("Registration window is closed. You cannot delete students at this time.");
   }
-  
+
   const studentId = String(formData.get("studentId") ?? "");
   const students = await getPortalStudents();
   const current = students.find((student) => student.id === studentId);
@@ -213,16 +233,29 @@ export default async function RegisterStudentsPage({
         {isOpen ? (
           <>
             <ChestNumberPreview teamName={team.teamName} teamStudents={teamStudents} />
-            <form action={createStudentAction} className="mt-4 grid gap-3 sm:gap-4 sm:grid-cols-[1fr_auto]">
-              <Input 
-                name="name" 
-                placeholder="Enter student name" 
-                required 
-                className="bg-white/10 border-white/20 text-white placeholder:text-white/50"
-              />
-              <Button type="submit" className="w-full sm:w-auto">
-                Add Student
-              </Button>
+            <form action={createStudentAction} className="mt-4 space-y-3">
+              <div className="grid gap-3 sm:gap-4 sm:grid-cols-[1fr_auto]">
+                <Input
+                  name="name"
+                  placeholder="Enter student name"
+                  required
+                  className="bg-white/10 border-white/20 text-white placeholder:text-white/50"
+                />
+                <Button type="submit" className="w-full sm:w-auto">
+                  Add Student
+                </Button>
+              </div>
+              <div>
+                <label className="text-xs text-white/60 mb-1.5 block">
+                  Student Photo (Optional)
+                </label>
+                <input
+                  type="file"
+                  name="photo"
+                  accept="image/*"
+                  className="w-full text-xs text-white/70 file:mr-3 file:py-2 file:px-3.5 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-white/10 file:text-white hover:file:bg-white/15 file:cursor-pointer cursor-pointer rounded-xl border border-white/10 bg-white/5 p-1.5"
+                />
+              </div>
             </form>
           </>
         ) : (

@@ -100,6 +100,7 @@ export interface PortalStudent {
   teamId: string;
   teamName: string;
   score: number;
+  avatar?: string;
 }
 
 export interface RegistrationSchedule {

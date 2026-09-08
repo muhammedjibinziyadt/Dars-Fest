@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import type { Program, ProgramRegistration, PortalStudent } from "@/lib/types";
-import { Card, CardDescription, CardTitle } from "@/components/ui/card";
+import { Card, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -199,9 +199,20 @@ function ProgramRegistrationCard({
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <CardTitle>{program.name}</CardTitle>
-          <CardDescription className="mt-1 text-white/70">
-            Section: {program.section} · Category: {program.category}
-          </CardDescription>
+          <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
+            <span className="inline-flex items-center rounded-lg border border-white/15 bg-white/10 px-2.5 py-0.5 font-medium capitalize text-white/90">
+              {program.section}
+            </span>
+            <span
+              className={`inline-flex items-center rounded-lg border px-2.5 py-0.5 font-medium ${
+                program.stage
+                  ? "border-amber-400/30 bg-amber-400/10 text-amber-300"
+                  : "border-sky-400/30 bg-sky-400/10 text-sky-300"
+              }`}
+            >
+              {program.stage ? "On-Stage" : "Off-Stage"}
+            </span>
+          </div>
         </div>
         <Badge tone={limitReached ? "pink" : "emerald"}>
           Registered {registrations.length} / {program.candidateLimit}
@@ -459,55 +470,136 @@ export function TeamProgramRegister({
   teamStudents,
 }: Props) {
   const [query, setQuery] = useState("");
+  const [sectionFilter, setSectionFilter] = useState<"all" | "single" | "group" | "general">("all");
+  const [stageFilter, setStageFilter] = useState<"all" | "on-stage" | "off-stage">("all");
 
   const filteredPrograms = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return programs;
-    return programs.filter((program) => program.name.toLowerCase().includes(q));
-  }, [programs, query]);
+    return programs.filter((program) => {
+      if (q && !program.name.toLowerCase().includes(q)) return false;
+      if (sectionFilter !== "all" && program.section !== sectionFilter) return false;
+      if (stageFilter !== "all") {
+        if (stageFilter === "on-stage" && !program.stage) return false;
+        if (stageFilter === "off-stage" && program.stage) return false;
+      }
+      return true;
+    });
+  }, [programs, query, sectionFilter, stageFilter]);
 
   return (
     <div className="space-y-4">
-      <div className="rounded-3xl border border-white/10 bg-white/5 p-4 text-white">
-        <p className="text-sm text-white/70">
-          Registration window: {isOpen ? "Open" : "Closed"} (controls {isOpen ? "enabled" : "disabled"})
-        </p>
+      <div className="space-y-4 rounded-3xl border border-white/10 bg-white/5 p-4 text-white">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="text-sm text-white/70">
+            Registration window:{" "}
+            <span className={isOpen ? "font-semibold text-emerald-400" : "font-semibold text-red-400"}>
+              {isOpen ? "Open" : "Closed"}
+            </span>{" "}
+            (controls {isOpen ? "enabled" : "disabled"})
+          </p>
+          <span className="text-xs text-white/50">
+            Showing {filteredPrograms.length} of {programs.length} programs
+          </span>
+        </div>
+
         <Input
           value={query}
           onChange={(event) => setQuery(event.target.value)}
           placeholder="Search programs..."
-          className="mt-3 bg-slate-900/40 text-white placeholder:text-white/50"
+          className="bg-slate-900/40 text-white placeholder:text-white/50"
         />
+
+        {/* Section & Stage Filters */}
+        <div className="flex flex-wrap items-center gap-3 pt-1 border-t border-white/10">
+          {/* Section Filter */}
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="text-xs font-medium uppercase tracking-wider text-white/50 mr-1">Section:</span>
+            {(
+              [
+                { label: "All", value: "all" },
+                { label: "Single", value: "single" },
+                { label: "Group", value: "group" },
+                { label: "General", value: "general" },
+              ] as const
+            ).map((opt) => (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => setSectionFilter(opt.value)}
+                className={`rounded-xl px-3 py-1 text-xs font-medium transition-all ${
+                  sectionFilter === opt.value
+                    ? "bg-fuchsia-600 text-white shadow-sm"
+                    : "border border-white/10 bg-white/5 text-white/70 hover:bg-white/10 hover:text-white"
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="h-4 w-px bg-white/10 hidden sm:block" />
+
+          {/* Stage Filter */}
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="text-xs font-medium uppercase tracking-wider text-white/50 mr-1">Stage:</span>
+            {(
+              [
+                { label: "All", value: "all" },
+                { label: "On-Stage", value: "on-stage" },
+                { label: "Off-Stage", value: "off-stage" },
+              ] as const
+            ).map((opt) => (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => setStageFilter(opt.value)}
+                className={`rounded-xl px-3 py-1 text-xs font-medium transition-all ${
+                  stageFilter === opt.value
+                    ? "bg-amber-500 text-slate-950 font-semibold shadow-sm"
+                    : "border border-white/10 bg-white/5 text-white/70 hover:bg-white/10 hover:text-white"
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
 
-      {filteredPrograms.map((program) => {
-        const registrations = teamRegistrations.filter(
-          (registration) => registration.programId === program.id,
-        );
-        const availableStudents = teamStudents.filter(
-          (student) => !registrations.some((registration) => registration.studentId === student.id),
-        );
-        const limitReached = registrations.length >= program.candidateLimit;
-        const isGroupOrGeneral = program.section === "group" || program.section === "general";
-        const remainingSlots = program.candidateLimit - registrations.length;
+      {filteredPrograms.length === 0 ? (
+        <div className="rounded-2xl border border-white/10 bg-white/5 p-8 text-center text-sm text-white/60">
+          No programs match the selected filters.
+        </div>
+      ) : (
+        filteredPrograms.map((program) => {
+          const registrations = teamRegistrations.filter(
+            (registration) => registration.programId === program.id,
+          );
+          const availableStudents = teamStudents.filter(
+            (student) => !registrations.some((registration) => registration.studentId === student.id),
+          );
+          const limitReached = registrations.length >= program.candidateLimit;
+          const isGroupOrGeneral = program.section === "group" || program.section === "general";
+          const remainingSlots = program.candidateLimit - registrations.length;
 
-        return (
-          <ProgramRegistrationCard
-            key={program.id}
-            program={program}
-            allPrograms={allPrograms}
-            registrations={registrations}
-            availableStudents={availableStudents}
-            limitReached={limitReached}
-            remainingSlots={remainingSlots}
-            isGroupOrGeneral={isGroupOrGeneral}
-            isOpen={isOpen}
-            registerAction={registerAction}
-            registerMultipleAction={registerMultipleAction}
-            removeAction={removeAction}
-          />
-        );
-      })}
+          return (
+            <ProgramRegistrationCard
+              key={program.id}
+              program={program}
+              allPrograms={allPrograms}
+              registrations={registrations}
+              availableStudents={availableStudents}
+              limitReached={limitReached}
+              remainingSlots={remainingSlots}
+              isGroupOrGeneral={isGroupOrGeneral}
+              isOpen={isOpen}
+              registerAction={registerAction}
+              registerMultipleAction={registerMultipleAction}
+              removeAction={removeAction}
+            />
+          );
+        })
+      )}
     </div>
   );
 }

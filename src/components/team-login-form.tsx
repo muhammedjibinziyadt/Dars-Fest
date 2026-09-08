@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useFormState, useFormStatus } from "react-dom";
+import { useState, useActionState } from "react";
+import { useFormStatus } from "react-dom";
 import { Users, Lock, Eye, EyeOff, ArrowRight, Loader2, AlertCircle } from "lucide-react";
 
 interface LoginState {
@@ -36,7 +36,7 @@ export function TeamLoginForm({
 }: {
   action: (state: LoginState, formData: FormData) => Promise<LoginState>;
 }) {
-  const [state, formAction] = useFormState(action, {});
+  const [state, formAction] = useActionState(action, {});
   const [showPassword, setShowPassword] = useState(false);
 
   return (

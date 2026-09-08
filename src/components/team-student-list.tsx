@@ -29,6 +29,7 @@ export function TeamStudentList({ students, updateAction, deleteAction, isRegist
   const [viewingId, setViewingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
   const [editChestNumber, setEditChestNumber] = useState("");
+  const [editPhoto, setEditPhoto] = useState<File | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
 
   // Filter students based on search query
@@ -50,12 +51,14 @@ export function TeamStudentList({ students, updateAction, deleteAction, isRegist
     setEditingId(student.id);
     setEditName(student.name);
     setEditChestNumber(student.chestNumber);
+    setEditPhoto(null);
   };
 
   const handleCancel = () => {
     setEditingId(null);
     setEditName("");
     setEditChestNumber("");
+    setEditPhoto(null);
   };
 
   const handleSave = async (studentId: string) => {
@@ -63,10 +66,14 @@ export function TeamStudentList({ students, updateAction, deleteAction, isRegist
     formData.append("studentId", studentId);
     formData.append("name", editName.trim());
     formData.append("chestNumber", editChestNumber.trim().toUpperCase());
+    if (editPhoto) {
+      formData.append("photo", editPhoto);
+    }
     await updateAction(formData);
     setEditingId(null);
     setEditName("");
     setEditChestNumber("");
+    setEditPhoto(null);
   };
 
   const handleDelete = async (studentId: string) => {
@@ -181,6 +188,15 @@ export function TeamStudentList({ students, updateAction, deleteAction, isRegist
                       maxLength={10}
                     />
                   </div>
+                  <div className="sm:col-span-2">
+                    <label className="text-xs text-white/60 mb-1.5 block">Update Photo (Optional)</label>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => setEditPhoto(e.target.files?.[0] ?? null)}
+                      className="w-full text-xs text-white/70 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-white/10 file:text-white hover:file:bg-white/15 file:cursor-pointer cursor-pointer rounded-xl border border-white/10 bg-white/5 p-1.5"
+                    />
+                  </div>
                 </div>
                 <div className="flex gap-2">
                   <Button
@@ -205,8 +221,16 @@ export function TeamStudentList({ students, updateAction, deleteAction, isRegist
               // View Mode
               <div className="flex items-center justify-between gap-4">
                 <div className="flex items-center gap-4 flex-1 min-w-0">
-                  <div className="rounded-full bg-gradient-to-br from-cyan-500/20 to-blue-500/20 p-2.5 shrink-0">
-                    <User className="h-5 w-5 text-cyan-400" />
+                  <div className="relative w-11 h-11 shrink-0 rounded-full overflow-hidden border border-white/20 bg-gradient-to-br from-fuchsia-500/20 to-cyan-500/20 flex items-center justify-center">
+                    {student.avatar ? (
+                      <img
+                        src={student.avatar}
+                        alt={student.name}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <User className="h-5 w-5 text-cyan-400" />
+                    )}
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-white truncate">{student.name}</p>
@@ -254,8 +278,27 @@ export function TeamStudentList({ students, updateAction, deleteAction, isRegist
 
             {/* View Details Panel */}
             {isViewing && !isEditing && (
-              <div className="mt-4 pt-4 border-t border-white/10">
-                <div className="grid grid-cols-2 gap-4 text-sm">
+              <div className="mt-4 pt-4 border-t border-white/10 space-y-4">
+                <div className="flex flex-col sm:flex-row items-center gap-4">
+                  <div className="relative w-16 h-16 rounded-2xl overflow-hidden border border-white/20 bg-gradient-to-br from-fuchsia-500/20 to-cyan-500/20 flex items-center justify-center shrink-0">
+                    {student.avatar ? (
+                      <img
+                        src={student.avatar}
+                        alt={student.name}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <User className="h-8 w-8 text-cyan-400" />
+                    )}
+                  </div>
+                  <div className="text-center sm:text-left">
+                    <h4 className="text-base font-bold text-white">{student.name}</h4>
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-mono font-semibold bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 mt-1">
+                      #{student.chestNumber}
+                    </span>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4 text-sm pt-2 border-t border-white/5">
                   <div>
                     <p className="text-xs text-white/60 mb-1">Student Name</p>
                     <p className="font-medium text-white">{student.name}</p>
@@ -277,7 +320,7 @@ export function TeamStudentList({ students, updateAction, deleteAction, isRegist
                   variant="ghost"
                   size="sm"
                   onClick={() => setViewingId(null)}
-                  className="mt-4 w-full"
+                  className="mt-2 w-full"
                 >
                   Close Details
                 </Button>

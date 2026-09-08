@@ -117,7 +117,7 @@ export default async function AssignProgramPage() {
   const programOptions = validPrograms.map((program) => ({
     value: program.id,
     label: program.name,
-    meta: `${program.section} · Cat ${program.category}${program.stage ? " · On stage" : " · Off stage"}`,
+    meta: `${program.section}${program.stage ? " · On stage" : " · Off stage"}`,
     name: program.name, // Keep for AssignmentManager if needed, though typically it uses id
   }));
   const juryOptions = validJuries.map((jury) => ({

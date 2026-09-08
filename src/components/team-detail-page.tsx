@@ -266,7 +266,22 @@ export function TeamDetailPage({
                     className="border-b border-white/5 hover:bg-white/5 transition-colors"
                   >
                     <td className="py-4 px-4">
-                      <p className="font-medium text-white">{student.name}</p>
+                      <div className="flex items-center gap-3">
+                        <div className="relative w-8 h-8 rounded-full overflow-hidden border border-white/20 bg-gradient-to-br from-fuchsia-500/20 to-cyan-500/20 shrink-0 flex items-center justify-center">
+                          {student.avatar ? (
+                            <img
+                              src={student.avatar}
+                              alt={student.name}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <span className="text-[10px] font-bold text-white/60 uppercase">
+                              {student.name.slice(0, 2)}
+                            </span>
+                          )}
+                        </div>
+                        <p className="font-medium text-white">{student.name}</p>
+                      </div>
                     </td>
                     <td className="py-4 px-4">
                       <Badge tone="cyan">{student.chestNumber}</Badge>

@@ -38,3 +38,22 @@ export async function deleteFile(fileUrl: string) {
         console.error("Failed to delete file:", error);
     }
 }
+
+const STUDENTS_UPLOAD_DIR = path.join(process.cwd(), "public", "uploads", "students");
+
+export async function uploadStudentPhoto(file: File): Promise<string> {
+    await mkdir(STUDENTS_UPLOAD_DIR, { recursive: true });
+
+    const buffer = Buffer.from(await file.arrayBuffer());
+    const filename = `${randomUUID()}.webp`;
+    const filepath = path.join(STUDENTS_UPLOAD_DIR, filename);
+
+    // Compress & crop avatar to square WebP (400x400)
+    await sharp(buffer)
+        .resize(400, 400, { fit: "cover", position: "center" })
+        .webp({ quality: 85 })
+        .toFile(filepath);
+
+    return `/uploads/students/${filename}`;
+}
+

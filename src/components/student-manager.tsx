@@ -419,6 +419,19 @@ export const StudentManager = React.memo(function StudentManager({
                     checked={isSelected}
                     onChange={() => toggleSelectOne(student.id)}
                   />
+                  <div className="relative w-11 h-11 shrink-0 rounded-full overflow-hidden border border-white/20 bg-gradient-to-br from-fuchsia-500/25 to-cyan-500/25 shadow-md flex items-center justify-center">
+                    {student.avatar ? (
+                      <img
+                        src={student.avatar}
+                        alt={student.name}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <span className="text-xs font-bold text-white/70 uppercase">
+                        {student.name.slice(0, 2)}
+                      </span>
+                    )}
+                  </div>
                   <div>
                     <p className="text-sm text-white/40">#{student.id.slice(0, 8)}</p>
                     <p className="text-lg font-semibold text-white">{student.name}</p>
@@ -466,17 +479,52 @@ export const StudentManager = React.memo(function StudentManager({
                   className="mt-4 grid gap-3 rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-white md:grid-cols-3"
                 >
                   <input type="hidden" name="id" value={student.id} />
-                  <Input name="name" defaultValue={student.name} placeholder="Student name" />
-                  <input type="hidden" name="chest_no" value={student.chest_no} />
-                  <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-white/70">
-                    Chest: {student.chest_no}
+                  <div>
+                    <label className="text-xs text-white/60 mb-1 block">Student Name</label>
+                    <Input name="name" defaultValue={student.name} placeholder="Student name" required />
                   </div>
-                  <SearchSelect
-                    name="team_id"
-                    defaultValue={student.team_id}
-                    options={teams.map((team) => ({ value: team.id, label: team.name }))}
-                    placeholder="Select team"
-                  />
+                  <input type="hidden" name="chest_no" value={student.chest_no} />
+                  <div>
+                    <label className="text-xs text-white/60 mb-1 block">Chest Number</label>
+                    <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-white/70">
+                      Chest: {student.chest_no}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-xs text-white/60 mb-1 block">Team</label>
+                    <SearchSelect
+                      name="team_id"
+                      defaultValue={student.team_id}
+                      options={teams.map((team) => ({ value: team.id, label: team.name }))}
+                      placeholder="Select team"
+                    />
+                  </div>
+                  <div className="md:col-span-3 flex items-center gap-4 py-1">
+                    <div className="relative w-12 h-12 shrink-0 rounded-xl overflow-hidden border border-white/20 bg-white/5 flex items-center justify-center">
+                      {student.avatar ? (
+                        <img
+                          src={student.avatar}
+                          alt={student.name}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <span className="text-xs font-bold text-white/50 uppercase">
+                          {student.name.slice(0, 2)}
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <label className="text-xs text-white/60 mb-1 block">
+                        Update Student Photo (Optional)
+                      </label>
+                      <input
+                        type="file"
+                        name="photo"
+                        accept="image/*"
+                        className="w-full text-xs text-white/70 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-white/10 file:text-white hover:file:bg-white/15 file:cursor-pointer cursor-pointer rounded-xl border border-white/10 bg-white/5 p-1.5"
+                      />
+                    </div>
+                  </div>
                   <div className="flex items-center gap-3 md:col-span-3">
                     <Button type="submit" className="flex-1">
                       Save changes
@@ -548,16 +596,37 @@ export const StudentManager = React.memo(function StudentManager({
         }
       >
         {viewStudent && (
-          <div className="space-y-3 text-sm text-white/80">
-            <p>
-              <span className="text-white/50">Student ID:</span> {viewStudent.id}
-            </p>
-            <p>
-              <span className="text-white/50">Team:</span> {teamMap.get(viewStudent.team_id) ?? "Unknown"}
-            </p>
-            <p>
-              <span className="text-white/50">Chest number:</span> {viewStudent.chest_no}
-            </p>
+          <div className="space-y-4 text-sm text-white/80">
+            <div className="flex flex-col items-center justify-center text-center pb-2">
+              <div className="relative w-24 h-24 rounded-2xl overflow-hidden border-2 border-fuchsia-500/30 bg-gradient-to-br from-fuchsia-500/20 to-cyan-500/20 shadow-xl flex items-center justify-center mb-3">
+                {viewStudent.avatar ? (
+                  <img
+                    src={viewStudent.avatar}
+                    alt={viewStudent.name}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span className="text-2xl font-bold text-white/60 uppercase">
+                    {viewStudent.name.slice(0, 2)}
+                  </span>
+                )}
+              </div>
+              <h3 className="text-xl font-bold text-white">{viewStudent.name}</h3>
+              <span className="inline-flex items-center px-3 py-0.5 rounded-full text-xs font-mono font-semibold bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 mt-1">
+                Chest #{viewStudent.chest_no}
+              </span>
+            </div>
+            <div className="space-y-2 border-t border-white/10 pt-3">
+              <p>
+                <span className="text-white/50">Student ID:</span> {viewStudent.id}
+              </p>
+              <p>
+                <span className="text-white/50">Team:</span> {teamMap.get(viewStudent.team_id) ?? "Unknown"}
+              </p>
+              <p>
+                <span className="text-white/50">Total Points:</span> {viewStudent.total_points ?? 0}
+              </p>
+            </div>
           </div>
         )}
       </Modal>

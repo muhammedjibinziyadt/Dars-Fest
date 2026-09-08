@@ -12,7 +12,7 @@ import { sendCredentialUpdateEmail } from "@/lib/email-service";
 export async function updateAdminCredentials(
   prevState: { error?: string; success?: string },
   formData: FormData,
-) {
+): Promise<{ error?: string; success?: string }> {
   try {
     const username = String(formData.get("username") ?? "").trim();
     const password = String(formData.get("password") ?? "").trim();
