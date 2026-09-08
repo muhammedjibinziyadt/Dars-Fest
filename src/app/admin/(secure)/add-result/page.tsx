@@ -1,7 +1,15 @@
 import { redirect } from "next/navigation";
 import { AddResultForm } from "@/components/forms/add-result-form";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
-import { getApprovedResults, getJuries, getPrograms, getStudents, getTeams, getOrCreateAdminJury } from "@/lib/data";
+import {
+  getApprovedResults,
+  getJuries,
+  getPrograms,
+  getStudents,
+  getTeams,
+  getOrCreateAdminJury,
+  getScoringRules,
+} from "@/lib/data";
 import { getProgramRegistrations } from "@/lib/team-data";
 import { ensureRegisteredCandidates } from "@/lib/registration-guard";
 import { submitResultToPending } from "@/lib/result-service";
@@ -134,6 +142,7 @@ export default async function AddResultPage() {
     getProgramRegistrations(),
     getApprovedResults(),
     getOrCreateAdminJury(),
+    getScoringRules(),
   ]);
 
   // Filter out programs that are already approved/published
@@ -166,6 +175,7 @@ export default async function AddResultPage() {
         approvedResults={approvedResults}
         action={submitResultAction}
         defaultJuryId={adminJury.id}
+        scoringRules={scoringRules}
       />
     </div>
   );

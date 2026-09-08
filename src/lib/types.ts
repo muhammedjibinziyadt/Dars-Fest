@@ -253,3 +253,24 @@ export interface FestoryUser {
   image?: string;
   profileImageUpdateCount?: number;
 }
+
+export interface ScoringRules {
+  single: {
+    first: number;
+    second: number;
+    third: number;
+    gradeA: number;
+    gradeB: number;
+    gradeC: number;
+  };
+  group: {
+    first: number;
+    second: number;
+    third: number;
+  };
+  general: {
+    first: number;
+    second: number;
+    third: number;
+  };
+}

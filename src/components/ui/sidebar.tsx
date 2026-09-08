@@ -19,6 +19,7 @@ import {
   Users,
   BarChart,
   Trophy,
+  Award,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -50,6 +51,7 @@ const ICONS = {
   addResult: PenSquare,
   pending: Hourglass,
   approved: BadgeCheck,
+  grades: Award,
   settings: Settings,
   polls: BarChart,
   predictions: Trophy,

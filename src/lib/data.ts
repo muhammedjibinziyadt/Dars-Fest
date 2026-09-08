@@ -3,10 +3,12 @@ import { hash } from "bcryptjs";
 import type {
   AssignedProgram,
   CategoryType,
+  GradeType,
   Jury,
   LiveScore,
   Program,
   ResultRecord,
+  ScoringRules,
   SectionType,
   Student,
   Team,
@@ -21,6 +23,7 @@ import {
   pendingResultsCol,
   approvedResultsCol,
   liveScoresCol,
+  adminSettingsCol,
   docsToData,
   docToData,
 } from "./models";
@@ -343,50 +346,109 @@ export async function deleteAssignment(programId: string, juryId: string) {
   await assignedProgramsCol.doc(docId).delete();
 }
 
-const CATEGORY_SCORES: Record<
-  Exclude<CategoryType, "none">,
-  Record<1 | 2 | 3, number>
-> = {
-  A: { 1: 10, 2: 7, 3: 5 },
-  B: { 1: 7, 2: 5, 3: 3 },
-  C: { 1: 5, 2: 3, 3: 1 },
+export const DEFAULT_SCORING_RULES: ScoringRules = {
+  single: {
+    first: 10,
+    second: 7,
+    third: 5,
+    gradeA: 5,
+    gradeB: 3,
+    gradeC: 1,
+  },
+  group: {
+    first: 20,
+    second: 15,
+    third: 10,
+  },
+  general: {
+    first: 25,
+    second: 20,
+    third: 15,
+  },
 };
 
-const GRADE_BONUS: Record<Exclude<CategoryType, "none">, number> = {
-  A: 5,
-  B: 3,
-  C: 1,
-};
+let cachedScoringRules: ScoringRules | null = null;
 
-const GROUP_SCORES: Record<1 | 2 | 3, number> = {
-  1: 20,
-  2: 15,
-  3: 10,
-};
+export async function getScoringRules(): Promise<ScoringRules> {
+  if (cachedScoringRules) return cachedScoringRules;
+  try {
+    const doc = await adminSettingsCol.doc("scoring_rules").get();
+    if (doc.exists) {
+      const data = doc.data() as Partial<ScoringRules>;
+      cachedScoringRules = {
+        single: {
+          first: Number(data.single?.first ?? DEFAULT_SCORING_RULES.single.first),
+          second: Number(data.single?.second ?? DEFAULT_SCORING_RULES.single.second),
+          third: Number(data.single?.third ?? DEFAULT_SCORING_RULES.single.third),
+          gradeA: Number(data.single?.gradeA ?? DEFAULT_SCORING_RULES.single.gradeA),
+          gradeB: Number(data.single?.gradeB ?? DEFAULT_SCORING_RULES.single.gradeB),
+          gradeC: Number(data.single?.gradeC ?? DEFAULT_SCORING_RULES.single.gradeC),
+        },
+        group: {
+          first: Number(data.group?.first ?? DEFAULT_SCORING_RULES.group.first),
+          second: Number(data.group?.second ?? DEFAULT_SCORING_RULES.group.second),
+          third: Number(data.group?.third ?? DEFAULT_SCORING_RULES.group.third),
+        },
+        general: {
+          first: Number(data.general?.first ?? DEFAULT_SCORING_RULES.general.first),
+          second: Number(data.general?.second ?? DEFAULT_SCORING_RULES.general.second),
+          third: Number(data.general?.third ?? DEFAULT_SCORING_RULES.general.third),
+        },
+      };
+      return cachedScoringRules;
+    }
+  } catch (error) {
+    console.error("Error loading scoring rules:", error);
+  }
+  cachedScoringRules = DEFAULT_SCORING_RULES;
+  return DEFAULT_SCORING_RULES;
+}
 
-const GENERAL_SCORES: Record<1 | 2 | 3, number> = {
-  1: 25,
-  2: 20,
-  3: 15,
-};
+export async function saveScoringRules(rules: ScoringRules): Promise<void> {
+  await adminSettingsCol.doc("scoring_rules").set(rules);
+  cachedScoringRules = rules;
+}
 
 export function calculateScore(
   section: SectionType,
   category: CategoryType,
   position: 1 | 2 | 3,
-  grade: CategoryType = "none",
+  grade: GradeType | CategoryType = "none",
+  rules: ScoringRules = cachedScoringRules ?? DEFAULT_SCORING_RULES,
 ): number {
   if (section === "single") {
-    const base = category !== "none" ? CATEGORY_SCORES[category][position] : 0;
-    const bonus = grade !== "none" ? GRADE_BONUS[grade] : 0;
-    return base + bonus;
+    const posScore =
+      position === 1
+        ? rules.single.first
+        : position === 2
+          ? rules.single.second
+          : rules.single.third;
+
+    const gradeScore =
+      grade === "A"
+        ? rules.single.gradeA
+        : grade === "B"
+          ? rules.single.gradeB
+          : grade === "C"
+            ? rules.single.gradeC
+            : 0;
+
+    return posScore + gradeScore;
   }
 
   if (section === "group") {
-    return GROUP_SCORES[position];
+    return position === 1
+      ? rules.group.first
+      : position === 2
+        ? rules.group.second
+        : rules.group.third;
   }
 
-  return GENERAL_SCORES[position];
+  return position === 1
+    ? rules.general.first
+    : position === 2
+      ? rules.general.second
+      : rules.general.third;
 }
 
 export async function updateLiveScore(teamId: string, delta: number) {

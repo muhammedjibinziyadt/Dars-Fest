@@ -13,6 +13,7 @@ import type {
   Program,
   ProgramRegistration,
   ResultRecord,
+  ScoringRules,
   Student,
   Team,
 } from "@/lib/types";
@@ -44,14 +45,8 @@ interface AddResultFormProps {
   mode?: "default" | "jury";
   juryName?: string;
   defaultJuryId?: string;
+  scoringRules?: ScoringRules;
 }
-
-const gradeOptions = [
-  { value: "A", label: "Grade A (+5)" },
-  { value: "B", label: "Grade B (+3)" },
-  { value: "C", label: "Grade C (+1)" },
-  { value: "none", label: "None" },
-];
 
 export function AddResultForm({
   programs,
@@ -68,7 +63,14 @@ export function AddResultForm({
   mode = "default",
   juryName,
   defaultJuryId,
+  scoringRules,
 }: AddResultFormProps) {
+  const gradeOptions = useMemo(() => [
+    { value: "A", label: scoringRules ? `Grade A (+${scoringRules.single.gradeA})` : "Grade A (+5)" },
+    { value: "B", label: scoringRules ? `Grade B (+${scoringRules.single.gradeB})` : "Grade B (+3)" },
+    { value: "C", label: scoringRules ? `Grade C (+${scoringRules.single.gradeC})` : "Grade C (+1)" },
+    { value: "none", label: "None" },
+  ], [scoringRules]);
   const [programId, setProgramId] = useState(programs[0]?.id ?? "");
   const [showRules, setShowRules] = useState(false);
   const [showPublishedModal, setShowPublishedModal] = useState(false);
@@ -524,21 +526,29 @@ export function AddResultForm({
           </Button>
         }
       >
-        <div className="space-y-4 text-sm">
-          <p>Single events (Category A/B/C) add grade bonus on top of podium points.</p>
-          <div className="grid gap-3 rounded-2xl border border-white/10 bg-slate-900/70 p-4">
-            <p className="font-semibold">Single · Podium</p>
-            <p>A: 10 / 7 / 5 · B: 7 / 5 / 3 · C: 5 / 3 / 1</p>
-            <p className="font-semibold">Grade Bonus</p>
-            <p>A +5 · B +3 · C +1</p>
+          <div className="space-y-4 text-sm">
+            <p className="text-white/80">Single events combine placement points and grade bonuses.</p>
+            <div className="grid gap-3 rounded-2xl border border-white/10 bg-slate-900/70 p-4">
+              <p className="font-semibold text-white">Single · Podium Points</p>
+              <p className="text-white/70">
+                1st: {scoringRules?.single.first ?? 10} pts · 2nd: {scoringRules?.single.second ?? 7} pts · 3rd: {scoringRules?.single.third ?? 5} pts
+              </p>
+              <p className="font-semibold text-white mt-1">Grade Bonus Points</p>
+              <p className="text-emerald-400">
+                Grade A: +{scoringRules?.single.gradeA ?? 5} pts · Grade B: +{scoringRules?.single.gradeB ?? 3} pts · Grade C: +{scoringRules?.single.gradeC ?? 1} pts
+              </p>
+            </div>
+            <div className="grid gap-3 rounded-2xl border border-white/10 bg-slate-900/70 p-4">
+              <p className="font-semibold text-white">Group · Podium Points</p>
+              <p className="text-white/70">
+                1st: {scoringRules?.group.first ?? 20} pts · 2nd: {scoringRules?.group.second ?? 15} pts · 3rd: {scoringRules?.group.third ?? 10} pts
+              </p>
+              <p className="font-semibold text-white mt-1">General · Podium Points</p>
+              <p className="text-white/70">
+                1st: {scoringRules?.general.first ?? 25} pts · 2nd: {scoringRules?.general.second ?? 20} pts · 3rd: {scoringRules?.general.third ?? 15} pts
+              </p>
+            </div>
           </div>
-          <div className="grid gap-3 rounded-2xl border border-white/10 bg-slate-900/70 p-4">
-            <p className="font-semibold">Group</p>
-            <p>1st 20 · 2nd 15 · 3rd 10</p>
-            <p className="font-semibold">General</p>
-            <p>1st 25 · 2nd 20 · 3rd 15</p>
-          </div>
-        </div>
       </Modal>
       
       {/* Published Program Modal */}
