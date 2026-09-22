@@ -272,6 +272,7 @@ export function TeamLeadersShowcase({ teams }: TeamLeadersShowcaseProps) {
                                     src={getLeaderPhoto(team.leader_photo, i)}
                                     alt={leader}
                                     fill
+                                    sizes="96px"
                                     className="object-cover"
                                   />
                                 </div>
@@ -284,6 +285,7 @@ export function TeamLeadersShowcase({ teams }: TeamLeadersShowcaseProps) {
                                   src={getLeaderPhoto(team.leader_photo, 0)}
                                   alt={leaders[0]}
                                   fill
+                                  sizes="128px"
                                   className="object-cover transition-transform duration-700 group-hover:scale-110"
                                 />
                               </div>

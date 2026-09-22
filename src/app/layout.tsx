@@ -30,7 +30,7 @@ const moga = localFont({
 export const metadata: Metadata = {
   title: "Maerika 2k26 - കലായുഗ ഭാവുകം",
   description:
-    "A premier platform for students to showcase their talents and highlight the rich art forms of Islamic culture. Live scoreboard, admin controls, and jury tools for Funoon Fiesta.",
+    "ലഹരിയുടെ കാർമേഘങ്ങൾ നാടിനെ മൂടുന്ന വർത്തമാനകാലത്ത്, സർഗാത്മകതയുടെ വെളിച്ചം കൊണ്ട് പ്രതിരോധം തീർക്കുകയാണ് ഞങ്ങളുടെ ദർസ് ഫെസ്റ്റ്.",
   metadataBase: new URL("https://dars-fest.vercel.app/"),
   manifest: "/manifest.json",
   appleWebApp: {

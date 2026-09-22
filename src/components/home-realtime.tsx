@@ -1,17 +1,18 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardDescription, CardTitle } from "@/components/ui/card";
-import { Menu, X } from "lucide-react";
-import { formatNumber } from "@/lib/utils";
+import {
+  Card,
+  CardDescription,
+  CardTitle,
+} from "@/components/ui/card";
+import { useRouter } from "next/navigation";
 import { LiveScorePulse } from "@/components/live-score-pulse";
 import { TeamLeadersShowcase } from "@/components/team-leaders-showcase";
 import { useScoreboardUpdates } from "@/hooks/use-realtime";
-import { useRouter } from "next/navigation";
 import type { Team } from "@/lib/types";
 
 interface HomeRealtimeProps {
@@ -19,7 +20,10 @@ interface HomeRealtimeProps {
   liveScores: Map<string, number>;
 }
 
-export function HomeRealtime({ teams: initialTeams, liveScores: initialLiveScores }: HomeRealtimeProps) {
+export function HomeRealtime({
+  teams: initialTeams,
+  liveScores: initialLiveScores,
+}: HomeRealtimeProps) {
   const router = useRouter();
 
   useScoreboardUpdates(() => {
@@ -38,9 +42,10 @@ export function HomeRealtime({ teams: initialTeams, liveScores: initialLiveScore
             src="/img/hero/waves.webp"
             alt="Decorative waves"
             fill
+            sizes="100vw"
             className="object-cover object-bottom"
             priority
-            style={{ width: '100%' }}
+            style={{ width: "100%" }}
           />
         </div>
 
@@ -54,6 +59,7 @@ export function HomeRealtime({ teams: initialTeams, liveScores: initialLiveScore
                   src="/img/hero/Fest-logo.webp"
                   alt="Maerika Logo"
                   fill
+                  sizes="64px"
                   className="object-contain"
                   priority
                 />
@@ -66,6 +72,7 @@ export function HomeRealtime({ teams: initialTeams, liveScores: initialLiveScore
                 src="/img/hero/Left-side-image-for-hero section.webp"
                 alt="Cultural Heritage Illustration"
                 fill
+                sizes="(max-width: 1024px) 100vw, 50vw"
                 className="object-contain"
                 priority
               />
@@ -78,6 +85,7 @@ export function HomeRealtime({ teams: initialTeams, liveScores: initialLiveScore
                   src="/img/hero/Typegraphy.webp"
                   alt="ശതകം സാക്ഷി"
                   fill
+                  sizes="(max-width: 640px) 100vw, 576px"
                   className="object-contain"
                   priority
                 />
@@ -87,7 +95,14 @@ export function HomeRealtime({ teams: initialTeams, liveScores: initialLiveScore
             {/* Description - Centered (Mobile) */}
             <div className="text-center space-y-4 px-4">
               <p className="text-sm sm:text-base text-gray-700 leading-relaxed max-w-lg mx-auto">
-                For a hundred years, the Malabar coast has carried the rhythm of a community shaped by knowledge, faith, and artistic expression.
+                &apos;കലായുഗ ഭാവുകം&apos; എന്ന പ്രമേയത്തിലൂടെ, യുവത്വത്തെ
+                കാർന്നുതിന്നുന്ന ലഹരിയെന്ന വിപത്തിനെതിരെ കലയെയും അറിവിനെയും
+                ഞങ്ങൾ ആയുധമാക്കുന്നു. ചിന്തകൾക്ക് മൂർച്ചകൂട്ടാനും
+                സർഗശേഷികളെ നാടിന്റെ നന്മയ്ക്കായി വഴിതിരിച്ചുവിടാനും ഈ വേദി
+                കരുത്തുപകരുന്നു. വിനാശകരമായ ലഹരിയുടെ വഴികളിൽ നിന്ന്
+                കലയുടെയും സംസ്കാരത്തിന്റെയും വിശുദ്ധിയിലേക്ക് വിദ്യാർത്ഥി
+                സമൂഹത്തെ കൈപിടിച്ചുയർത്താനുള്ള ഒരു സർഗ്ഗാത്മക
+                മുന്നേറ്റമാണിത്.
               </p>
 
               {/* CTA Button - Centered (Mobile) - Smaller */}
@@ -109,6 +124,7 @@ export function HomeRealtime({ teams: initialTeams, liveScores: initialLiveScore
                 src="/img/hero/Left-side-image-for-hero section.webp"
                 alt="Cultural Heritage Illustration"
                 fill
+                sizes="(max-width: 1024px) 100vw, 50vw"
                 className="object-contain"
                 priority
               />
@@ -125,11 +141,13 @@ export function HomeRealtime({ teams: initialTeams, liveScores: initialLiveScore
                       src="/img/hero/Fest-logo.webp"
                       alt="Maerika Logo"
                       fill
+                      sizes="(max-width: 1280px) 96px, 144px"
                       className="object-contain"
                       priority
                     />
                   </div>
                 </div>
+
                 {/* Malayalam Text */}
                 <div className="flex-1 pt-1">
                   <div className="relative w-full h-14 xl:h-28">
@@ -137,6 +155,7 @@ export function HomeRealtime({ teams: initialTeams, liveScores: initialLiveScore
                       src="/img/hero/Typegraphy.webp"
                       alt="കലായുഗ ഭാവുകം"
                       fill
+                      sizes="(max-width: 1024px) 100vw, (max-width: 1280px) 400px, 500px"
                       className="object-contain object-left"
                       priority
                     />
@@ -149,14 +168,22 @@ export function HomeRealtime({ teams: initialTeams, liveScores: initialLiveScore
                 <h1 className="text-4xl xl:text-5xl 2xl:text-7xl font-moga text-[#8B4513] leading-tight mb-2">
                   Maerika 2k26
                 </h1>
+
                 <p className="text-xl xl:text-2xl text-[#8B4513] font-light tracking-widest">
                   2026-27
                 </p>
               </div>
 
               {/* Description */}
-              <p className="text-xm xl:text-md text-gray-700 leading-relaxed max-w-3xl">
-                For a hundred years, the Malabar coast has carried the rhythm of a community shaped by knowledge, faith, and artistic expression. Funoon Fiesta 2025-26 is the creative bridge that connects this century-long legacy to a new generation. Rooted in the centenary of Samastha Kerala Jamiyyathul Ulama, this edition proudly carries the theme "Shathakam Saakshi" – a tribute to the scholars, institutions, and countless individuals who illuminated our path.
+              <p className="text-base xl:text-lg text-gray-700 leading-relaxed max-w-3xl">
+                &apos;കലായുഗ ഭാവുകം&apos; എന്ന പ്രമേയത്തിലൂടെ, യുവത്വത്തെ
+                കാർന്നുതിന്നുന്ന ലഹരിയെന്ന വിപത്തിനെതിരെ കലയെയും അറിവിനെയും
+                ഞങ്ങൾ ആയുധമാക്കുന്നു. ചിന്തകൾക്ക് മൂർച്ചകൂട്ടാനും
+                സർഗശേഷികളെ നാടിന്റെ നന്മയ്ക്കായി വഴിതിരിച്ചുവിടാനും ഈ വേദി
+                കരുത്തുപകരുന്നു. വിനാശകരമായ ലഹരിയുടെ വഴികളിൽ നിന്ന്
+                കലയുടെയും സംസ്കാരത്തിന്റെയും വിശുദ്ധിയിലേക്ക് വിദ്യാർത്ഥി
+                സമൂഹത്തെ കൈപിടിച്ചുയർത്താനുള്ള ഒരു സർഗ്ഗാത്മക
+                മുന്നേറ്റമാണിത്.
               </p>
 
               {/* CTA Button */}
@@ -175,7 +202,10 @@ export function HomeRealtime({ teams: initialTeams, liveScores: initialLiveScore
       {/* Live Score Pulse Section */}
       <section className="bg-[#fffcf5] py-12 sm:py-16 md:py-20">
         <div className="container mx-auto max-w-7xl px-4 sm:px-5 md:px-8">
-          <LiveScorePulse teams={initialTeams} liveScores={initialLiveScores} />
+          <LiveScorePulse
+            teams={initialTeams}
+            liveScores={initialLiveScores}
+          />
         </div>
       </section>
 
@@ -191,15 +221,21 @@ export function HomeRealtime({ teams: initialTeams, liveScores: initialLiveScore
         <div className="container mx-auto max-w-7xl px-4 sm:px-5 md:px-8">
           <div className="space-y-6 sm:space-y-8">
             <div className="text-center max-w-3xl mx-auto px-4">
-              <Badge className="bg-amber-100 text-amber-800 border-amber-200 mb-3 sm:mb-4 text-xs sm:text-sm">About Maerika2k26</Badge>
+              <Badge className="bg-amber-100 text-amber-800 border-amber-200 mb-3 sm:mb-4 text-xs sm:text-sm">
+                About Maerika2k26
+              </Badge>
+
               <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-serif text-[#8B4513] mb-3 sm:mb-4">
-                Celebrating Islamic Art & Culture
+                Celebrating Islamic Art &amp; Culture
               </h2>
+
               <p className="text-gray-700 text-base sm:text-lg md:text-xl leading-relaxed">
-                Funoon Fiesta is a premier platform for students to showcase their talents and highlight
-                the rich art forms of Islamic culture. Through music, calligraphy, poetry, traditional
-                dance, visual arts, and more, we present these beautiful expressions to a wider audience,
-                fostering creativity, cultural appreciation, and artistic excellence.
+                Funoon Fiesta is a premier platform for students to showcase
+                their talents and highlight the rich art forms of Islamic
+                culture. Through music, calligraphy, poetry, traditional dance,
+                visual arts, and more, we present these beautiful expressions
+                to a wider audience, fostering creativity, cultural
+                appreciation, and artistic excellence.
               </p>
             </div>
 
@@ -209,32 +245,46 @@ export function HomeRealtime({ teams: initialTeams, liveScores: initialLiveScore
                   title: "Cultural Heritage",
                   copy: "We celebrate the diverse and rich art forms rooted in Islamic culture, from traditional calligraphy to contemporary expressions, preserving and promoting cultural appreciation.",
                   tag: "Cultural showcase",
-                  icon: "🎨"
+                  icon: "🎨",
                 },
                 {
                   title: "Student Excellence",
                   copy: "A premier platform designed for students to showcase their talents, creativity, and artistic expression in a supportive and competitive environment.",
                   tag: "Talent platform",
-                  icon: "⭐"
+                  icon: "⭐",
                 },
                 {
                   title: "Transparent Judging",
                   copy: "All scoring rules are codified in the platform. Every entry is auto-scored before human review, ensuring fairness and transparency in every evaluation.",
                   tag: "Fair evaluation",
-                  icon: "⚖️"
+                  icon: "⚖️",
                 },
                 {
                   title: "Live Updates",
                   copy: "Once admins approve submissions, both team and student scores refresh in seconds, keeping everyone connected to the action in real-time.",
                   tag: "Realtime sync",
-                  icon: "⚡"
+                  icon: "⚡",
                 },
               ].map((item) => (
-                <Card key={item.title} className="bg-white border-gray-200 shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1 p-4 sm:p-6">
-                  <div className="text-3xl sm:text-4xl mb-2 sm:mb-3">{item.icon}</div>
-                  <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200 mb-2 sm:mb-3 text-xs">{item.tag}</Badge>
-                  <CardTitle className="text-lg sm:text-xl text-gray-900 mb-2 sm:mb-3">{item.title}</CardTitle>
-                  <CardDescription className="text-sm sm:text-base text-gray-600 leading-relaxed">{item.copy}</CardDescription>
+                <Card
+                  key={item.title}
+                  className="bg-white border-gray-200 shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1 p-4 sm:p-6"
+                >
+                  <div className="text-3xl sm:text-4xl mb-2 sm:mb-3">
+                    {item.icon}
+                  </div>
+
+                  <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200 mb-2 sm:mb-3 text-xs">
+                    {item.tag}
+                  </Badge>
+
+                  <CardTitle className="text-lg sm:text-xl text-gray-900 mb-2 sm:mb-3">
+                    {item.title}
+                  </CardTitle>
+
+                  <CardDescription className="text-sm sm:text-base text-gray-600 leading-relaxed">
+                    {item.copy}
+                  </CardDescription>
                 </Card>
               ))}
             </div>
@@ -248,27 +298,49 @@ export function HomeRealtime({ teams: initialTeams, liveScores: initialLiveScore
           <div className="bg-white rounded-xl sm:rounded-2xl border border-gray-200 shadow-lg p-6 sm:p-8 md:p-12 mb-10">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 sm:gap-8">
               <div className="flex-1">
-                <Badge className="bg-cyan-100 text-cyan-800 border-cyan-200 mb-3 sm:mb-4 text-xs sm:text-sm">Need help?</Badge>
+                <Badge className="bg-cyan-100 text-cyan-800 border-cyan-200 mb-3 sm:mb-4 text-xs sm:text-sm">
+                  Need help?
+                </Badge>
+
                 <h2 className="text-2xl sm:text-3xl md:text-4xl font-serif text-[#8B4513] mb-3 sm:mb-4">
                   Funoon Fiesta Control Room
                 </h2>
+
                 <p className="text-gray-700 text-base sm:text-lg leading-relaxed max-w-2xl">
-                  Contact us for support, inquiries, or assistance with the platform.
-                  Our team is here to help ensure a smooth and enjoyable experience.
-                  <Link href="/admin/login" className="">
-                    <Button variant="secondary" className="text-sm text-black font-normal">
+                  Contact us for support, inquiries, or assistance with the
+                  platform. Our team is here to help ensure a smooth and
+                  enjoyable experience.
+                </p>
+
+                <div className="mt-4">
+                  <Link href="/admin/login">
+                    <Button
+                      variant="secondary"
+                      className="text-sm text-black font-normal"
+                    >
                       Admin Login
                     </Button>
                   </Link>
-                </p>
+                </div>
               </div>
+
               <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 w-full sm:w-auto">
-                <Link href="/jury/login" className="w-full sm:w-auto">
-                  <Button variant="ghost" className="text-gray-700 hover:bg-gray-100 border border-gray-300 w-full sm:w-auto text-sm sm:text-base">
+                <Link
+                  href="/jury/login"
+                  className="w-full sm:w-auto"
+                >
+                  <Button
+                    variant="ghost"
+                    className="text-gray-700 hover:bg-gray-100 border border-gray-300 w-full sm:w-auto text-sm sm:text-base"
+                  >
                     Jury Login
                   </Button>
                 </Link>
-                <Link href="/team/login" className="w-full sm:w-auto">
+
+                <Link
+                  href="/team/login"
+                  className="w-full sm:w-auto"
+                >
                   <Button className="bg-[#8B4513] hover:bg-[#6B3410] text-white w-full sm:w-auto text-sm sm:text-base">
                     Team Portal
                   </Button>
@@ -281,11 +353,3 @@ export function HomeRealtime({ teams: initialTeams, liveScores: initialLiveScore
     </main>
   );
 }
-
-
-
-
-
-
-
-
