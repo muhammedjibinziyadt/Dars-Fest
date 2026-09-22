@@ -43,7 +43,7 @@ export function HomeRealtime({ teams: initialTeams, liveScores: initialLiveScore
             style={{ width: '100%' }}
           />
         </div>
-        
+
         <div className="container mx-auto max-w-7xl relative z-10 flex-1 flex flex-col lg:justify-center">
           {/* Mobile Layout: Vertical Stack */}
           <div className="flex flex-col lg:hidden space-y-4 sm:space-y-5 w-full pt-2">
@@ -52,7 +52,7 @@ export function HomeRealtime({ teams: initialTeams, liveScores: initialLiveScore
               <div className="relative w-16 h-16 shrink-0">
                 <Image
                   src="/img/hero/Fest-logo.webp"
-                  alt="Funoon Fiesta Logo"
+                  alt="Maerika Logo"
                   fill
                   className="object-contain"
                   priority
@@ -123,7 +123,7 @@ export function HomeRealtime({ teams: initialTeams, liveScores: initialLiveScore
                   <div className="relative w-24 h-24 xl:w-36 xl:h-36 mb-1">
                     <Image
                       src="/img/hero/Fest-logo.webp"
-                      alt="Funoon Fiesta Logo"
+                      alt="Maerika Logo"
                       fill
                       className="object-contain"
                       priority
@@ -135,7 +135,7 @@ export function HomeRealtime({ teams: initialTeams, liveScores: initialLiveScore
                   <div className="relative w-full h-14 xl:h-28">
                     <Image
                       src="/img/hero/Typegraphy.webp"
-                      alt="ശതകം സാക്ഷി"
+                      alt="കലായുഗ ഭാവുകം"
                       fill
                       className="object-contain object-left"
                       priority
@@ -147,10 +147,10 @@ export function HomeRealtime({ teams: initialTeams, liveScores: initialLiveScore
               {/* Main Title */}
               <div>
                 <h1 className="text-4xl xl:text-5xl 2xl:text-7xl font-serif text-[#8B4513] leading-15 mb-2 ">
-                  Funoon Fiesta
+                  Maerika2K265
                 </h1>
                 <p className="text-xl xl:text-2xl text-[#8B4513] font-light tracking-widest">
-                  2025 - 26
+                  2026-27
                 </p>
               </div>
 
@@ -186,46 +186,46 @@ export function HomeRealtime({ teams: initialTeams, liveScores: initialLiveScore
         </div>
       </section>
 
-      {/* About Funoon Fiesta Section */}
+      {/* About Maerika Logo Section */}
       <section className="bg-[#fffcf5] py-12 sm:py-16 md:py-20">
         <div className="container mx-auto max-w-7xl px-4 sm:px-5 md:px-8">
           <div className="space-y-6 sm:space-y-8">
             <div className="text-center max-w-3xl mx-auto px-4">
-              <Badge className="bg-amber-100 text-amber-800 border-amber-200 mb-3 sm:mb-4 text-xs sm:text-sm">About Funoon Fiesta</Badge>
+              <Badge className="bg-amber-100 text-amber-800 border-amber-200 mb-3 sm:mb-4 text-xs sm:text-sm">About Maerika2k26</Badge>
               <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-serif text-[#8B4513] mb-3 sm:mb-4">
                 Celebrating Islamic Art & Culture
               </h2>
               <p className="text-gray-700 text-base sm:text-lg md:text-xl leading-relaxed">
-                Funoon Fiesta is a premier platform for students to showcase their talents and highlight 
-                the rich art forms of Islamic culture. Through music, calligraphy, poetry, traditional 
-                dance, visual arts, and more, we present these beautiful expressions to a wider audience, 
+                Funoon Fiesta is a premier platform for students to showcase their talents and highlight
+                the rich art forms of Islamic culture. Through music, calligraphy, poetry, traditional
+                dance, visual arts, and more, we present these beautiful expressions to a wider audience,
                 fostering creativity, cultural appreciation, and artistic excellence.
               </p>
             </div>
-            
+
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mt-8 sm:mt-12">
               {[
-                { 
-                  title: "Cultural Heritage", 
-                  copy: "We celebrate the diverse and rich art forms rooted in Islamic culture, from traditional calligraphy to contemporary expressions, preserving and promoting cultural appreciation.", 
+                {
+                  title: "Cultural Heritage",
+                  copy: "We celebrate the diverse and rich art forms rooted in Islamic culture, from traditional calligraphy to contemporary expressions, preserving and promoting cultural appreciation.",
                   tag: "Cultural showcase",
                   icon: "🎨"
                 },
-                { 
-                  title: "Student Excellence", 
-                  copy: "A premier platform designed for students to showcase their talents, creativity, and artistic expression in a supportive and competitive environment.", 
+                {
+                  title: "Student Excellence",
+                  copy: "A premier platform designed for students to showcase their talents, creativity, and artistic expression in a supportive and competitive environment.",
                   tag: "Talent platform",
                   icon: "⭐"
                 },
-                { 
-                  title: "Transparent Judging", 
-                  copy: "All scoring rules are codified in the platform. Every entry is auto-scored before human review, ensuring fairness and transparency in every evaluation.", 
+                {
+                  title: "Transparent Judging",
+                  copy: "All scoring rules are codified in the platform. Every entry is auto-scored before human review, ensuring fairness and transparency in every evaluation.",
                   tag: "Fair evaluation",
                   icon: "⚖️"
                 },
-                { 
-                  title: "Live Updates", 
-                  copy: "Once admins approve submissions, both team and student scores refresh in seconds, keeping everyone connected to the action in real-time.", 
+                {
+                  title: "Live Updates",
+                  copy: "Once admins approve submissions, both team and student scores refresh in seconds, keeping everyone connected to the action in real-time.",
                   tag: "Realtime sync",
                   icon: "⚡"
                 },
@@ -253,13 +253,13 @@ export function HomeRealtime({ teams: initialTeams, liveScores: initialLiveScore
                   Funoon Fiesta Control Room
                 </h2>
                 <p className="text-gray-700 text-base sm:text-lg leading-relaxed max-w-2xl">
-                  Contact us for support, inquiries, or assistance with the platform. 
+                  Contact us for support, inquiries, or assistance with the platform.
                   Our team is here to help ensure a smooth and enjoyable experience.
                   <Link href="/admin/login" className="">
-                  <Button variant="secondary" className="text-sm text-black font-normal">
-                    Admin Login
-                  </Button>
-                </Link>
+                    <Button variant="secondary" className="text-sm text-black font-normal">
+                      Admin Login
+                    </Button>
+                  </Link>
                 </p>
               </div>
               <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 w-full sm:w-auto">
