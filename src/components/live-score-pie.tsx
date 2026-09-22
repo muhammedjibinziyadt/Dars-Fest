@@ -93,7 +93,7 @@ export function LiveScorePie({ teams, liveScores }: LiveScorePieProps) {
           </p>
         </CardContent>
       ) : (
-        <CardContent className="flex flex-col items-center gap-4 pb-6 pt-2">
+        <CardContent className="flex flex-col items-center w-full min-w-0 gap-4 pb-6 pt-2">
         <ChartContainer
           config={chartConfig}
           className="[&_.recharts-text]:fill-white mx-auto h-[280px] md:h-[340px] w-full max-w-[420px]"

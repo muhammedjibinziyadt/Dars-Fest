@@ -15,6 +15,7 @@ import {
   ResponsiveContainer,
   Cell,
 } from "recharts";
+import { useContainerDimensions } from "@/hooks/use-container-dimensions";
 
 interface LiveScorePulseProps {
   teams: Team[];
@@ -197,75 +198,99 @@ interface DistributionChartProps {
 }
 
 function DesktopDistributionChart({ teams }: DistributionChartProps) {
+  const { ref, hasDimensions, width, height } = useContainerDimensions<HTMLDivElement>();
+
   return (
     <div className="hidden md:flex flex-col h-full min-h-[400px] p-6 rounded-3xl bg-white border border-gray-100 shadow-xl">
       <div className="mb-6">
         <h4 className="text-lg font-bold text-gray-900">Points Distribution</h4>
         <p className="text-sm text-gray-500">Comparative analysis of team performance</p>
       </div>
-      <div className="flex-1 w-full min-h-[300px]">
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={teams} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
-            <XAxis
-              dataKey="name"
-              axisLine={false}
-              tickLine={false}
-              tick={{ fill: '#6B7280', fontSize: 12, fontWeight: 600 }}
-              dy={10}
-              tickFormatter={(value) => value.slice(0, 3).toUpperCase()}
-            />
-            <YAxis
-              axisLine={false}
-              tickLine={false}
-              tick={{ fill: '#9CA3AF', fontSize: 12 }}
-              dx={-10}
-            />
-            <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(0,0,0,0.02)' }} />
-            <Bar dataKey="totalPoints" radius={[8, 8, 0, 0]} animationDuration={1500}>
-              {teams.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={entry.colors.primary} />
-              ))}
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
+      <div ref={ref} className="flex-1 w-full min-w-0 min-h-[300px] h-[320px]">
+        {hasDimensions ? (
+          <ResponsiveContainer
+            width="100%"
+            height="100%"
+            minWidth={0}
+            minHeight={0}
+            initialDimension={{ width, height }}
+          >
+            <BarChart data={teams} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
+              <XAxis
+                dataKey="name"
+                axisLine={false}
+                tickLine={false}
+                tick={{ fill: '#6B7280', fontSize: 12, fontWeight: 600 }}
+                dy={10}
+                tickFormatter={(value) => value.slice(0, 3).toUpperCase()}
+              />
+              <YAxis
+                axisLine={false}
+                tickLine={false}
+                tick={{ fill: '#9CA3AF', fontSize: 12 }}
+                dx={-10}
+              />
+              <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(0,0,0,0.02)' }} />
+              <Bar dataKey="totalPoints" radius={[8, 8, 0, 0]} animationDuration={1500}>
+                {teams.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={entry.colors.primary} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        ) : (
+          <div className="w-full h-full min-h-[300px]" aria-hidden="true" />
+        )}
       </div>
     </div>
   );
 }
 
 function MobileDistributionChart({ teams }: DistributionChartProps) {
+  const { ref, hasDimensions, width, height } = useContainerDimensions<HTMLDivElement>();
+
   return (
     <div className="md:hidden flex flex-col h-[350px] p-4 rounded-3xl bg-white border border-gray-100 shadow-lg">
       <div className="mb-4">
         <h4 className="text-base font-bold text-gray-900">Points Distribution</h4>
         <p className="text-xs text-gray-500">Team performance overview</p>
       </div>
-      <div className="flex-1 w-full min-h-[250px]">
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart
-            data={teams}
-            layout="vertical"
-            margin={{ top: 5, right: 30, left: 0, bottom: 5 }}
+      <div ref={ref} className="flex-1 w-full min-w-0 min-h-[250px] h-[260px]">
+        {hasDimensions ? (
+          <ResponsiveContainer
+            width="100%"
+            height="100%"
+            minWidth={0}
+            minHeight={0}
+            initialDimension={{ width, height }}
           >
-            <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f0f0f0" />
-            <XAxis type="number" hide />
-            <YAxis
-              dataKey="name"
-              type="category"
-              axisLine={false}
-              tickLine={false}
-              width={80}
-              tick={{ fill: '#4B5563', fontSize: 11, fontWeight: 600 }}
-            />
-            <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(0,0,0,0.02)' }} />
-            <Bar dataKey="totalPoints" radius={[0, 10, 10, 0]} barSize={20} animationDuration={1500}>
-              {teams.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={entry.colors.primary} />
-              ))}
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
+            <BarChart
+              data={teams}
+              layout="vertical"
+              margin={{ top: 5, right: 30, left: 0, bottom: 5 }}
+            >
+              <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f0f0f0" />
+              <XAxis type="number" hide />
+              <YAxis
+                dataKey="name"
+                type="category"
+                axisLine={false}
+                tickLine={false}
+                width={80}
+                tick={{ fill: '#4B5563', fontSize: 11, fontWeight: 600 }}
+              />
+              <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(0,0,0,0.02)' }} />
+              <Bar dataKey="totalPoints" radius={[0, 10, 10, 0]} barSize={20} animationDuration={1500}>
+                {teams.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={entry.colors.primary} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        ) : (
+          <div className="w-full h-full min-h-[250px]" aria-hidden="true" />
+        )}
       </div>
     </div>
   );

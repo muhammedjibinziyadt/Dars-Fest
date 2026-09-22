@@ -70,8 +70,8 @@ function isValidImageUrl(url: string | undefined | null): boolean {
 }
 
 function getLeaderPhoto(leaderPhoto: string | undefined | null, leaderIndex: number): string {
-  if (!isValidImageUrl(leaderPhoto)) {
-    return `https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=facearea&facepad=2&w=256&h=256&q=80&seed=${leaderIndex}`;
+  if (!isValidImageUrl(leaderPhoto) || leaderPhoto?.includes("1546456073-92b9f0a8d1d6")) {
+    return `https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=facearea&facepad=2&w=256&h=256&q=80&seed=${leaderIndex}`;
   }
   if (leaderPhoto?.includes('?')) {
     return leaderPhoto;

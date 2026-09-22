@@ -39,7 +39,7 @@ async function updateTeamNames() {
   for (const team of defaultTeams) {
     await TeamModel.updateOne(
       { id: team.id },
-      { $set: { name: team.name, color: team.color } },
+      { $set: { name: team.name, color: team.color, leader_photo: team.leader_photo } },
       { upsert: false }
     );
   }
@@ -568,7 +568,7 @@ const defaultTeams: Team[] = [
     id: "team-flux",
     name: "BUKHARA",
     leader: "Levi D'Souza",
-    leader_photo: "https://images.unsplash.com/photo-1546456073-92b9f0a8d1d6",
+    leader_photo: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d",
     color: "#FB923C",
     description: "Media & film crew pushing experimental visuals.",
     contact: "flux@artsfest.edu",

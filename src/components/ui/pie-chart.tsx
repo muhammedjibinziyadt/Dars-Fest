@@ -4,6 +4,7 @@ import * as React from "react";
 import * as RechartsPrimitive from "recharts";
 
 import { cn } from "@/lib/utils";
+import { useContainerDimensions } from "@/hooks/use-container-dimensions";
 
 // Format: { THEME_NAME: CSS_SELECTOR }
 const THEMES = { light: "", dark: ".dark" } as const;
@@ -37,6 +38,7 @@ function ChartContainer({
   className,
   children,
   config,
+  ref: externalRef,
   ...props
 }: React.ComponentProps<"div"> & {
   config: ChartConfig;
@@ -46,10 +48,21 @@ function ChartContainer({
 }) {
   const uniqueId = React.useId();
   const chartId = `chart-${id || uniqueId.replace(/:/g, "")}`;
+  const { ref: containerRef, hasDimensions, width, height } = useContainerDimensions<HTMLDivElement>();
+
+  const setMergedRef = (node: HTMLDivElement | null) => {
+    containerRef.current = node;
+    if (typeof externalRef === "function") {
+      externalRef(node);
+    } else if (externalRef && typeof externalRef === "object" && "current" in externalRef) {
+      (externalRef as any).current = node;
+    }
+  };
 
   return (
     <ChartContext.Provider value={{ config }}>
       <div
+        ref={setMergedRef}
         data-slot="chart"
         data-chart={chartId}
         className={cn(
@@ -60,9 +73,19 @@ function ChartContainer({
         {...props}
       >
         <ChartStyle id={chartId} config={config} />
-        <RechartsPrimitive.ResponsiveContainer width="100%" height="100%">
-          {children}
-        </RechartsPrimitive.ResponsiveContainer>
+        {hasDimensions ? (
+          <RechartsPrimitive.ResponsiveContainer
+            width="100%"
+            height="100%"
+            minWidth={0}
+            minHeight={0}
+            initialDimension={{ width, height }}
+          >
+            {children}
+          </RechartsPrimitive.ResponsiveContainer>
+        ) : (
+          <div className="w-full h-full min-h-[inherit]" aria-hidden="true" />
+        )}
       </div>
     </ChartContext.Provider>
   );

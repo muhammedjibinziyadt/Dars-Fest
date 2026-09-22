@@ -20,6 +20,7 @@ import { Trophy, Award, AlertTriangle, Star } from "lucide-react";
 import type { ParticipantProfile } from "@/lib/participant-service";
 import { QRCodeDisplay } from "./qr-code-display";
 import { motion } from "framer-motion";
+import { useContainerDimensions } from "@/hooks/use-container-dimensions";
 
 interface ParticipantProfileProps {
   profile: ParticipantProfile;
@@ -43,6 +44,8 @@ const STATUS_COLORS = {
 
 export function ParticipantProfileDisplay({ profile }: ParticipantProfileProps) {
   const { student, team, registrations, totalPoints, stats } = profile;
+  const pointsContainer = useContainerDimensions<HTMLDivElement>();
+  const winsContainer = useContainerDimensions<HTMLDivElement>();
 
   // Chart data for points breakdown
   const pointsChartData = useMemo(() => {
@@ -134,29 +137,39 @@ export function ParticipantProfileDisplay({ profile }: ParticipantProfileProps) 
             <BarChart className="w-4 h-4 text-gray-400" />
             Points Analysis
           </CardTitle>
-          <div className="h-[200px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={pointsChartData} margin={{ top: 5, right: 5, left: -25, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" opacity={0.5} />
-                <XAxis
-                  dataKey="name"
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{ fill: '#6B7280', fontSize: 11 }}
-                  dy={10}
-                />
-                <YAxis
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{ fill: '#6B7280', fontSize: 11 }}
-                />
-                <Tooltip
-                  cursor={{ fill: '#F3F4F6', opacity: 0.4 }}
-                  contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}
-                />
-                <Bar dataKey="points" fill="#8B5CF6" radius={[4, 4, 0, 0]} barSize={30} />
-              </BarChart>
-            </ResponsiveContainer>
+          <div ref={pointsContainer.ref} className="h-[200px] w-full min-w-0">
+            {pointsContainer.hasDimensions ? (
+              <ResponsiveContainer
+                width="100%"
+                height="100%"
+                minWidth={0}
+                minHeight={0}
+                initialDimension={{ width: pointsContainer.width, height: pointsContainer.height }}
+              >
+                <BarChart data={pointsChartData} margin={{ top: 5, right: 5, left: -25, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" opacity={0.5} />
+                  <XAxis
+                    dataKey="name"
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fill: '#6B7280', fontSize: 11 }}
+                    dy={10}
+                  />
+                  <YAxis
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fill: '#6B7280', fontSize: 11 }}
+                  />
+                  <Tooltip
+                    cursor={{ fill: '#F3F4F6', opacity: 0.4 }}
+                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}
+                  />
+                  <Bar dataKey="points" fill="#8B5CF6" radius={[4, 4, 0, 0]} barSize={30} />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="w-full h-full min-h-[200px]" aria-hidden="true" />
+            )}
           </div>
         </Card>
 
@@ -166,35 +179,47 @@ export function ParticipantProfileDisplay({ profile }: ParticipantProfileProps) 
             <Trophy className="w-4 h-4 text-gray-400" />
             Victory Stats
           </CardTitle>
-          <div className="h-[200px] w-full relative">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={winsData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={50}
-                  outerRadius={70}
-                  paddingAngle={5}
-                  dataKey="value"
+          <div ref={winsContainer.ref} className="h-[200px] w-full min-w-0 relative">
+            {winsContainer.hasDimensions ? (
+              <>
+                <ResponsiveContainer
+                  width="100%"
+                  height="100%"
+                  minWidth={0}
+                  minHeight={0}
+                  initialDimension={{ width: winsContainer.width, height: winsContainer.height }}
                 >
-                  {winsData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} strokeWidth={0} />
-                  ))}
-                </Pie>
-                <Tooltip
-                  contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <div className="text-center">
-                <span className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {stats.wins.first + stats.wins.second + stats.wins.third}
-                </span>
-                <p className="text-[10px] text-gray-500 dark:text-gray-400 uppercase font-medium">Wins</p>
-              </div>
-            </div>
+                  <PieChart>
+                    <Pie
+                      data={winsData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={50}
+                      outerRadius={70}
+                      paddingAngle={5}
+                      dataKey="value"
+                    >
+                      {winsData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} strokeWidth={0} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                  <div className="text-center">
+                    <span className="text-2xl font-bold text-gray-900 dark:text-white">
+                      {stats.wins.first + stats.wins.second + stats.wins.third}
+                    </span>
+                    <p className="text-[10px] text-gray-500 dark:text-gray-400 uppercase font-medium">Wins</p>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div className="w-full h-full min-h-[200px]" aria-hidden="true" />
+            )}
           </div>
         </Card>
       </div>
