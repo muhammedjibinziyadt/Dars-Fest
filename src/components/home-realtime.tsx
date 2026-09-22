@@ -35,7 +35,7 @@ export function HomeRealtime({ teams: initialTeams, liveScores: initialLiveScore
         {/* Decorative waves at bottom - full width */}
         <div className="absolute bottom-0 left-0 right-0 w-full h-12 md:h-16 lg:h-22 z-0">
           <Image
-            src="/img/hero/waves.webp?v=2"
+            src="/img/hero/waves.webp"
             alt="Decorative waves"
             fill
             className="object-cover object-bottom"
@@ -51,7 +51,7 @@ export function HomeRealtime({ teams: initialTeams, liveScores: initialLiveScore
             <div className="flex items-center justify-between mb-2">
               <div className="relative w-16 h-16 shrink-0">
                 <Image
-                  src="/img/hero/Fest-logo.webp?v=2"
+                  src="/img/hero/Fest-logo.webp"
                   alt="Funoon Fiesta Logo"
                   fill
                   className="object-contain"
@@ -63,7 +63,7 @@ export function HomeRealtime({ teams: initialTeams, liveScores: initialLiveScore
             {/* Illustration - Full Width (Mobile) */}
             <div className="relative w-full h-[250px] sm:h-[320px] md:h-[380px] mx-auto -mt-2">
               <Image
-                src="/img/hero/Left-side-image-for-hero section.webp?v=2"
+                src="/img/hero/Left-side-image-for-hero section.webp"
                 alt="Cultural Heritage Illustration"
                 fill
                 className="object-contain"
@@ -75,7 +75,7 @@ export function HomeRealtime({ teams: initialTeams, liveScores: initialLiveScore
             <div className="flex justify-center px-4 -mt-2">
               <div className="relative w-full max-w-lg sm:max-w-xl h-24 sm:h-32 md:h-40">
                 <Image
-                  src="/img/hero/Typegraphy.webp?v=2"
+                  src="/img/hero/Typegraphy.webp"
                   alt="ശതകം സാക്ഷി"
                   fill
                   className="object-contain"
@@ -106,7 +106,7 @@ export function HomeRealtime({ teams: initialTeams, liveScores: initialLiveScore
             {/* Left Side - Illustration */}
             <div className="relative w-full h-[500px] xl:h-[600px]">
               <Image
-                src="/img/hero/Left-side-image-for-hero section.webp?v=2"
+                src="/img/hero/Left-side-image-for-hero section.webp"
                 alt="Cultural Heritage Illustration"
                 fill
                 className="object-contain"
@@ -122,7 +122,7 @@ export function HomeRealtime({ teams: initialTeams, liveScores: initialLiveScore
                 <div className="shrink-0 flex flex-col items-center">
                   <div className="relative w-24 h-24 xl:w-36 xl:h-36 mb-1">
                     <Image
-                      src="/img/hero/Fest-logo.webp?v=2"
+                      src="/img/hero/Fest-logo.webp"
                       alt="Funoon Fiesta Logo"
                       fill
                       className="object-contain"
@@ -134,7 +134,7 @@ export function HomeRealtime({ teams: initialTeams, liveScores: initialLiveScore
                 <div className="flex-1 pt-1">
                   <div className="relative w-full h-14 xl:h-28">
                     <Image
-                      src="/img/hero/Typegraphy.webp?v=2"
+                      src="/img/hero/Typegraphy.webp"
                       alt="ശതകം സാക്ഷി"
                       fill
                       className="object-contain object-left"
