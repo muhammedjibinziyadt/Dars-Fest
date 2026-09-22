@@ -32,6 +32,19 @@ export async function createResultPublishedNotification(
   // Emit real-time event for all users
   await emitNotificationCreated(notification);
 
+  // Send email notification via Resend
+  try {
+    const { sendResultPublishedEmail } = await import("./email-service");
+    const adminEmail = process.env.RESEND_REPLY_TO || "jawharathululoomsuffadars@gmail.com";
+    sendResultPublishedEmail({
+      to: adminEmail,
+      programName: program.name,
+      programId: program.id,
+    }).catch((err) => console.error("Email notification skipped/failed:", err));
+  } catch (err) {
+    console.error("Failed to load email service:", err);
+  }
+
   return notification;
 }
 
