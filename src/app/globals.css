@@ -40,6 +40,19 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+  --font-moga: var(--font-moga, 'Moga');
+}
+
+@font-face {
+  font-family: 'Moga';
+  src: url('/font/moga.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+.font-moga {
+  font-family: var(--font-moga), 'Moga', sans-serif;
 }
 
 body {

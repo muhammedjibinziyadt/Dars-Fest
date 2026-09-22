@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { ToastProvider } from "@/components/toast-provider";
@@ -20,16 +21,22 @@ const geistMono = Geist_Mono({
   display: "swap",
 });
 
+const moga = localFont({
+  src: "../../public/font/moga.otf",
+  variable: "--font-moga",
+  display: "swap",
+});
+
 export const metadata: Metadata = {
-  title: "Funoon Fiesta - Showcasing Islamic Art & Culture",
+  title: "Maerika 2k26 - കലായുഗ ഭാവുകം",
   description:
     "A premier platform for students to showcase their talents and highlight the rich art forms of Islamic culture. Live scoreboard, admin controls, and jury tools for Funoon Fiesta.",
-  metadataBase: new URL("https://funoonfiesta.local"),
+  metadataBase: new URL("https://dars-fest.vercel.app/"),
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "Funoon Fiesta",
+    title: "Maerika 2k26",
   },
   icons: {
     icon: [
@@ -66,20 +73,20 @@ export default function RootLayout({
         <meta name="theme-color" content="#3b0764" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-        <meta name="apple-mobile-web-app-title" content="Funoon Fiesta" />
+        <meta name="apple-mobile-web-app-title" content="Maerika 2k26" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="msapplication-TileColor" content="#3b0764" />
         <meta name="msapplication-config" content="/browserconfig.xml" />
       </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} ${moga.variable} antialiased`}
       >
-        <SpeedInsights/>
+        <SpeedInsights />
         <RealtimeProvider>
           <OfflineIndicator />
           <ToastProvider>
             <PublicPageWrapper>
-            {children}
+              {children}
             </PublicPageWrapper>
           </ToastProvider>
           <PWAInstallPrompt />

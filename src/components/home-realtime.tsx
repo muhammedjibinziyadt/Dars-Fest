@@ -146,8 +146,8 @@ export function HomeRealtime({ teams: initialTeams, liveScores: initialLiveScore
 
               {/* Main Title */}
               <div>
-                <h1 className="text-4xl xl:text-5xl 2xl:text-7xl font-serif text-[#8B4513] leading-15 mb-2 ">
-                  Maerika2K265
+                <h1 className="text-4xl xl:text-5xl 2xl:text-7xl font-moga text-[#8B4513] leading-tight mb-2">
+                  Maerika 2k26
                 </h1>
                 <p className="text-xl xl:text-2xl text-[#8B4513] font-light tracking-widest">
                   2026-27
