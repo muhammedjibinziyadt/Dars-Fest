@@ -1,13 +1,23 @@
 import { Resend } from "resend";
 
-const apiKey = process.env.RESEND_API_KEY;
+let resendInstance: Resend | null = null;
 
-export const resend = apiKey ? new Resend(apiKey) : null;
+export function getResendClient(): Resend | null {
+  const key = process.env.RESEND_API_KEY;
+  if (!key) return null;
+  if (!resendInstance) {
+    resendInstance = new Resend(key);
+  }
+  return resendInstance;
+}
 
-export const DEFAULT_FROM =
-  process.env.RESEND_FROM_EMAIL || "Maerika 2K26 <onboarding@resend.dev>";
-export const DEFAULT_REPLY_TO =
-  process.env.RESEND_REPLY_TO || "jawharathululoomsuffadars@gmail.com";
+export function getDefaultFrom(): string {
+  return process.env.RESEND_FROM_EMAIL || "Maerika 2K26 <noreply@maerika2k26.jawharathululoomsuffadars.online>";
+}
+
+export function getDefaultReplyTo(): string {
+  return process.env.RESEND_REPLY_TO || "jawharathululoomsuffadars@gmail.com";
+}
 
 interface SendEmailOptions {
   to: string | string[];
@@ -26,19 +36,23 @@ export async function sendEmail({
   subject,
   html,
   text,
-  from = DEFAULT_FROM,
-  replyTo = DEFAULT_REPLY_TO,
+  from,
+  replyTo,
 }: SendEmailOptions) {
-  if (!resend) {
+  const client = getResendClient();
+  if (!client) {
     console.warn("⚠️ Resend is not configured (missing RESEND_API_KEY). Email skipped:", subject);
     return { success: false, error: "Missing RESEND_API_KEY" };
   }
 
+  const sender = from || getDefaultFrom();
+  const reply = replyTo || getDefaultReplyTo();
+
   try {
-    const data = await resend.emails.send({
-      from,
+    const data = await client.emails.send({
+      from: sender,
       to,
-      replyTo,
+      replyTo: reply,
       subject,
       html,
       text,
