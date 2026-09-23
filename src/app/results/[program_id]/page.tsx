@@ -147,6 +147,18 @@ export default async function ProgramDetailPage({ params }: ProgramDetailPagePro
                       <p className="text-lg font-bold text-gray-900">
                         {positionLabel}
                       </p>
+                      {student?.avatar ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={student.avatar}
+                          alt={student.name}
+                          className="w-12 h-12 rounded-full object-cover border-2 border-amber-400 shadow-md shrink-0"
+                        />
+                      ) : student ? (
+                        <div className="w-12 h-12 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center font-bold text-gray-600 text-lg shadow-sm shrink-0">
+                          {student.name.charAt(0).toUpperCase()}
+                        </div>
+                      ) : null}
                     </div>
                     <p className="text-2xl font-bold text-gray-900 mb-2">
                       {student?.name ?? team?.name ?? "—"}

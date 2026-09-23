@@ -492,6 +492,7 @@ export const StudentManager = React.memo(function StudentManager({
                   />
                   <div className="md:col-span-3">
                     <StudentAvatarPicker
+                      key={student.id}
                       name="avatar"
                       defaultValue={student.avatar}
                       label="Update Student Photo"

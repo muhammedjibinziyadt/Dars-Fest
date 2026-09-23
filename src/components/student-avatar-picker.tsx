@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useRef, ChangeEvent, DragEvent } from "react";
+import { useState, useRef, useEffect, ChangeEvent, DragEvent } from "react";
 import Image from "next/image";
-import { Camera, Upload, Trash2, Link as LinkIcon, User } from "lucide-react";
+import { Camera, Upload, Trash2, Link as LinkIcon, User, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface StudentAvatarPickerProps {
   name?: string;
+  value?: string;
   defaultValue?: string;
   label?: string;
   onChange?: (avatar: string) => void;
@@ -14,15 +15,28 @@ interface StudentAvatarPickerProps {
 
 export function StudentAvatarPicker({
   name = "avatar",
+  value,
   defaultValue = "",
   label = "Student Photo",
   onChange,
 }: StudentAvatarPickerProps) {
-  const [avatar, setAvatar] = useState<string>(defaultValue);
+  const [internalAvatar, setInternalAvatar] = useState<string>(value ?? defaultValue);
+  const [isProcessing, setIsProcessing] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [showUrlInput, setShowUrlInput] = useState(false);
   const [urlInput, setUrlInput] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const currentAvatar = value !== undefined ? value : internalAvatar;
+
+  // Sync internal state when controlled value or defaultValue changes
+  useEffect(() => {
+    if (value !== undefined) {
+      setInternalAvatar(value);
+    } else if (defaultValue !== undefined) {
+      setInternalAvatar(defaultValue);
+    }
+  }, [value, defaultValue]);
 
   // Resize and compress image to 300x300 square canvas
   const processImageFile = (file: File) => {
@@ -31,41 +45,60 @@ export function StudentAvatarPicker({
       return;
     }
 
+    setIsProcessing(true);
     const reader = new FileReader();
     reader.onload = (e) => {
       const img = new window.Image();
       img.onload = () => {
-        const size = 300;
-        const canvas = document.createElement("canvas");
-        canvas.width = size;
-        canvas.height = size;
-        const ctx = canvas.getContext("2d");
+        try {
+          const size = 300;
+          const canvas = document.createElement("canvas");
+          canvas.width = size;
+          canvas.height = size;
+          const ctx = canvas.getContext("2d");
 
-        if (!ctx) return;
+          if (!ctx) {
+            setIsProcessing(false);
+            return;
+          }
 
-        // Draw centered square crop
-        const minDim = Math.min(img.width, img.height);
-        const startX = (img.width - minDim) / 2;
-        const startY = (img.height - minDim) / 2;
+          // Draw centered square crop
+          const minDim = Math.min(img.width, img.height);
+          const startX = (img.width - minDim) / 2;
+          const startY = (img.height - minDim) / 2;
 
-        ctx.drawImage(
-          img,
-          startX,
-          startY,
-          minDim,
-          minDim,
-          0,
-          0,
-          size,
-          size
-        );
+          ctx.drawImage(
+            img,
+            startX,
+            startY,
+            minDim,
+            minDim,
+            0,
+            0,
+            size,
+            size
+          );
 
-        // Convert to optimized JPEG data URL (~25KB)
-        const compressedBase64 = canvas.toDataURL("image/jpeg", 0.85);
-        setAvatar(compressedBase64);
-        onChange?.(compressedBase64);
+          // Convert to optimized JPEG data URL (~25KB)
+          const compressedBase64 = canvas.toDataURL("image/jpeg", 0.85);
+          setInternalAvatar(compressedBase64);
+          onChange?.(compressedBase64);
+        } catch (err) {
+          console.error("Failed to crop image:", err);
+          alert("Could not process image file. Please try a different one.");
+        } finally {
+          setIsProcessing(false);
+        }
+      };
+      img.onerror = () => {
+        setIsProcessing(false);
+        alert("Failed to load image. Please choose another image file.");
       };
       img.src = e.target?.result as string;
+    };
+    reader.onerror = () => {
+      setIsProcessing(false);
+      alert("Failed to read image file.");
     };
     reader.readAsDataURL(file);
   };
@@ -75,6 +108,8 @@ export function StudentAvatarPicker({
     if (file) {
       processImageFile(file);
     }
+    // Reset file input value so selecting the same file again triggers onChange
+    e.target.value = "";
   };
 
   const handleDrop = (e: DragEvent<HTMLDivElement>) => {
@@ -87,7 +122,7 @@ export function StudentAvatarPicker({
   };
 
   const handleRemove = () => {
-    setAvatar("");
+    setInternalAvatar("");
     onChange?.("");
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
@@ -97,7 +132,7 @@ export function StudentAvatarPicker({
   const handleApplyUrl = () => {
     const clean = urlInput.trim();
     if (clean) {
-      setAvatar(clean);
+      setInternalAvatar(clean);
       onChange?.(clean);
       setShowUrlInput(false);
       setUrlInput("");
@@ -113,7 +148,7 @@ export function StudentAvatarPicker({
       )}
 
       {/* Hidden input to pass avatar value in FormData */}
-      <input type="hidden" name={name} value={avatar} />
+      <input type="hidden" name={name} value={currentAvatar} />
       <input
         ref={fileInputRef}
         type="file"
@@ -135,16 +170,21 @@ export function StudentAvatarPicker({
           className={`relative group cursor-pointer w-20 h-20 shrink-0 rounded-full overflow-hidden border-2 transition-all flex items-center justify-center ${
             isDragging
               ? "border-amber-400 bg-amber-400/20 scale-105"
-              : avatar
+              : currentAvatar
               ? "border-[#FACC15]/80 shadow-md shadow-amber-400/10"
               : "border-dashed border-white/20 bg-white/5 hover:border-white/40"
           }`}
           title="Click or drag image to upload"
         >
-          {avatar ? (
+          {isProcessing ? (
+            <div className="flex flex-col items-center justify-center text-amber-400">
+              <Loader2 className="w-6 h-6 animate-spin" />
+              <span className="text-[8px] uppercase mt-1">Processing</span>
+            </div>
+          ) : currentAvatar ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
-              src={avatar}
+              src={currentAvatar}
               alt="Student Avatar"
               className="w-full h-full object-cover"
             />
@@ -156,9 +196,11 @@ export function StudentAvatarPicker({
           )}
 
           {/* Hover overlay with Camera Icon */}
-          <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white">
-            <Camera className="w-6 h-6" />
-          </div>
+          {!isProcessing && (
+            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white">
+              <Camera className="w-6 h-6" />
+            </div>
+          )}
         </div>
 
         {/* Action Controls */}
@@ -168,17 +210,19 @@ export function StudentAvatarPicker({
               type="button"
               variant="secondary"
               size="sm"
+              disabled={isProcessing}
               onClick={() => fileInputRef.current?.click()}
               className="gap-1.5 text-xs h-8"
             >
               <Upload className="w-3.5 h-3.5" />
-              {avatar ? "Change Photo" : "Upload Photo"}
+              {currentAvatar ? "Change Photo" : "Upload Photo"}
             </Button>
 
             <Button
               type="button"
               variant="ghost"
               size="sm"
+              disabled={isProcessing}
               onClick={() => setShowUrlInput(!showUrlInput)}
               className="gap-1.5 text-xs h-8 border border-white/10 hover:bg-white/10 text-white/80"
             >
@@ -186,11 +230,12 @@ export function StudentAvatarPicker({
               Paste URL
             </Button>
 
-            {avatar && (
+            {currentAvatar && (
               <Button
                 type="button"
                 variant="danger"
                 size="sm"
+                disabled={isProcessing}
                 onClick={handleRemove}
                 className="gap-1 text-xs h-8 px-2"
                 title="Remove photo"

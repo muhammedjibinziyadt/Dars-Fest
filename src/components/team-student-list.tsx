@@ -13,7 +13,8 @@ import {
   User,
   Hash,
   Search,
-  Lock
+  Lock,
+  Loader2
 } from "lucide-react";
 import { StudentAvatarPicker } from "@/components/student-avatar-picker";
 import type { PortalStudent } from "@/lib/types";
@@ -31,6 +32,7 @@ export function TeamStudentList({ students, updateAction, deleteAction, isRegist
   const [editName, setEditName] = useState("");
   const [editChestNumber, setEditChestNumber] = useState("");
   const [editAvatar, setEditAvatar] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
   // Filter students based on search query
@@ -63,16 +65,24 @@ export function TeamStudentList({ students, updateAction, deleteAction, isRegist
   };
 
   const handleSave = async (studentId: string) => {
-    const formData = new FormData();
-    formData.append("studentId", studentId);
-    formData.append("name", editName.trim());
-    formData.append("chestNumber", editChestNumber.trim().toUpperCase());
-    formData.append("avatar", editAvatar);
-    await updateAction(formData);
-    setEditingId(null);
-    setEditName("");
-    setEditChestNumber("");
-    setEditAvatar("");
+    if (isSaving) return;
+    setIsSaving(true);
+    try {
+      const formData = new FormData();
+      formData.append("studentId", studentId);
+      formData.append("name", editName.trim());
+      formData.append("chestNumber", editChestNumber.trim().toUpperCase());
+      formData.append("avatar", editAvatar);
+      await updateAction(formData);
+      setEditingId(null);
+      setEditName("");
+      setEditChestNumber("");
+      setEditAvatar("");
+    } catch (error) {
+      console.error("Save student error:", error);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleDelete = async (studentId: string) => {
@@ -190,6 +200,8 @@ export function TeamStudentList({ students, updateAction, deleteAction, isRegist
                 </div>
                 <div>
                   <StudentAvatarPicker
+                    key={student.id}
+                    value={editAvatar}
                     defaultValue={editAvatar}
                     onChange={setEditAvatar}
                     label="Update Student Photo"
@@ -198,16 +210,26 @@ export function TeamStudentList({ students, updateAction, deleteAction, isRegist
                 <div className="flex gap-2">
                   <Button
                     onClick={() => handleSave(student.id)}
-                    disabled={!isRegistrationOpen}
+                    disabled={!isRegistrationOpen || isSaving}
                     className="flex-1"
                     size="sm"
                   >
-                    <Check className="h-4 w-4 mr-1.5" />
-                    Save Changes
+                    {isSaving ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
+                        Saving...
+                      </>
+                    ) : (
+                      <>
+                        <Check className="h-4 w-4 mr-1.5" />
+                        Save Changes
+                      </>
+                    )}
                   </Button>
                   <Button
                     variant="ghost"
                     onClick={handleCancel}
+                    disabled={isSaving}
                     size="sm"
                   >
                     Cancel

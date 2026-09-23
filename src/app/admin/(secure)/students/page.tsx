@@ -61,12 +61,14 @@ const csvStudentSchema = z.object({
 });
 
 async function upsertStudent(formData: FormData, mode: "create" | "update") {
+  const avatarField = formData.has("avatar") ? String(formData.get("avatar") ?? "").trim() : undefined;
+
   const parsed = studentSchema.safeParse({
     id: String(formData.get("id") ?? "").trim() || undefined,
     name: String(formData.get("name") ?? "").trim(),
     team_id: String(formData.get("team_id") ?? "").trim(),
     chest_no: String(formData.get("chest_no") ?? "").trim() || undefined,
-    avatar: String(formData.get("avatar") ?? "").trim() || undefined,
+    avatar: avatarField,
   });
   if (!parsed.success) {
     throw new Error(parsed.error.issues.map((issue) => issue.message).join(", "));
@@ -96,7 +98,7 @@ async function upsertStudent(formData: FormData, mode: "create" | "update") {
       name: payload.name,
       team_id: payload.team_id,
       chest_no: chest_no!,
-      avatar: payload.avatar,
+      avatar: payload.avatar || undefined,
     });
   } else {
     if (!payload.id) throw new Error("Student ID missing");
@@ -105,8 +107,8 @@ async function upsertStudent(formData: FormData, mode: "create" | "update") {
       team_id: payload.team_id,
       chest_no: chest_no!,
     };
-    if (payload.avatar !== undefined) {
-      updateData.avatar = payload.avatar;
+    if (avatarField !== undefined) {
+      updateData.avatar = avatarField;
     }
     await updateStudentById(payload.id, updateData);
   }

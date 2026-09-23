@@ -266,7 +266,21 @@ export function TeamDetailPage({
                     className="border-b border-white/5 hover:bg-white/5 transition-colors"
                   >
                     <td className="py-4 px-4">
-                      <p className="font-medium text-white">{student.name}</p>
+                      <div className="flex items-center gap-3">
+                        {student.avatar ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={student.avatar}
+                            alt={student.name}
+                            className="w-8 h-8 rounded-full object-cover border border-amber-400/50 shadow-sm shrink-0"
+                          />
+                        ) : (
+                          <div className="w-8 h-8 rounded-full bg-white/10 border border-white/10 flex items-center justify-center font-bold text-white/70 text-xs shrink-0">
+                            {student.name.charAt(0).toUpperCase()}
+                          </div>
+                        )}
+                        <p className="font-medium text-white">{student.name}</p>
+                      </div>
                     </td>
                     <td className="py-4 px-4">
                       <Badge tone="cyan">{student.chestNumber}</Badge>
