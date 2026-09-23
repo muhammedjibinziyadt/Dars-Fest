@@ -58,8 +58,10 @@ export const viewport: Viewport = {
   themeColor: "#3b0764",
 };
 
+import { Suspense } from "react";
+import { NavigationProgress } from "@/components/navigation-progress";
+
 export const dynamic = "force-dynamic";
-export const revalidate = 0;
 
 export default function RootLayout({
   children,
@@ -81,6 +83,9 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${moga.variable} antialiased`}
       >
+        <Suspense fallback={null}>
+          <NavigationProgress />
+        </Suspense>
         <SpeedInsights />
         <RealtimeProvider>
           <OfflineIndicator />

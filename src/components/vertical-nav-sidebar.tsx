@@ -32,6 +32,7 @@ export function VerticalNavSidebar() {
       <Link
         key={`${orientation}-${item.label}`}
         href={item.href}
+        prefetch={true}
         className={cn(
           "relative flex items-center justify-center transition-all duration-300 text-center",
           orientation === "vertical"

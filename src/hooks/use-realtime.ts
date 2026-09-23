@@ -65,24 +65,28 @@ export function useRealtimeSubscription(
             clearTimeout(refreshTimeout);
           }
 
-          router.refresh();
-
           refreshTimeout = setTimeout(() => {
-            isRefreshing = false;
-            if (pendingRefresh) {
-              pendingRefresh = false;
-              router.refresh();
-              setTimeout(() => {
-                isRefreshing = false;
-              }, 200);
-            }
-          }, 300);
+            router.refresh();
+            setTimeout(() => {
+              isRefreshing = false;
+              if (pendingRefresh) {
+                pendingRefresh = false;
+                router.refresh();
+              }
+            }, 500);
+          }, 400);
         } else {
           pendingRefresh = true;
         }
       },
       (error) => {
-        console.warn(`[Firestore Realtime] Error on ${collectionName}:`, error.message);
+        // Silently ignore transient WebChannel connection drops which auto-retry
+        if (process.env.NODE_ENV === "development") {
+          // only log non-transient errors
+          if (!error.message?.includes("transport errored")) {
+            console.warn(`[Firestore Realtime] ${collectionName}:`, error.message);
+          }
+        }
       }
     );
 

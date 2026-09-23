@@ -40,6 +40,36 @@ export interface QuerySinglePromise<T> extends Promise<T> {
   exec(): Promise<T>;
 }
 
+interface CacheEntry<T> {
+  data: T[];
+  timestamp: number;
+}
+
+const globalForCache = globalThis as unknown as {
+  __firestoreCache?: Record<string, CacheEntry<any>>;
+};
+
+if (!globalForCache.__firestoreCache) {
+  globalForCache.__firestoreCache = {};
+}
+
+const cache = globalForCache.__firestoreCache;
+const CACHE_TTL_MS = 25_000; // 25 seconds in-memory cache
+
+export function invalidateCache(collectionName?: string) {
+  if (collectionName) {
+    delete cache[collectionName];
+  } else {
+    for (const key of Object.keys(cache)) {
+      delete cache[key];
+    }
+  }
+}
+
+export function invalidateAllCaches() {
+  invalidateCache();
+}
+
 export class FirestoreModel<T extends Record<string, any>> {
   readonly collectionName: string;
 
@@ -53,6 +83,10 @@ export class FirestoreModel<T extends Record<string, any>> {
 
   async countDocuments(filter?: Partial<T> | Record<string, any>): Promise<number> {
     if (!filter || Object.keys(filter).length === 0) {
+      const cached = cache[this.collectionName];
+      if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
+        return cached.data.length;
+      }
       const snap = await this.col.count().get();
       return snap.data().count;
     }
@@ -66,11 +100,28 @@ export class FirestoreModel<T extends Record<string, any>> {
     let limitCount: number | null = null;
 
     const execute = async (): Promise<T[]> => {
-      const snapshot = await this.col.get();
-      let results: T[] = [];
-      snapshot.forEach((doc) => {
-        results.push(doc.data() as T);
-      });
+      const now = Date.now();
+      const cached = cache[this.collectionName];
+      let allDocs: T[];
+
+      if (cached && now - cached.timestamp < CACHE_TTL_MS) {
+        allDocs = cached.data;
+      } else {
+        const snapshot = await this.col.get();
+        const fresh: T[] = [];
+        snapshot.forEach((doc) => {
+          fresh.push(doc.data() as T);
+        });
+        cache[this.collectionName] = {
+          data: fresh,
+          timestamp: now,
+        };
+        allDocs = fresh;
+      }
+
+      let results = allDocs;
+
+
 
       if (filter && Object.keys(filter).length > 0) {
         results = results.filter((item) => this.matchesFilter(item, filter));
@@ -143,6 +194,13 @@ export class FirestoreModel<T extends Record<string, any>> {
   }
 
   async findById(id: string): Promise<T | null> {
+    const cached = cache[this.collectionName];
+    if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
+      const found = cached.data.find(
+        (item: any) => String(item.id) === String(id) || String(item._id) === String(id)
+      );
+      if (found) return found as T;
+    }
     const doc = await this.col.doc(String(id)).get();
     if (doc.exists) {
       return doc.data() as T;
@@ -151,6 +209,7 @@ export class FirestoreModel<T extends Record<string, any>> {
   }
 
   async create(data: T): Promise<T> {
+    invalidateCache(this.collectionName);
     const docId = data.id || data.team_id || data.key || this.col.doc().id;
     const docData = { ...data, id: data.id || docId };
     await this.col.doc(String(docId)).set(docData);
@@ -159,6 +218,7 @@ export class FirestoreModel<T extends Record<string, any>> {
 
   async insertMany(items: T[]): Promise<T[]> {
     if (!items || items.length === 0) return [];
+    invalidateCache(this.collectionName);
     const db = getAdminDb();
     const batches: Promise<any>[] = [];
     let currentBatch = db.batch();
@@ -187,6 +247,7 @@ export class FirestoreModel<T extends Record<string, any>> {
     update: any,
     options?: { upsert?: boolean }
   ): Promise<{ modifiedCount: number }> {
+    invalidateCache(this.collectionName);
     const existing = await this.findOne(filter);
     const updateData = update || {};
     const setFields = updateData.$set || (updateData.$inc || updateData.$setOnInsert ? {} : updateData);
@@ -228,6 +289,7 @@ export class FirestoreModel<T extends Record<string, any>> {
     update: any,
     options?: { upsert?: boolean; new?: boolean }
   ): Promise<T | null> {
+    invalidateCache(this.collectionName);
     await this.updateOne(filter, update, options);
     return this.findOne(filter);
   }
@@ -236,6 +298,7 @@ export class FirestoreModel<T extends Record<string, any>> {
     filter: Partial<T> | Record<string, any>,
     update: any
   ): Promise<{ modifiedCount: number }> {
+    invalidateCache(this.collectionName);
     const items = await this.find(filter);
     if (items.length === 0) return { modifiedCount: 0 };
     const db = getAdminDb();
@@ -254,6 +317,7 @@ export class FirestoreModel<T extends Record<string, any>> {
   }
 
   async deleteOne(filter: Partial<T> | Record<string, any>): Promise<{ deletedCount: number }> {
+    invalidateCache(this.collectionName);
     const existing = await this.findOne(filter);
     if (existing) {
       const docId = existing.id || existing.team_id || existing.key;
@@ -266,6 +330,7 @@ export class FirestoreModel<T extends Record<string, any>> {
   }
 
   async deleteMany(filter: Partial<T> | Record<string, any>): Promise<{ deletedCount: number }> {
+    invalidateCache(this.collectionName);
     const items = await this.find(filter);
     if (items.length === 0) return { deletedCount: 0 };
     const db = getAdminDb();

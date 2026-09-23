@@ -8,16 +8,19 @@ try {
 } catch {}
 process.env.GRPC_DNS_RESOLVER = "native";
 
-let app: App | null = null;
-let firestoreInstance: Firestore | null = null;
+const globalForFirebase = globalThis as unknown as {
+  firebaseAdminApp?: App;
+  firestoreInstance?: Firestore;
+};
 
 export function getFirebaseAdminApp(): App {
-  if (getApps().length > 0) {
-    return getApps()[0];
+  if (globalForFirebase.firebaseAdminApp) {
+    return globalForFirebase.firebaseAdminApp;
   }
 
-  if (app) {
-    return app;
+  if (getApps().length > 0) {
+    globalForFirebase.firebaseAdminApp = getApps()[0];
+    return globalForFirebase.firebaseAdminApp;
   }
 
   const projectId = process.env.FIREBASE_PROJECT_ID;
@@ -35,7 +38,7 @@ export function getFirebaseAdminApp(): App {
     throw new Error("Missing Firebase Admin SDK environment variables in .env.local");
   }
 
-  app = initializeApp({
+  const app = initializeApp({
     credential: cert({
       projectId,
       clientEmail,
@@ -43,13 +46,14 @@ export function getFirebaseAdminApp(): App {
     }),
   });
 
+  globalForFirebase.firebaseAdminApp = app;
   return app;
 }
 
 export function getAdminDb(): Firestore {
-  if (!firestoreInstance) {
+  if (!globalForFirebase.firestoreInstance) {
     const adminApp = getFirebaseAdminApp();
-    firestoreInstance = getFirestore(adminApp);
+    globalForFirebase.firestoreInstance = getFirestore(adminApp);
   }
-  return firestoreInstance;
+  return globalForFirebase.firestoreInstance;
 }

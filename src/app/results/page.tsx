@@ -1,6 +1,8 @@
 import { getApprovedResults, getPrograms, getStudents, getTeams } from "@/lib/data";
 import { ResultsRealtime } from "@/components/results-realtime";
 
+export const revalidate = 15;
+
 async function getResultsData() {
   const [results, programs, students, teams] = await Promise.all([
     getApprovedResults(),

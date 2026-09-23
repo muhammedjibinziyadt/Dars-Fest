@@ -1,6 +1,8 @@
 import { getLiveScores, getTeams } from "@/lib/data";
 import { HomeRealtime } from "@/components/home-realtime";
 
+export const revalidate = 15;
+
 async function getHomeData() {
   const [teams, live] = await Promise.all([
     getTeams(),
