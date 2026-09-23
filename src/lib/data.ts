@@ -21,113 +21,42 @@ import {
   StudentModel,
   TeamModel,
 } from "./models";
-
-let seedPromise: Promise<void> | null = null;
-
-async function seedCollection<T>(
-  count: number,
-  insertFn: () => Promise<T>,
-): Promise<void> {
-  if (count === 0) {
-    await insertFn();
-  }
-}
-
-async function updateTeamNames() {
-  await connectDB();
-  // Update existing teams with new names and colors from defaultTeams
-  for (const team of defaultTeams) {
-    await TeamModel.updateOne(
-      { id: team.id },
-      { $set: { name: team.name, color: team.color, leader_photo: team.leader_photo } },
-      { upsert: false }
-    );
-  }
-}
-
-async function seedDatabase() {
-  await connectDB();
-
-  const [teamCount, studentCount, programCount, juryCount, liveScoreCount, assignmentCount] =
-    await Promise.all([
-      TeamModel.countDocuments(),
-      StudentModel.countDocuments(),
-      ProgramModel.countDocuments(),
-      JuryModel.countDocuments(),
-      LiveScoreModel.countDocuments(),
-      AssignedProgramModel.countDocuments(),
-    ]);
-
-  // Always update team names to ensure they match the current defaults
-  await updateTeamNames();
-
-  await seedCollection(teamCount, async () => {
-    await TeamModel.insertMany(defaultTeams);
-  });
-
-  await seedCollection(liveScoreCount, async () => {
-    await LiveScoreModel.insertMany(
-      defaultTeams.map((team) => ({
-        team_id: team.id,
-        total_points: team.total_points,
-      })),
-    );
-  });
-
-  await seedCollection(studentCount, async () => {
-    await StudentModel.insertMany(defaultStudents);
-  });
-
-  await seedCollection(programCount, async () => {
-    await ProgramModel.insertMany(defaultPrograms);
-  });
-
-  await seedCollection(juryCount, async () => {
-    await JuryModel.insertMany(defaultJury);
-  });
-
-  await seedCollection(assignmentCount, async () => {
-    await AssignedProgramModel.insertMany(defaultAssignments);
-  });
-}
-
-async function ensureSeedData() {
-  if (!seedPromise) {
-    seedPromise = seedDatabase();
-  }
-  await seedPromise;
-}
+import {
+  createOrUpdateFirebaseUser,
+  deleteFirebaseUser,
+  getJuryFirebaseEmail,
+} from "./firebase-auth";
 
 function normalize<T>(docs: T[]): T[] {
   return docs.map((doc) => JSON.parse(JSON.stringify(doc)));
 }
 
 export async function getTeams(): Promise<Team[]> {
-  await ensureSeedData();
+  await connectDB();
   const teams = await TeamModel.find().lean<Team[]>();
   return normalize(teams);
 }
 
 export async function getLiveScores(): Promise<LiveScore[]> {
-  await ensureSeedData();
+  await connectDB();
   const scores = await LiveScoreModel.find().lean<LiveScore[]>();
   return normalize(scores);
 }
 
 export async function getStudents(): Promise<Student[]> {
-  await ensureSeedData();
+  await connectDB();
   const students = await StudentModel.find().lean<Student[]>();
   return normalize(students);
 }
 
 export async function getPrograms(): Promise<Program[]> {
-  await ensureSeedData();
+  await connectDB();
   const programs = await ProgramModel.find().lean<Program[]>();
   return normalize(programs);
 }
 
 export async function getJuries(): Promise<Jury[]> {
-  await ensureSeedData();
+  await connectDB();
   const juries = await JuryModel.find().lean<Jury[]>();
   const normalized = normalize(juries);
   
@@ -136,13 +65,10 @@ export async function getJuries(): Promise<Jury[]> {
   const juriesWithAvatars = await Promise.all(
     normalized.map(async (jury) => {
       if (!jury.avatar) {
-        // Assign random avatar only if missing - this will be saved permanently
         const avatar = getRandomJuryAvatar();
-        await connectDB();
         await JuryModel.updateOne({ id: jury.id }, { $set: { avatar } });
         return { ...jury, avatar };
       }
-      // Avatar already exists - return as-is (never change it)
       return jury;
     })
   );
@@ -151,19 +77,19 @@ export async function getJuries(): Promise<Jury[]> {
 }
 
 export async function getAssignments(): Promise<AssignedProgram[]> {
-  await ensureSeedData();
+  await connectDB();
   const assignments = await AssignedProgramModel.find().lean<AssignedProgram[]>();
   return normalize(assignments);
 }
 
 export async function getPendingResults(): Promise<ResultRecord[]> {
-  await ensureSeedData();
+  await connectDB();
   const results = await PendingResultModel.find().lean<ResultRecord[]>();
   return normalize(results);
 }
 
 export async function getApprovedResults(): Promise<ResultRecord[]> {
-  await ensureSeedData();
+  await connectDB();
   const results = await ApprovedResultModel.find().lean<ResultRecord[]>();
   return normalize(results);
 }
@@ -174,7 +100,7 @@ export async function getApprovedResults(): Promise<ResultRecord[]> {
  * @returns true if the program has an approved result, false otherwise
  */
 export async function isProgramResultApproved(programId: string): Promise<boolean> {
-  await ensureSeedData();
+  await connectDB();
   const approvedResult = await ApprovedResultModel.findOne({ program_id: programId }).lean();
   return !!approvedResult;
 }
@@ -182,7 +108,7 @@ export async function isProgramResultApproved(programId: string): Promise<boolea
 export async function getPendingResultById(
   id: string,
 ): Promise<ResultRecord | null> {
-  await ensureSeedData();
+  await connectDB();
   const result = await PendingResultModel.findOne({ id }).lean<ResultRecord | null>();
   return result ? JSON.parse(JSON.stringify(result)) : null;
 }
@@ -190,7 +116,7 @@ export async function getPendingResultById(
 export async function getApprovedResultById(
   id: string,
 ): Promise<ResultRecord | null> {
-  await ensureSeedData();
+  await connectDB();
   const result = await ApprovedResultModel.findOne({ id }).lean<ResultRecord | null>();
   return result ? JSON.parse(JSON.stringify(result)) : null;
 }
@@ -322,13 +248,28 @@ function getRandomJuryAvatar(): string {
 
 export async function createJury(input: Omit<Jury, "id">) {
   await connectDB();
+  const juryId = `jury-${randomUUID().slice(0, 8)}`;
   // Assign random avatar if not provided - once set, it never changes
   const avatar = input.avatar || getRandomJuryAvatar();
   await JuryModel.create({ 
     ...input, 
-    id: `jury-${randomUUID().slice(0, 8)}`,
+    id: juryId,
     avatar, // Avatar is set once at creation and never changes
   });
+
+  // Sync to Firebase Authentication
+  try {
+    await createOrUpdateFirebaseUser({
+      uid: juryId,
+      email: getJuryFirebaseEmail(juryId),
+      password: input.password,
+      displayName: input.name,
+      role: "jury",
+      metadata: { juryId },
+    });
+  } catch (err: any) {
+    console.error("Failed to sync jury to Firebase Auth:", err?.message || err);
+  }
 }
 
 export async function updateJuryById(id: string, data: Partial<Omit<Jury, "id">>) {
@@ -336,11 +277,32 @@ export async function updateJuryById(id: string, data: Partial<Omit<Jury, "id">>
   // Explicitly exclude avatar from updates - avatars are immutable once set
   const { avatar, ...updateData } = data;
   await JuryModel.updateOne({ id }, updateData);
+
+  // Sync to Firebase Authentication
+  try {
+    await createOrUpdateFirebaseUser({
+      uid: id,
+      email: getJuryFirebaseEmail(id),
+      password: data.password,
+      displayName: data.name,
+      role: "jury",
+      metadata: { juryId: id },
+    });
+  } catch (err: any) {
+    console.error("Failed to update jury in Firebase Auth:", err?.message || err);
+  }
 }
 
 export async function deleteJuryById(id: string) {
   await connectDB();
   await JuryModel.deleteOne({ id });
+
+  // Remove from Firebase Authentication
+  try {
+    await deleteFirebaseUser(id);
+  } catch (err: any) {
+    console.error("Failed to delete jury from Firebase Auth:", err?.message || err);
+  }
 }
 
 export async function getOrCreateAdminJury(): Promise<Jury> {
@@ -507,186 +469,3 @@ export async function resetLiveScores() {
     StudentModel.updateMany({}, { $set: { total_points: 0 } }),
   ]);
 }
-
-const defaultTeams: Team[] = [
-  {
-    id: "team-cosmos",
-    name: "SAMARQAND",
-    leader: "Mira Lopes",
-    leader_photo: "https://images.unsplash.com/photo-1544723795-3fb6469f5b39",
-    color: "#D72638",
-    description: "Fine arts and installations with a cosmic narrative.",
-    contact: "cosmos@artsfest.edu",
-    total_points: 0,
-    portal_password: "cosmos@123",
-  },
-  {
-    id: "team-dynamo",
-    name: "NAHAVAND",
-    leader: "Ritvik Sen",
-    leader_photo: "https://images.unsplash.com/photo-1521572267360-ee0c2909d518",
-    color: "#1E3A8A",
-    description: "Theatre and stagecraft enthusiasts.",
-    contact: "dynamo@artsfest.edu",
-    total_points: 0,
-    portal_password: "dynamo@123",
-  },
-  {
-    id: "team-blaze",
-    name: "YAMAMA",
-    leader: "Kabir Varma",
-    leader_photo: "https://images.unsplash.com/photo-1504593811423-6dd665756598",
-    color: "#7C3AED",
-    description: "Dance collective known for explosive choreography.",
-    contact: "blaze@artsfest.edu",
-    total_points: 0,
-    portal_password: "blaze@123",
-  },
-  {
-    id: "team-ember",
-    name: "QURTUBA",
-    leader: "Salma Aziz & Ahmed Hassan",
-    leader_photo: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e",
-    color: "#FACC15",
-    description: "Literary arts champions with spoken word mastery.",
-    contact: "ember@artsfest.edu",
-    total_points: 0,
-    portal_password: "ember@123",
-  },
-  {
-    id: "team-aurora",
-    name: "MUQADDAS",
-    leader: "Anaya Joseph",
-    leader_photo: "https://images.unsplash.com/photo-1494790108377-be9c29b29330",
-    color: "#059669",
-    description: "Music & rhythm powerhouse representing the senior batch.",
-    contact: "aurora@artsfest.edu",
-    total_points: 0,
-    portal_password: "aurora@123",
-  },
-  {
-    id: "team-flux",
-    name: "BUKHARA",
-    leader: "Levi D'Souza",
-    leader_photo: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d",
-    color: "#FB923C",
-    description: "Media & film crew pushing experimental visuals.",
-    contact: "flux@artsfest.edu",
-    total_points: 0,
-    portal_password: "flux@123",
-  },
-];
-
-const defaultStudents: Student[] = [
-  {
-    id: "stu-aurora-1",
-    name: "Neha Dominic",
-    team_id: "team-aurora",
-    chest_no: "A101",
-    avatar: "https://images.unsplash.com/photo-1524504388940-b1c1722653e1",
-    total_points: 0,
-  },
-  {
-    id: "stu-aurora-2",
-    name: "Arjun Prakash",
-    team_id: "team-aurora",
-    chest_no: "A102",
-    avatar: "https://images.unsplash.com/photo-1488426862026-3ee34a7d66df",
-    total_points: 0,
-  },
-  {
-    id: "stu-blaze-1",
-    name: "Sana Mathew",
-    team_id: "team-blaze",
-    chest_no: "B201",
-    avatar: "https://images.unsplash.com/photo-1524504388940-b1c1722653e1",
-    total_points: 0,
-  },
-  {
-    id: "stu-cosmos-1",
-    name: "Joel Francis",
-    team_id: "team-cosmos",
-    chest_no: "C301",
-    avatar: "https://images.unsplash.com/photo-1504593811423-6dd665756598",
-    total_points: 0,
-  },
-  {
-    id: "stu-dynamo-1",
-    name: "Veda Krish",
-    team_id: "team-dynamo",
-    chest_no: "D401",
-    avatar: "https://images.unsplash.com/photo-1544723795-3fb6469f5b39",
-    total_points: 0,
-  },
-  {
-    id: "stu-ember-1",
-    name: "Kiran Nair",
-    team_id: "team-ember",
-    chest_no: "E501",
-    avatar: "https://images.unsplash.com/photo-1521572267360-ee0c2909d518",
-    total_points: 0,
-  },
-  {
-    id: "stu-flux-1",
-    name: "Maya Iqbal",
-    team_id: "team-flux",
-    chest_no: "F601",
-    avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330",
-    total_points: 0,
-  },
-];
-
-const defaultPrograms: Program[] = [
-  {
-    id: "prog-solo-vocals",
-    name: "Solo Vocals",
-    section: "single",
-    stage: true,
-    category: "A",
-    candidateLimit: 2,
-  },
-  {
-    id: "prog-duet-dance",
-    name: "Duet Dance",
-    section: "group",
-    stage: true,
-    category: "none",
-    candidateLimit: 3,
-  },
-  {
-    id: "prog-live-paint",
-    name: "Live Canvas Painting",
-    section: "single",
-    stage: false,
-    category: "B",
-    candidateLimit: 1,
-  },
-  {
-    id: "prog-shortfilm",
-    name: "Short Film",
-    section: "group",
-    stage: false,
-    category: "none",
-    candidateLimit: 4,
-  },
-  {
-    id: "prog-quiz",
-    name: "General Quiz",
-    section: "general",
-    stage: true,
-    category: "none",
-    candidateLimit: 5,
-  },
-];
-
-const defaultAssignments: AssignedProgram[] = [
-  { program_id: "prog-solo-vocals", jury_id: "jury-anika", status: "pending" },
-  { program_id: "prog-duet-dance", jury_id: "jury-dev", status: "pending" },
-  { program_id: "prog-live-paint", jury_id: "jury-sahana", status: "pending" },
-];
-
-const defaultJury: Jury[] = [
-  { id: "jury-anika", name: "Anika Raman", password: "anika@jury", avatar: "/img/jury.webp" },
-  { id: "jury-dev", name: "Dev Jain", password: "dev@jury", avatar: "/img/jury1.webp" },
-  { id: "jury-sahana", name: "Sahana Biju", password: "sahana@jury", avatar: "/img/jury2.webp" },
-];

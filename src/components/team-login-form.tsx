@@ -1,6 +1,7 @@
 "use client";
 
-import { useFormState, useFormStatus } from "react-dom";
+import { useActionState } from "react";
+import { useFormStatus } from "react-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -23,7 +24,7 @@ export function TeamLoginForm({
 }: {
   action: (state: LoginState, formData: FormData) => Promise<LoginState>;
 }) {
-  const [state, formAction] = useFormState(action, {});
+  const [state, formAction] = useActionState(action, {});
 
   return (
     <Card className="max-w-lg border-white/10 bg-white/5 p-6 text-white">
@@ -32,7 +33,7 @@ export function TeamLoginForm({
         Enter your team name and password to access the portal.
       </CardDescription>
       <form action={formAction} className="mt-6 space-y-4">
-        <Input name="teamName" placeholder="Team name" required />
+        <Input name="teamName" placeholder="Team name or email" required />
         <Input name="password" type="password" placeholder="Password" required />
         {state.error && <p className="text-sm text-red-400">{state.error}</p>}
         <SubmitButton />

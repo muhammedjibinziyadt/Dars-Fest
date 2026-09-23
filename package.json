@@ -1,5 +1,5 @@
 {
-  "name": "fest-app",
+  "name": "maerika-2k26",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -7,7 +7,8 @@
     "build": "next build --webpack",
     "start": "next start",
     "lint": "eslint",
-    "generate-icons": "node scripts/generate-icons.js"
+    "generate-icons": "node scripts/generate-icons.js",
+    "clear-mock-data": "node scripts/clear-mock-data.js"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",

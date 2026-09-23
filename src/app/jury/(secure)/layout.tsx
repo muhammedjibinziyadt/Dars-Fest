@@ -19,6 +19,9 @@ export default async function JuryLayout({
   children: React.ReactNode;
 }) {
   const jury = await getCurrentJury();
+  if (!jury) {
+    redirect("/jury/login");
+  }
 
   return (
     <div className="min-h-screen bg-slate-950/95 text-white">

@@ -1,9 +1,7 @@
-import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { JuryLoginForm } from "@/components/forms/jury-login-form";
-import { JURY_COOKIE, SESSION_MAX_AGE } from "@/lib/config";
-import { findJury } from "@/lib/auth";
+import { authenticateJury } from "@/lib/auth";
 
 async function juryLoginAction(
   _state: { error?: string },
@@ -13,19 +11,18 @@ async function juryLoginAction(
   const identifier = String(formData.get("identifier") ?? "").trim();
   const password = String(formData.get("password") ?? "").trim();
 
-  const jury = identifier ? await findJury(identifier) : undefined;
-  if (!jury || jury.password !== password) {
-    return { error: "Invalid jury credentials." };
+  if (!identifier || !password) {
+    return { error: "Jury identifier/email and password are required." };
   }
 
-  const store = await cookies();
-  store.set(JURY_COOKIE, `jury:${jury.id}`, {
-    httpOnly: true,
-    sameSite: "lax",
-    secure: true,
-    maxAge: SESSION_MAX_AGE,
-    path: "/",
-  });
+  try {
+    const jury = await authenticateJury(identifier, password);
+    if (!jury) {
+      return { error: "Jury not found." };
+    }
+  } catch (error: any) {
+    return { error: error?.message || "Invalid jury credentials." };
+  }
 
   redirect("/jury/programs");
 }

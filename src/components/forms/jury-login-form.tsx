@@ -33,11 +33,11 @@ export function JuryLoginForm({ action }: JuryLoginFormProps) {
     >
       <div>
         <label className="text-sm font-semibold text-white/80">
-          Jury ID or Name
+          Jury ID, Name or Email
         </label>
         <Input
           name="identifier"
-          placeholder="jury-anika"
+          placeholder="jury-id or email"
           className="mt-2"
           required
         />

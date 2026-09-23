@@ -1,6 +1,6 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
-import { ADMIN_COOKIE, ADMIN_CREDENTIALS, JURY_COOKIE, TEAM_COOKIE } from "./src/lib/config";
+import { ADMIN_COOKIE, JURY_COOKIE, TEAM_COOKIE } from "./src/lib/config";
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -10,7 +10,7 @@ export function middleware(request: NextRequest) {
       return NextResponse.next();
     }
     const token = request.cookies.get(ADMIN_COOKIE)?.value;
-    if (token !== ADMIN_CREDENTIALS.username) {
+    if (!token?.startsWith("admin:")) {
       const url = new URL("/admin/login", request.url);
       return NextResponse.redirect(url);
     }

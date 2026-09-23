@@ -16,6 +16,11 @@ import {
   TeamModel,
 } from "./models";
 import { connectDB } from "./db";
+import {
+  createOrUpdateFirebaseUser,
+  deleteFirebaseUser,
+  getTeamFirebaseEmail,
+} from "./firebase-auth";
 
 function sanitizeColor(color?: string) {
   if (!color) return "#0ea5e9";
@@ -54,6 +59,20 @@ export async function savePortalTeam(team: PortalTeam) {
     },
     { upsert: true },
   );
+
+  // Sync to Firebase Authentication
+  try {
+    await createOrUpdateFirebaseUser({
+      uid: team.id,
+      email: getTeamFirebaseEmail(team.id),
+      password: team.password,
+      displayName: team.teamName,
+      role: "team",
+      metadata: { teamId: team.id },
+    });
+  } catch (err: any) {
+    console.error("Failed to sync team to Firebase Auth:", err?.message || err);
+  }
 }
 
 export async function deletePortalTeam(teamId: string) {
@@ -61,6 +80,13 @@ export async function deletePortalTeam(teamId: string) {
   await TeamModel.deleteOne({ id: teamId });
   await StudentModel.deleteMany({ team_id: teamId });
   await ProgramRegistrationModel.deleteMany({ teamId });
+
+  // Remove from Firebase Authentication
+  try {
+    await deleteFirebaseUser(teamId);
+  } catch (err: any) {
+    console.error("Failed to delete team from Firebase Auth:", err?.message || err);
+  }
 }
 
 export async function getPortalStudents(): Promise<PortalStudent[]> {

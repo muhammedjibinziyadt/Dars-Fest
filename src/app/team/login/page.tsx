@@ -9,11 +9,15 @@ async function teamLoginAction(_state: { error?: string }, formData: FormData) {
   const teamName = String(formData.get("teamName") ?? "").trim();
   const password = String(formData.get("password") ?? "");
   if (!teamName || !password) {
-    return { error: "Team name and password are required." };
+    return { error: "Team name/email and password are required." };
   }
-  const team = await authenticateTeam(teamName, password);
-  if (!team) {
-    return { error: "Invalid team credentials." };
+  try {
+    const team = await authenticateTeam(teamName, password);
+    if (!team) {
+      return { error: "Team not found." };
+    }
+  } catch (error: any) {
+    return { error: error?.message || "Invalid team credentials." };
   }
   redirect("/team/dashboard");
 }
