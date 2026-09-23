@@ -15,6 +15,7 @@ import {
   Search,
   Lock
 } from "lucide-react";
+import { StudentAvatarPicker } from "@/components/student-avatar-picker";
 import type { PortalStudent } from "@/lib/types";
 
 interface Props {
@@ -29,6 +30,7 @@ export function TeamStudentList({ students, updateAction, deleteAction, isRegist
   const [viewingId, setViewingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
   const [editChestNumber, setEditChestNumber] = useState("");
+  const [editAvatar, setEditAvatar] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
 
   // Filter students based on search query
@@ -50,12 +52,14 @@ export function TeamStudentList({ students, updateAction, deleteAction, isRegist
     setEditingId(student.id);
     setEditName(student.name);
     setEditChestNumber(student.chestNumber);
+    setEditAvatar(student.avatar || "");
   };
 
   const handleCancel = () => {
     setEditingId(null);
     setEditName("");
     setEditChestNumber("");
+    setEditAvatar("");
   };
 
   const handleSave = async (studentId: string) => {
@@ -63,10 +67,12 @@ export function TeamStudentList({ students, updateAction, deleteAction, isRegist
     formData.append("studentId", studentId);
     formData.append("name", editName.trim());
     formData.append("chestNumber", editChestNumber.trim().toUpperCase());
+    formData.append("avatar", editAvatar);
     await updateAction(formData);
     setEditingId(null);
     setEditName("");
     setEditChestNumber("");
+    setEditAvatar("");
   };
 
   const handleDelete = async (studentId: string) => {
@@ -182,6 +188,13 @@ export function TeamStudentList({ students, updateAction, deleteAction, isRegist
                     />
                   </div>
                 </div>
+                <div>
+                  <StudentAvatarPicker
+                    defaultValue={editAvatar}
+                    onChange={setEditAvatar}
+                    label="Update Student Photo"
+                  />
+                </div>
                 <div className="flex gap-2">
                   <Button
                     onClick={() => handleSave(student.id)}
@@ -205,9 +218,18 @@ export function TeamStudentList({ students, updateAction, deleteAction, isRegist
               // View Mode
               <div className="flex items-center justify-between gap-4">
                 <div className="flex items-center gap-4 flex-1 min-w-0">
-                  <div className="rounded-full bg-gradient-to-br from-cyan-500/20 to-blue-500/20 p-2.5 shrink-0">
-                    <User className="h-5 w-5 text-cyan-400" />
-                  </div>
+                  {student.avatar ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={student.avatar}
+                      alt={student.name}
+                      className="h-11 w-11 rounded-full object-cover border border-amber-400/60 shadow-sm shrink-0"
+                    />
+                  ) : (
+                    <div className="rounded-full bg-gradient-to-br from-cyan-500/20 to-blue-500/20 p-2.5 shrink-0 flex items-center justify-center w-11 h-11 border border-white/10">
+                      <User className="h-5 w-5 text-cyan-400" />
+                    </div>
+                  )}
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-white truncate">{student.name}</p>
                     <div className="flex items-center gap-2 mt-1 text-sm text-white/60">
@@ -254,7 +276,27 @@ export function TeamStudentList({ students, updateAction, deleteAction, isRegist
 
             {/* View Details Panel */}
             {isViewing && !isEditing && (
-              <div className="mt-4 pt-4 border-t border-white/10">
+              <div className="mt-4 pt-4 border-t border-white/10 space-y-4">
+                <div className="flex items-center gap-4 pb-3 border-b border-white/10">
+                  {student.avatar ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={student.avatar}
+                      alt={student.name}
+                      className="w-16 h-16 rounded-full object-cover border-2 border-amber-400 shadow-md shrink-0"
+                    />
+                  ) : (
+                    <div className="w-16 h-16 rounded-full bg-white/10 border border-white/20 flex items-center justify-center font-bold text-2xl text-white/70 shrink-0">
+                      {student.name.charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                  <div>
+                    <h3 className="text-base font-bold text-white">{student.name}</h3>
+                    <p className="text-xs text-amber-400 font-semibold uppercase">{student.teamName}</p>
+                    <p className="text-xs text-white/50">Chest #{student.chestNumber}</p>
+                  </div>
+                </div>
+
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
                     <p className="text-xs text-white/60 mb-1">Student Name</p>
@@ -270,14 +312,14 @@ export function TeamStudentList({ students, updateAction, deleteAction, isRegist
                   </div>
                   <div>
                     <p className="text-xs text-white/60 mb-1">Total Points</p>
-                    <p className="font-medium text-white">{student.score || 0}</p>
+                    <p className="font-medium text-emerald-400">{student.score || 0}</p>
                   </div>
                 </div>
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => setViewingId(null)}
-                  className="mt-4 w-full"
+                  className="w-full"
                 >
                   Close Details
                 </Button>

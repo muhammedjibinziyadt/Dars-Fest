@@ -15,6 +15,7 @@ import {
 } from "@/lib/data";
 import { getProgramRegistrations } from "@/lib/team-data";
 import { redirectWithToast } from "@/lib/actions";
+import { StudentAvatarPicker } from "@/components/student-avatar-picker";
 
 function generateNextChestNumber(teamName: string, existingStudents: Array<{ chest_no: string }>): string {
   const prefix = teamName.slice(0, 2).toUpperCase();
@@ -45,6 +46,7 @@ const studentSchema = z.object({
   name: z.string().min(2),
   team_id: z.string().min(2),
   chest_no: z.string().optional(),
+  avatar: z.string().optional(),
 });
 
 const csvStudentSchema = z.object({
@@ -52,6 +54,7 @@ const csvStudentSchema = z.object({
   team_id: z.string().min(2).optional(),
   team_name: z.string().min(2).optional(),
   chest_no: z.string().optional(),
+  avatar: z.string().optional(),
 }).refine((data) => data.team_id || data.team_name, {
   message: "Either team_id or team_name is required",
   path: ["team_id"],
@@ -63,6 +66,7 @@ async function upsertStudent(formData: FormData, mode: "create" | "update") {
     name: String(formData.get("name") ?? "").trim(),
     team_id: String(formData.get("team_id") ?? "").trim(),
     chest_no: String(formData.get("chest_no") ?? "").trim() || undefined,
+    avatar: String(formData.get("avatar") ?? "").trim() || undefined,
   });
   if (!parsed.success) {
     throw new Error(parsed.error.issues.map((issue) => issue.message).join(", "));
@@ -92,14 +96,19 @@ async function upsertStudent(formData: FormData, mode: "create" | "update") {
       name: payload.name,
       team_id: payload.team_id,
       chest_no: chest_no!,
+      avatar: payload.avatar,
     });
   } else {
     if (!payload.id) throw new Error("Student ID missing");
-    await updateStudentById(payload.id, {
+    const updateData: Record<string, any> = {
       name: payload.name,
       team_id: payload.team_id,
       chest_no: chest_no!,
-    });
+    };
+    if (payload.avatar !== undefined) {
+      updateData.avatar = payload.avatar;
+    }
+    await updateStudentById(payload.id, updateData);
   }
 
   revalidatePath("/admin/students");
@@ -380,6 +389,9 @@ export default async function StudentsPage() {
             options={teams.map((team) => ({ value: team.id, label: team.name }))}
             placeholder="Select team"
           />
+          <div className="md:col-span-2">
+            <StudentAvatarPicker name="avatar" label="Student Photo (Optional)" />
+          </div>
           <Button type="submit" className="md:col-span-2">
             Save Student
           </Button>

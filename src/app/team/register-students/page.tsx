@@ -12,6 +12,7 @@ import {
   upsertPortalStudent,
   isRegistrationOpen,
 } from "@/lib/team-data";
+import { StudentAvatarPicker } from "@/components/student-avatar-picker";
 
 function redirectWithMessage(message: string, type: "error" | "success" = "error") {
   const params = new URLSearchParams({ [type]: message });
@@ -72,11 +73,14 @@ async function createStudentAction(formData: FormData) {
   ) {
     redirectWithMessage("Student name already exists for this team.");
   }
+  const avatar = String(formData.get("avatar") ?? "").trim() || undefined;
+
   try {
     await upsertPortalStudent({
       name,
       chestNumber,
       teamId: team.id,
+      avatar,
     });
   } catch (error) {
     redirectWithMessage((error as Error).message);
@@ -98,6 +102,7 @@ async function updateStudentAction(formData: FormData) {
   const studentId = String(formData.get("studentId") ?? "");
   const name = String(formData.get("name") ?? "").trim();
   const chestNumber = String(formData.get("chestNumber") ?? "").trim().toUpperCase();
+  const avatar = formData.has("avatar") ? String(formData.get("avatar") ?? "").trim() : undefined;
   if (!studentId) redirectWithMessage("Missing student ID.");
 
   const students = await getPortalStudents();
@@ -114,6 +119,7 @@ async function updateStudentAction(formData: FormData) {
       name,
       chestNumber,
       teamId: team.id,
+      ...(avatar !== undefined ? { avatar } : {}),
     });
   } catch (error) {
     redirectWithMessage((error as Error).message);
@@ -213,16 +219,19 @@ export default async function RegisterStudentsPage({
         {isOpen ? (
           <>
             <ChestNumberPreview teamName={team.teamName} teamStudents={teamStudents} />
-            <form action={createStudentAction} className="mt-4 grid gap-3 sm:gap-4 sm:grid-cols-[1fr_auto]">
-              <Input 
-                name="name" 
-                placeholder="Enter student name" 
-                required 
-                className="bg-white/10 border-white/20 text-white placeholder:text-white/50"
-              />
-              <Button type="submit" className="w-full sm:w-auto">
-                Add Student
-              </Button>
+            <form action={createStudentAction} className="mt-4 space-y-4">
+              <StudentAvatarPicker name="avatar" label="Student Photo (Optional)" />
+              <div className="grid gap-3 sm:gap-4 sm:grid-cols-[1fr_auto]">
+                <Input 
+                  name="name" 
+                  placeholder="Enter student name" 
+                  required 
+                  className="bg-white/10 border-white/20 text-white placeholder:text-white/50"
+                />
+                <Button type="submit" className="w-full sm:w-auto">
+                  Add Student
+                </Button>
+              </div>
             </form>
           </>
         ) : (

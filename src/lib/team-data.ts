@@ -107,6 +107,7 @@ export async function getPortalStudents(): Promise<PortalStudent[]> {
     teamId: student.team_id,
     teamName: teamMap.get(student.team_id) ?? "Unknown",
     score: student.total_points ?? 0,
+    avatar: student.avatar,
   }));
 }
 
@@ -115,6 +116,7 @@ export async function upsertPortalStudent(input: {
   name: string;
   chestNumber: string;
   teamId: string;
+  avatar?: string;
 }) {
   await connectDB();
   const chestNumber = input.chestNumber.trim().toUpperCase();
@@ -132,14 +134,19 @@ export async function upsertPortalStudent(input: {
   const isNew = !input.id;
   
   try {
+    const setFields: Record<string, any> = {
+      name: input.name,
+      chest_no: chestNumber,
+      team_id: input.teamId,
+    };
+    if (input.avatar !== undefined) {
+      setFields.avatar = input.avatar;
+    }
+
     await StudentModel.updateOne(
       { id: studentId },
       {
-        $set: {
-          name: input.name,
-          chest_no: chestNumber,
-          team_id: input.teamId,
-        },
+        $set: setFields,
         $setOnInsert: { total_points: 0 },
       },
       { upsert: true },

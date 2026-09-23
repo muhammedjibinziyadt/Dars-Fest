@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Modal } from "@/components/ui/modal";
 import { SearchSelect } from "@/components/ui/search-select";
 import { useDebounce } from "@/hooks/use-debounce";
+import { StudentAvatarPicker } from "@/components/student-avatar-picker";
 import type { Student, Team, Program, ProgramRegistration } from "@/lib/types";
 
 interface StudentManagerProps {
@@ -419,6 +420,18 @@ export const StudentManager = React.memo(function StudentManager({
                     checked={isSelected}
                     onChange={() => toggleSelectOne(student.id)}
                   />
+                  {student.avatar ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={student.avatar}
+                      alt={student.name}
+                      className="w-10 h-10 rounded-full object-cover border border-amber-400/50 shadow-sm shrink-0"
+                    />
+                  ) : (
+                    <div className="w-10 h-10 rounded-full bg-white/10 border border-white/10 flex items-center justify-center font-bold text-white/70 text-sm shrink-0">
+                      {student.name.charAt(0).toUpperCase()}
+                    </div>
+                  )}
                   <div>
                     <p className="text-sm text-white/40">#{student.id.slice(0, 8)}</p>
                     <p className="text-lg font-semibold text-white">{student.name}</p>
@@ -477,6 +490,13 @@ export const StudentManager = React.memo(function StudentManager({
                     options={teams.map((team) => ({ value: team.id, label: team.name }))}
                     placeholder="Select team"
                   />
+                  <div className="md:col-span-3">
+                    <StudentAvatarPicker
+                      name="avatar"
+                      defaultValue={student.avatar}
+                      label="Update Student Photo"
+                    />
+                  </div>
                   <div className="flex items-center gap-3 md:col-span-3">
                     <Button type="submit" className="flex-1">
                       Save changes
@@ -548,15 +568,34 @@ export const StudentManager = React.memo(function StudentManager({
         }
       >
         {viewStudent && (
-          <div className="space-y-3 text-sm text-white/80">
+          <div className="space-y-4 text-sm text-white/80">
+            <div className="flex items-center gap-4 pb-3 border-b border-white/10">
+              {viewStudent.avatar ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={viewStudent.avatar}
+                  alt={viewStudent.name}
+                  className="w-16 h-16 rounded-full object-cover border-2 border-amber-400 shadow-md shrink-0"
+                />
+              ) : (
+                <div className="w-16 h-16 rounded-full bg-white/10 border border-white/20 flex items-center justify-center font-bold text-2xl text-white/70 shrink-0">
+                  {viewStudent.name.charAt(0).toUpperCase()}
+                </div>
+              )}
+              <div>
+                <h3 className="text-base font-bold text-white">{viewStudent.name}</h3>
+                <p className="text-xs text-amber-400 font-semibold uppercase">
+                  {teamMap.get(viewStudent.team_id) ?? "Unknown Team"}
+                </p>
+                <p className="text-xs text-white/50">Chest #{viewStudent.chest_no}</p>
+              </div>
+            </div>
             <p>
               <span className="text-white/50">Student ID:</span> {viewStudent.id}
             </p>
             <p>
-              <span className="text-white/50">Team:</span> {teamMap.get(viewStudent.team_id) ?? "Unknown"}
-            </p>
-            <p>
-              <span className="text-white/50">Chest number:</span> {viewStudent.chest_no}
+              <span className="text-white/50">Total Points:</span>{" "}
+              <span className="font-semibold text-emerald-400">{viewStudent.total_points ?? 0}</span>
             </p>
           </div>
         )}
