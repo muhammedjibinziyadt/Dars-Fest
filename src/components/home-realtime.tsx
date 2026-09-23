@@ -226,16 +226,11 @@ export function HomeRealtime({
               </Badge>
 
               <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-serif text-[#8B4513] mb-3 sm:mb-4">
-                Celebrating Islamic Art &amp; Culture
+                കലായുഗ ഭാവുകം
               </h2>
 
               <p className="text-gray-700 text-base sm:text-lg md:text-xl leading-relaxed">
-                Funoon Fiesta is a premier platform for students to showcase
-                their talents and highlight the rich art forms of Islamic
-                culture. Through music, calligraphy, poetry, traditional dance,
-                visual arts, and more, we present these beautiful expressions
-                to a wider audience, fostering creativity, cultural
-                appreciation, and artistic excellence.
+                'കലായുഗ ഭാവുകം' എന്ന പ്രമേയത്തിലൂടെ, യുവത്വത്തെ കാർന്നുതിന്നുന്ന ലഹരിയെന്ന വിപത്തിനെതിരെ കലയെയും അറിവിനെയും ഞങ്ങൾ ആയുധമാക്കുന്നു. ചിന്തകൾക്ക് മൂർച്ചകൂട്ടാനും സർഗശേഷികളെ നാടിന്റെ നന്മയ്ക്കായി വഴിതിരിച്ചുവിടാനും ഈ വേദി കരുത്തുപകരുന്നു. വിനാശകരമായ ലഹരിയുടെ വഴികളിൽ നിന്ന് കലയുടെയും സംസ്കാരത്തിന്റെയും വിശുദ്ധിയിലേക്ക് വിദ്യാർത്ഥി സമൂഹത്തെ കൈപിടിച്ചുയർത്താനുള്ള ഒരു സർഗ്ഗാത്മക മുന്നേറ്റമാണിത്.
               </p>
             </div>
 
@@ -303,7 +298,7 @@ export function HomeRealtime({
                 </Badge>
 
                 <h2 className="text-2xl sm:text-3xl md:text-4xl font-serif text-[#8B4513] mb-3 sm:mb-4">
-                  Funoon Fiesta Control Room
+                  Maerika Control Room
                 </h2>
 
                 <p className="text-gray-700 text-base sm:text-lg leading-relaxed max-w-2xl">
