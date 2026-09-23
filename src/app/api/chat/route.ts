@@ -24,8 +24,12 @@ export async function POST(req: Request) {
         const festData = await getFestDataForAI();
 
         const genAI = new GoogleGenerativeAI(apiKey);
-        // Using gemini-1.5-flash as it is fast and efficient for this use case
-        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+        const candidateModels = [
+            "gemini-3.6-flash",
+            "gemini-3.5-flash",
+            "gemini-flash-lite-latest",
+            "gemini-flash-latest",
+        ];
 
         const systemPrompt = `
 You are the official AI Assistant for "Maerika 2k26", a Dars arts fest.
@@ -48,11 +52,30 @@ GUIDELINES:
 User Query: ${message}
     `;
 
-        const result = await model.generateContent(systemPrompt);
-        const response = result.response;
-        const text = response.text();
+        let replyText = "";
+        let lastError: any = null;
 
-        return NextResponse.json({ response: text });
+        for (const modelName of candidateModels) {
+            try {
+                const model = genAI.getGenerativeModel({ model: modelName });
+                const result = await model.generateContent(systemPrompt);
+                replyText = result.response.text();
+                if (replyText) {
+                    break;
+                }
+            } catch (err: any) {
+                lastError = err;
+                console.warn(
+                    `[Chatbot] Model ${modelName} unavailable (${err?.status || err?.message}). Attempting fallback...`
+                );
+            }
+        }
+
+        if (!replyText) {
+            throw lastError || new Error("All AI models were unavailable");
+        }
+
+        return NextResponse.json({ response: replyText });
     } catch (error) {
         console.error("Chatbot Error:", error);
         return NextResponse.json(

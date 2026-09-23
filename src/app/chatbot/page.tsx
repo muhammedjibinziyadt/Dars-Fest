@@ -79,7 +79,7 @@ export default function ChatbotPage() {
                         </div>
                         <div>
                             <h1 className="font-semibold text-lg text-gray-900 dark:text-white">Maerika AI</h1>
-                            <p className="text-xs text-gray-500 dark:text-gray-400">Powered by Gemini 2.5</p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">Powered by Gemini 3.6</p>
                         </div>
                     </div>
                 </div>
