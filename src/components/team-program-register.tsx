@@ -200,7 +200,7 @@ function ProgramRegistrationCard({
         <div>
           <CardTitle>{program.name}</CardTitle>
           <CardDescription className="mt-1 text-white/70">
-            Section: {program.section} · Category: {program.category}
+            Section: {program.section}
           </CardDescription>
         </div>
         <Badge tone={limitReached ? "pink" : "emerald"}>

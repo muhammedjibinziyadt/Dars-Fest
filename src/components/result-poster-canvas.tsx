@@ -10,7 +10,6 @@ interface PrizeEntry {
 interface PosterData {
   programName: string;
   section?: string;
-  category?: string;
   prizes: PrizeEntry[];
 }
 

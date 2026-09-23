@@ -22,7 +22,6 @@ export default async function JuryProgramsPage() {
         programId: assignment.program_id,
         programName: program.name,
         section: program.section,
-        category: program.category,
         stage: program.stage,
         status: assignment.status,
       };
@@ -32,7 +31,6 @@ export default async function JuryProgramsPage() {
       programId: string;
       programName: string;
       section: string;
-      category: string;
       stage: boolean;
       status: (typeof myAssignments)[number]["status"];
     }>;

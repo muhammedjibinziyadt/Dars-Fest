@@ -49,7 +49,7 @@ export const StudentManager = React.memo(function StudentManager({
       ...programs.map((program) => ({
         value: program.id,
         label: program.name,
-        meta: `${program.section} · ${program.category !== "none" ? `Cat ${program.category}` : "General"}`,
+        meta: program.section,
       })),
     ],
     [programs],

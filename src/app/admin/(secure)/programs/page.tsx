@@ -25,7 +25,6 @@ const programSchema = z.object({
   name: z.string().min(2, "Program name is required"),
   section: z.enum(["single", "group", "general"]),
   stage: z.enum(["true", "false"]),
-  category: z.enum(["A", "B", "C", "none"]),
   candidateLimit: z
     .coerce.number()
     .min(1, "candidateLimit must be at least 1")
@@ -44,7 +43,6 @@ const csvRowSchema = z.object({
     })
     .transform((value) => value === "true")
     .pipe(z.boolean()),
-  category: z.enum(["A", "B", "C", "none"]),
   candidate_limit: z
     .coerce.number()
     .min(1, "candidate_limit must be at least 1")
@@ -60,7 +58,6 @@ async function mutateProgram(
   const nameValue = formData.get("name");
   const sectionValue = formData.get("section");
   const stageValue = formData.get("stage");
-  const categoryValue = formData.get("category");
   const candidateLimitValue = formData.get("candidateLimit") ?? formData.get("candidate_limit");
 
   const parsed = programSchema.safeParse({
@@ -68,7 +65,6 @@ async function mutateProgram(
     name: nameValue ? String(nameValue).trim() : "",
     section: sectionValue ? String(sectionValue) : "single",
     stage: stageValue ? String(stageValue) : "true",
-    category: categoryValue ? String(categoryValue) : "A",
     candidateLimit: candidateLimitValue ? String(candidateLimitValue) : "1",
   });
 
@@ -85,7 +81,6 @@ async function mutateProgram(
       name: payload.name,
       section: payload.section,
       stage,
-      category: payload.category,
       candidateLimit,
     });
   } else {
@@ -94,7 +89,6 @@ async function mutateProgram(
       name: payload.name,
       section: payload.section,
       stage,
-      category: payload.category,
       candidateLimit,
     });
   }
@@ -267,7 +261,7 @@ function parseCsv(content: string) {
   const headers = headerLine
     .split(",")
     .map((header) => header.trim().toLowerCase());
-  const requiredHeaders = ["name", "section", "stage", "category", "candidate_limit"];
+  const requiredHeaders = ["name", "section", "stage", "candidate_limit"];
   for (const column of requiredHeaders) {
     if (!headers.includes(column)) {
       throw new Error(`Missing "${column}" column in CSV header.`);
@@ -315,7 +309,6 @@ async function importProgramsAction(formData: FormData) {
         name: parsed.data.name,
         section: parsed.data.section,
         stage: parsed.data.stage,
-        category: parsed.data.category,
         candidateLimit: parsed.data.candidate_limit,
       });
       successCount++;
@@ -354,7 +347,7 @@ export default async function ProgramsPage() {
       <Card className="h-full">
         <CardTitle>Create Program</CardTitle>
         <CardDescription className="mt-2">
-          Add programs with section, stage and category metadata.
+          Add programs with section, stage and candidate limit metadata.
         </CardDescription>
         <form
           action={createProgramAction}
@@ -371,17 +364,6 @@ export default async function ProgramsPage() {
               { value: "general", label: "General" },
             ]}
             placeholder="Select section"
-          />
-          <SearchSelect
-            name="category"
-            defaultValue="A"
-            options={[
-              { value: "A", label: "Category A" },
-              { value: "B", label: "Category B" },
-              { value: "C", label: "Category C" },
-              { value: "none", label: "None" },
-            ]}
-            placeholder="Select category"
           />
           <SearchSelect
             name="stage"
@@ -408,7 +390,7 @@ export default async function ProgramsPage() {
       <Card className="h-full">
         <CardTitle>Bulk Import (CSV)</CardTitle>
         <CardDescription className="mt-2">
-          Required columns: <code>name, section, stage, category, candidate_limit</code>
+          Required columns: <code>name, section, stage, candidate_limit</code>
         </CardDescription>
         <form
           action={importProgramsAction}

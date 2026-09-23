@@ -60,7 +60,6 @@ export function ResultPosterDownloadButton({
       const posterData = {
         programName: program.name,
         section: program.section,
-        category: program.category !== "none" ? program.category : undefined,
         prizes: prizes.filter((p) => p.position <= 3) as Array<{
           position: 1 | 2 | 3;
           studentName?: string;

@@ -13,7 +13,7 @@ export async function getFestDataForAI() {
   // We exclude sensitive fields like passwords explicitly, though .lean() and projection handles it too.
   const [teams, programs, results, students] = await Promise.all([
     TeamModel.find({}, "id name total_points color leader").lean(),
-    ProgramModel.find({}, "id name section category").lean(),
+    ProgramModel.find({}, "id name section").lean(),
     ApprovedResultModel.find({}, "program_id entries").lean(),
     StudentModel.find({}, "id name chest_no team_id").lean(),
   ]);
@@ -54,7 +54,7 @@ export async function getFestDataForAI() {
   // 3. Programs List
   context += "ALL PROGRAMS:\n";
   programs.forEach((p) => {
-    context += `- ${p.name} (Section: ${p.section}, Category: ${p.category})\n`;
+    context += `- ${p.name} (Section: ${p.section})\n`;
   });
   context += "\n";
 

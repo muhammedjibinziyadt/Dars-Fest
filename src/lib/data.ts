@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import type {
   AssignedProgram,
-  CategoryType,
+  GradeType,
   Jury,
   LiveScore,
   Program,
@@ -391,16 +391,13 @@ export async function deleteAssignment(programId: string, juryId: string) {
   await emitAssignmentDeleted(programId, juryId);
 }
 
-const CATEGORY_SCORES: Record<
-  Exclude<CategoryType, "none">,
-  Record<1 | 2 | 3, number>
-> = {
-  A: { 1: 10, 2: 7, 3: 5 },
-  B: { 1: 7, 2: 5, 3: 3 },
-  C: { 1: 5, 2: 3, 3: 1 },
+const SINGLE_SCORES: Record<1 | 2 | 3, number> = {
+  1: 10,
+  2: 7,
+  3: 5,
 };
 
-const GRADE_BONUS: Record<Exclude<CategoryType, "none">, number> = {
+const GRADE_BONUS: Record<Exclude<GradeType, "none">, number> = {
   A: 5,
   B: 3,
   C: 1,
@@ -420,12 +417,11 @@ const GENERAL_SCORES: Record<1 | 2 | 3, number> = {
 
 export function calculateScore(
   section: SectionType,
-  category: CategoryType,
   position: 1 | 2 | 3,
-  grade: CategoryType = "none",
+  grade: GradeType = "none",
 ): number {
   if (section === "single") {
-    const base = category !== "none" ? CATEGORY_SCORES[category][position] : 0;
+    const base = SINGLE_SCORES[position] || 0;
     const bonus = grade !== "none" ? GRADE_BONUS[grade] : 0;
     return base + bonus;
   }

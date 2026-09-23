@@ -38,7 +38,7 @@ function sanitizeGrade(grade: string | undefined): "A" | "B" | "C" | "none" {
 }
 
 async function buildEntries(
-  program: { id: string; section: string; category: string },
+  program: { id: string; section: string },
   winners: WinnerPayload[],
 ) {
   if (program.section === "single") {
@@ -58,7 +58,6 @@ async function buildEntries(
         grade,
         score: calculateScore(
           program.section as "single",
-          program.category as "A" | "B" | "C" | "none",
           winner.position,
           grade,
         ),
@@ -80,7 +79,6 @@ async function buildEntries(
       grade: "none" as const,
       score: calculateScore(
         program.section as "group" | "general",
-        "none",
         winner.position,
         "none",
       ),

@@ -15,7 +15,6 @@ interface EnrichedAssignment {
   programId: string;
   programName: string;
   section: string;
-  category: string;
   stage: boolean;
   status: AssignedProgram["status"];
 }
@@ -157,7 +156,6 @@ export function JuryAssignmentsBoard({ assignments }: { assignments: EnrichedAss
                     <p className="text-sm text-white/70">{statusMeta.description}</p>
                     <div className="flex flex-wrap gap-2 text-xs font-semibold uppercase tracking-wider text-white/70">
                       <span className="rounded-full border border-white/20 px-3 py-1">Section: {assignment.section}</span>
-                      <span className="rounded-full border border-white/20 px-3 py-1">Cat {assignment.category}</span>
                       <span className="rounded-full border border-white/20 px-3 py-1">
                         {assignment.stage ? "On stage" : "Off stage"}
                       </span>

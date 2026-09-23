@@ -35,25 +35,28 @@ export async function getPortalTeams(): Promise<PortalTeam[]> {
     teamName: team.name,
     password: team.portal_password ?? "",
     leaderName: team.leader,
+    leaderEmail: team.leader_email || "",
     themeColor: sanitizeColor(team.color),
   }));
 }
 
 export async function savePortalTeam(team: PortalTeam) {
   await connectDB();
+  const cleanEmail = team.leaderEmail?.trim().toLowerCase();
   await TeamModel.updateOne(
     { id: team.id },
     {
       $set: {
         name: team.teamName,
         leader: team.leaderName,
+        leader_email: cleanEmail,
+        contact: cleanEmail || `${team.teamName.toLowerCase().replace(/\s+/g, "")}@fest.edu`,
         color: sanitizeColor(team.themeColor),
         portal_password: team.password,
       },
       $setOnInsert: {
         leader_photo: team.leaderName,
         description: `${team.teamName} squad`,
-        contact: `${team.teamName.toLowerCase().replace(/\s+/g, "")}@fest.edu`,
         total_points: 0,
       },
     },
@@ -62,13 +65,14 @@ export async function savePortalTeam(team: PortalTeam) {
 
   // Sync to Firebase Authentication
   try {
+    const authEmail = cleanEmail || getTeamFirebaseEmail(team.id);
     await createOrUpdateFirebaseUser({
       uid: team.id,
-      email: getTeamFirebaseEmail(team.id),
+      email: authEmail,
       password: team.password,
       displayName: team.teamName,
       role: "team",
-      metadata: { teamId: team.id },
+      metadata: { teamId: team.id, leaderEmail: cleanEmail },
     });
   } catch (err: any) {
     console.error("Failed to sync team to Firebase Auth:", err?.message || err);

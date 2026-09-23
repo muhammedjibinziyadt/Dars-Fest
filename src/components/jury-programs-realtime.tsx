@@ -11,7 +11,6 @@ interface EnrichedAssignment {
   programId: string;
   programName: string;
   section: string;
-  category: string;
   stage: boolean;
   status: AssignedProgram["status"];
 }

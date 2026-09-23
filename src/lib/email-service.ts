@@ -12,7 +12,7 @@ export function getResendClient(): Resend | null {
 }
 
 export function getDefaultFrom(): string {
-  return process.env.RESEND_FROM_EMAIL || "Maerika 2K26 <noreply@maerika2k26.jawharathululoomsuffadars.online>";
+  return process.env.RESEND_FROM_EMAIL || "Maerika 2K26 <admin@maerika2k26.jawharathululoomsuffadars.online>";
 }
 
 export function getDefaultReplyTo(): string {
@@ -120,9 +120,8 @@ export async function sendResultPublishedEmail({
               The official results for <strong>${programName}</strong> have been finalized and approved.
             </p>
 
-            ${
-              winners.length > 0
-                ? `
+            ${winners.length > 0
+      ? `
             <table style="width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 14px;">
               <thead>
                 <tr style="background-color: #f5f5f4; text-align: left;">
@@ -137,8 +136,8 @@ export async function sendResultPublishedEmail({
               </tbody>
             </table>
             `
-                : ""
-            }
+      : ""
+    }
 
             <div style="text-align: center; margin-top: 30px;">
               <a href="${resultUrl}" class="btn">View Full Results & Poster</a>
@@ -230,3 +229,100 @@ export async function sendTestEmail(to: string) {
     `,
   });
 }
+
+/**
+ * Team Leader Welcome & Credentials Email
+ */
+export async function sendTeamWelcomeEmail({
+  to,
+  leaderName,
+  teamName,
+  loginEmail,
+  password,
+}: {
+  to: string;
+  leaderName: string;
+  teamName: string;
+  loginEmail: string;
+  password: string;
+}) {
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || process.env.NEXT_PUBLIC_APP_URL || "https://maerika2k26.vercel.app";
+  const loginUrl = `${baseUrl}/team/login`;
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <style>
+          body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #fafaf9; margin: 0; padding: 20px; color: #1c1917; }
+          .container { max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 16px; overflow: hidden; border: 1px solid #e7e5e4; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); }
+          .header { background: linear-gradient(135deg, #8B4513, #6B3410); padding: 36px 24px; text-align: center; color: white; }
+          .content { padding: 32px 28px; }
+          .credential-box { background: #f5f5f4; border: 1px solid #e7e5e4; border-radius: 12px; padding: 20px; margin: 24px 0; }
+          .btn { display: inline-block; background-color: #8B4513; color: white !important; font-weight: 600; padding: 14px 32px; border-radius: 10px; text-decoration: none; margin-top: 20px; }
+          .instructions { background: #fffcf5; border-left: 4px solid #8B4513; padding: 16px; border-radius: 0 8px 8px 0; margin: 24px 0; font-size: 14px; line-height: 1.6; }
+          .footer { padding: 24px; text-align: center; font-size: 12px; color: #78716c; background-color: #f5f5f4; border-top: 1px solid #e7e5e4; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1 style="margin: 0; font-size: 26px; font-weight: 700;">Welcome to Maerika 2K26</h1>
+            <p style="margin: 8px 0 0 0; opacity: 0.9; font-size: 15px;">Team Leader Portal Access Credentials</p>
+          </div>
+          <div class="content">
+            <h2 style="color: #1c1917; margin-top: 0; font-size: 20px;">Assalamu Alaikum, ${leaderName}!</h2>
+            <p style="color: #44403c; line-height: 1.6;">
+              Congratulations! Your team <strong>${teamName}</strong> has been successfully registered for <strong>Maerika 2k26</strong>.
+              Below are your official credentials to access the Team Portal.
+            </p>
+
+            <div class="credential-box">
+              <div style="margin-bottom: 12px; border-bottom: 1px solid #e7e5e4; padding-bottom: 8px;">
+                <span style="color: #78716c; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600;">Login Credentials</span>
+              </div>
+              <p style="margin: 8px 0; font-size: 14px;"><strong>Festival:</strong> Maerika 2K26</p>
+              <p style="margin: 8px 0; font-size: 14px;"><strong>Team Name:</strong> ${teamName}</p>
+              <p style="margin: 8px 0; font-size: 14px;"><strong>Login Email:</strong> <code style="background: #e7e5e4; padding: 3px 8px; border-radius: 4px; font-size: 14px; font-weight: 600; color: #8B4513;">${loginEmail}</code></p>
+              <p style="margin: 8px 0; font-size: 14px;"><strong>Temporary Password:</strong> <code style="background: #e7e5e4; padding: 3px 8px; border-radius: 4px; font-size: 14px; font-weight: 600; color: #8B4513;">${password}</code></p>
+              <p style="margin: 8px 0 0 0; font-size: 12px; color: #78716c;">(You can also log in using your Team Name: <strong>${teamName}</strong>)</p>
+            </div>
+
+            <div class="instructions">
+              <strong style="color: #8B4513; font-size: 15px;">Instructions for Accessing & Managing Your Team:</strong>
+              <ol style="margin: 8px 0 0 0; padding-left: 20px;">
+                <li style="margin-bottom: 6px;">Sign in to the Team Portal using the button below or via <a href="${loginUrl}" style="color: #8B4513;">${loginUrl}</a>.</li>
+                <li style="margin-bottom: 6px;">Register participants for available single and group programs before the registration window closes.</li>
+                <li style="margin-bottom: 6px;">Track your team's live scores, rankings, and event schedules in real time.</li>
+                <li>Submit candidate replacement requests if needed before festival deadlines.</li>
+              </ol>
+            </div>
+
+            <div style="text-align: center; margin-top: 28px;">
+              <a href="${loginUrl}" class="btn">Log In to Team Portal</a>
+            </div>
+
+            <p style="text-align: center; font-size: 13px; color: #a8a29e; margin-top: 18px;">
+              Portal Link: <a href="${loginUrl}" style="color: #8B4513;">${loginUrl}</a>
+            </p>
+          </div>
+          <div class="footer">
+            <p style="margin: 4px 0;"><strong>Maerika 2K26</strong> · Arts & Cultural Fest</p>
+            <p style="margin: 4px 0;">Jawharathul Uloom Suffa Dars</p>
+            <p style="margin: 8px 0 0 0; font-size: 11px; color: #a8a29e;">This is an automated notification. Keep your password confidential.</p>
+          </div>
+        </div>
+      </body>
+    </html>
+  `;
+
+  return sendEmail({
+    to,
+    subject: `🎉 Welcome to Maerika 2K26 - Team Portal Credentials for ${teamName}`,
+    html,
+    text: `Welcome to Maerika 2K26!\n\nFestival: Maerika 2K26\nTeam: ${teamName}\nLeader: ${leaderName}\nLogin Email: ${loginEmail}\nPassword: ${password}\n\nTeam Portal Link: ${loginUrl}\n\nPlease sign in to register participants and manage your team.`,
+  });
+}
+

@@ -255,11 +255,6 @@ export function ParticipantProfileDisplay({ profile }: ParticipantProfileProps) 
                     <span className="text-[10px] bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 px-2 py-0.5 rounded-md">
                       {reg.program.section}
                     </span>
-                    {reg.program.category !== "none" && (
-                      <span className="text-[10px] bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 px-2 py-0.5 rounded-md">
-                        Cat {reg.program.category}
-                      </span>
-                    )}
                   </div>
 
                   {reg.result ? (

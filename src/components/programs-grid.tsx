@@ -90,7 +90,6 @@ export function ProgramsGrid({ programs, results, programMap, students, teams }:
     return {
       hasResults,
       section: program?.section || "general",
-      category: program?.category || "none",
     };
   };
 
@@ -175,11 +174,6 @@ export function ProgramsGrid({ programs, results, programMap, students, teams }:
                                   <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-700 capitalize">
                                     {stats.section}
                                   </span>
-                                  {stats.category !== "none" && (
-                                    <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-700">
-                                      Cat {stats.category}
-                                    </span>
-                                  )}
                                 </div>
                               </div>
                             </div>

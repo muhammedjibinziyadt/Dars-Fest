@@ -102,7 +102,6 @@ export default async function ProgramDetailPage({ params }: ProgramDetailPagePro
             </div>
             <div className="flex items-center gap-3 mt-3">
               <Badge className="bg-cyan-100 text-cyan-800 border-cyan-200">Section: {data.program.section}</Badge>
-              <Badge className="bg-pink-100 text-pink-800 border-pink-200">Category: {data.program.category}</Badge>
               <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200">Jury: {juryName}</Badge>
             </div>
           </div>

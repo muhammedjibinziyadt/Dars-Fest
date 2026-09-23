@@ -1,11 +1,11 @@
 export type SectionType = "single" | "group" | "general";
-export type CategoryType = "A" | "B" | "C" | "none";
 export type GradeType = "A" | "B" | "C" | "none";
 
 export interface Team {
   id: string;
   name: string;
   leader: string;
+  leader_email?: string;
   leader_photo: string;
   color: string;
   description: string;
@@ -28,7 +28,6 @@ export interface Program {
   name: string;
   section: SectionType;
   stage: boolean;
-  category: CategoryType;
   candidateLimit?: number;
 }
 
@@ -82,6 +81,7 @@ export interface PortalTeam {
   teamName: string;
   password: string;
   leaderName: string;
+  leaderEmail?: string;
   themeColor?: string;
 }
 

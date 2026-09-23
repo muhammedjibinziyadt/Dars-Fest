@@ -22,21 +22,13 @@ interface ProgramManagerProps {
   candidateCounts?: Record<string, number>;
 }
 
-type SortOption = "latest" | "az" | "category";
+type SortOption = "latest" | "az";
 
 const sectionOptions = [
   { label: "All Sections", value: "" },
   { label: "Single", value: "single" },
   { label: "Group", value: "group" },
   { label: "General", value: "general" },
-];
-
-const categoryOptions = [
-  { label: "All Categories", value: "" },
-  { label: "Category A", value: "A" },
-  { label: "Category B", value: "B" },
-  { label: "Category C", value: "C" },
-  { label: "None", value: "none" },
 ];
 
 const stageOptions = [
@@ -101,7 +93,6 @@ export const ProgramManager = React.memo(function ProgramManager({
   const [searchQuery, setSearchQuery] = useState("");
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
   const [sectionFilter, setSectionFilter] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState("");
   const [stageFilter, setStageFilter] = useState("");
   const [sort, setSort] = useState<SortOption>("latest");
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -119,7 +110,7 @@ export const ProgramManager = React.memo(function ProgramManager({
 
   useEffect(() => {
     setPage(1);
-  }, [debouncedSearchQuery, sectionFilter, categoryFilter, stageFilter, sort]);
+  }, [debouncedSearchQuery, sectionFilter, stageFilter, sort]);
 
   useEffect(() => {
     setSelectedJuryId(juryOptions[0]?.value ?? "");
@@ -136,18 +127,15 @@ export const ProgramManager = React.memo(function ProgramManager({
     return programs.filter((program) => {
       const matchesSearch = program.name.toLowerCase().includes(debouncedSearchQuery.trim().toLowerCase());
       const matchesSection = sectionFilter ? program.section === sectionFilter : true;
-      const matchesCategory = categoryFilter ? program.category === categoryFilter : true;
       const matchesStage = stageFilter ? String(program.stage) === stageFilter : true;
-      return matchesSearch && matchesSection && matchesCategory && matchesStage;
+      return matchesSearch && matchesSection && matchesStage;
     });
-  }, [programs, debouncedSearchQuery, sectionFilter, categoryFilter, stageFilter]);
+  }, [programs, debouncedSearchQuery, sectionFilter, stageFilter]);
 
   const sortedPrograms = useMemo(() => {
     const list = [...filteredPrograms];
     if (sort === "az") {
       list.sort((a, b) => a.name.localeCompare(b.name));
-    } else if (sort === "category") {
-      list.sort((a, b) => a.category.localeCompare(b.category));
     } else {
       list.sort((a, b) => b.id.localeCompare(a.id));
     }
@@ -258,13 +246,6 @@ export const ProgramManager = React.memo(function ProgramManager({
           placeholder="Filter by section"
         />
         <SearchSelect
-          name="category_filter"
-          options={categoryOptions}
-          value={categoryFilter}
-          onValueChange={setCategoryFilter}
-          placeholder="Filter by category"
-        />
-        <SearchSelect
           name="stage_filter"
           options={stageOptions}
           value={stageFilter}
@@ -279,7 +260,6 @@ export const ProgramManager = React.memo(function ProgramManager({
           {[
             { label: "Latest First", value: "latest" },
             { label: "A-Z Name", value: "az" },
-            { label: "Category", value: "category" },
           ].map((option) => (
             <button
               key={option.value}
@@ -355,9 +335,6 @@ export const ProgramManager = React.memo(function ProgramManager({
                     {program.section}
                   </span>
                   <span className="rounded-full border border-white/15 px-3 py-1">
-                    Cat {program.category}
-                  </span>
-                  <span className="rounded-full border border-white/15 px-3 py-1">
                     {program.stage ? "On stage" : "Off stage"}
                   </span>
                   <span
@@ -416,17 +393,6 @@ export const ProgramManager = React.memo(function ProgramManager({
                       { value: "general", label: "General" },
                     ]}
                     placeholder="Select section"
-                  />
-                  <SearchSelect
-                    name="category"
-                    defaultValue={program.category}
-                    options={[
-                      { value: "A", label: "Category A" },
-                      { value: "B", label: "Category B" },
-                      { value: "C", label: "Category C" },
-                      { value: "none", label: "None" },
-                    ]}
-                    placeholder="Select category"
                   />
                   <SearchSelect
                     name="stage"
@@ -519,9 +485,6 @@ export const ProgramManager = React.memo(function ProgramManager({
             </p>
             <p>
               <span className="text-white/50">Section:</span> {viewProgram.section}
-            </p>
-            <p>
-              <span className="text-white/50">Category:</span> {viewProgram.category}
             </p>
             <p>
               <span className="text-white/50">Stage:</span>{" "}

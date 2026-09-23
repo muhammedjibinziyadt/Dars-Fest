@@ -8,6 +8,8 @@ import { ColorPickerInput } from "@/components/ui/color-picker";
 import { TeamPortalManager } from "@/components/team-portal-manager";
 import { redirectWithToast } from "@/lib/actions";
 
+import { sendTeamWelcomeEmail } from "@/lib/email-service";
+
 function sanitizeColor(value: string) {
   return /^#([0-9A-F]{3}){1,2}$/i.test(value) ? value : "#0ea5e9";
 }
@@ -15,26 +17,78 @@ function sanitizeColor(value: string) {
 async function upsertTeamAction(formData: FormData) {
   "use server";
   try {
+    const isUpdate = Boolean(formData.get("id"));
     const id = String(formData.get("id") ?? `team-${randomUUID().slice(0, 6)}`);
     const teamName = String(formData.get("teamName") ?? "").trim();
-    const password = String(formData.get("password") ?? "").trim();
     const leaderName = String(formData.get("leaderName") ?? "").trim();
+    const leaderEmail = String(formData.get("leaderEmail") ?? "").trim().toLowerCase();
+    let password = String(formData.get("password") ?? "").trim();
     const themeColor = sanitizeColor(String(formData.get("themeColor") ?? "#0ea5e9"));
-    if (!teamName || !password || !leaderName) {
+
+    if (!teamName || !leaderName) {
       revalidatePath("/admin/team-portal-control");
-      redirectWithToast("/admin/team-portal-control", "Team name, password, and leader name are required.", "error");
+      redirectWithToast("/admin/team-portal-control", "Team name and leader name are required.", "error");
       return;
     }
-    const isUpdate = formData.get("id") !== null;
+
+    if (!leaderEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(leaderEmail)) {
+      revalidatePath("/admin/team-portal-control");
+      redirectWithToast("/admin/team-portal-control", "A valid Team Leader email address is required.", "error");
+      return;
+    }
+
+    // Auto-generate secure temporary password if left empty on creation
+    if (!password) {
+      if (!isUpdate) {
+        password = `M26@${Math.random().toString(36).slice(-6)}`;
+      } else {
+        revalidatePath("/admin/team-portal-control");
+        redirectWithToast("/admin/team-portal-control", "Password is required.", "error");
+        return;
+      }
+    }
+
     await savePortalTeam({
       id,
       teamName,
       password,
       leaderName,
+      leaderEmail,
       themeColor,
     });
+
+    let emailNotice = "";
+    let toastType: "success" | "warning" = "success";
+
+    // Send welcome email via Resend when new team is created
+    if (!isUpdate) {
+      try {
+        const emailRes = await sendTeamWelcomeEmail({
+          to: leaderEmail,
+          leaderName,
+          teamName,
+          loginEmail: leaderEmail,
+          password,
+        });
+
+        if (emailRes.success) {
+          emailNotice = ` Welcome email sent to ${leaderEmail}.`;
+        } else {
+          toastType = "warning";
+          emailNotice = ` Note: Welcome email could not be delivered (${emailRes.error || "service unavailable"}). Password: ${password}`;
+        }
+      } catch (err: any) {
+        toastType = "warning";
+        emailNotice = ` Note: Email sending failed (${err?.message || "error"}). Password: ${password}`;
+      }
+    }
+
     revalidatePath("/admin/team-portal-control");
-    redirectWithToast("/admin/team-portal-control", isUpdate ? "Team updated successfully!" : "Team created successfully!", "success");
+    redirectWithToast(
+      "/admin/team-portal-control",
+      isUpdate ? "Team updated successfully!" : `Team created successfully!${emailNotice}`,
+      toastType,
+    );
   } catch (error: any) {
     // Check if it's a redirect error - if so, re-throw it
     if (error?.digest === "NEXT_REDIRECT" || error?.message === "NEXT_REDIRECT") {
@@ -119,11 +173,12 @@ export default async function TeamPortalControlPage() {
           </CardDescription>
           <form action={upsertTeamAction} className="mt-6 grid gap-4">
             <Input name="teamName" placeholder="Team name" required />
-            <Input name="leaderName" placeholder="Leader name" required />
-            <Input name="password" type="text" placeholder="Password" required />
+            <Input name="leaderName" placeholder="Team Leader name" required />
+            <Input name="leaderEmail" type="email" placeholder="Team Leader email (credentials will be sent here)" required />
+            <Input name="password" type="text" placeholder="Password (leave empty to auto-generate)" />
             <ColorPickerInput name="themeColor" defaultValue="#0ea5e9" />
             <Button type="submit" className="w-full">
-              Create Team
+              Create Team &amp; Send Credentials
             </Button>
           </form>
         </Card>

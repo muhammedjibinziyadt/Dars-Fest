@@ -50,7 +50,7 @@ export interface ParticipantProfile {
       C: number;
     };
     totalPenalties: number;
-    pointsByCategory: {
+    pointsBreakdown: {
       position: number;
       grade: number;
       penalty: number;
@@ -213,7 +213,7 @@ export async function getParticipantProfile(
       (sum, r) => sum + ("penalty" in r && r.penalty?.points || 0),
       0,
     ),
-    pointsByCategory: {
+    pointsBreakdown: {
       position: enrichedRegistrations.reduce(
         (sum, r) => sum + ("result" in r && r.result?.score || 0),
         0,

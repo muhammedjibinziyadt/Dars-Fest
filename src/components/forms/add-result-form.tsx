@@ -115,7 +115,7 @@ export function AddResultForm({
       programs.map((program) => ({
         value: program.id,
         label: program.name,
-        meta: `${program.section} · Cat ${program.category}${
+        meta: `${program.section}${
           program.stage ? " · On stage" : " · Off stage"
         }`,
       })),
@@ -305,7 +305,6 @@ export function AddResultForm({
         <div className="mt-4 rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-white/80">
           <p>Section: {selectedProgram?.section}</p>
           <p>Stage: {selectedProgram?.stage ? "On stage" : "Off stage"}</p>
-          <p>Category: {selectedProgram?.category}</p>
         </div>
       </Card>
       )}
@@ -333,7 +332,7 @@ export function AddResultForm({
             <p className="text-xs uppercase tracking-widest text-white/50">Program</p>
             <p className="text-xl font-semibold text-white">{selectedProgram?.name}</p>
             <p className="text-xs text-white/50 mt-1">
-              Section: {selectedProgram?.section} · Category: {selectedProgram?.category}
+              Section: {selectedProgram?.section}
             </p>
           </div>
         )}
@@ -525,12 +524,12 @@ export function AddResultForm({
         }
       >
         <div className="space-y-4 text-sm">
-          <p>Single events (Category A/B/C) add grade bonus on top of podium points.</p>
+          <p>Single events add grade bonus on top of podium points.</p>
           <div className="grid gap-3 rounded-2xl border border-white/10 bg-slate-900/70 p-4">
             <p className="font-semibold">Single · Podium</p>
-            <p>A: 10 / 7 / 5 · B: 7 / 5 / 3 · C: 5 / 3 / 1</p>
+            <p>1st: 10 · 2nd: 7 · 3rd: 5</p>
             <p className="font-semibold">Grade Bonus</p>
-            <p>A +5 · B +3 · C +1</p>
+            <p>A: +5 · B: +3 · C: +1</p>
           </div>
           <div className="grid gap-3 rounded-2xl border border-white/10 bg-slate-900/70 p-4">
             <p className="font-semibold">Group</p>

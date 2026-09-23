@@ -346,7 +346,6 @@ export const AssignmentManager = React.memo(function AssignmentManager({
                           const programName = program?.name || `Program ID: ${assignment.program_id}`;
                           const juryName = jury?.name || `Jury ID: ${assignment.jury_id}`;
                           const programSection = program?.section || "Unknown";
-                          const programCategory = program?.category || "N/A";
                           const programStage = program?.stage !== undefined ? program.stage : false;
 
                           return (
@@ -366,8 +365,6 @@ export const AssignmentManager = React.memo(function AssignmentManager({
                                   </div>
                                   <div className="flex flex-wrap items-center gap-3 text-xs text-white/60">
                                     <span className="capitalize">{programSection}</span>
-                                    <span>•</span>
-                                    <span>Cat {programCategory}</span>
                                     <span>•</span>
                                     <span>{programStage ? "On Stage" : "Off Stage"}</span>
                                   </div>
@@ -435,7 +432,6 @@ export const AssignmentManager = React.memo(function AssignmentManager({
             const programName = program?.name || `Program ID: ${assignment.program_id}`;
             const juryName = jury?.name || `Jury ID: ${assignment.jury_id}`;
             const programSection = program?.section || "Unknown";
-            const programCategory = program?.category || "N/A";
 
             return (
               <motion.div
@@ -457,8 +453,6 @@ export const AssignmentManager = React.memo(function AssignmentManager({
                       </div>
                       <span>•</span>
                       <span className="capitalize">{programSection}</span>
-                      <span>•</span>
-                      <span>Cat {programCategory}</span>
                     </div>
                   </div>
                   <div className="flex items-center gap-3 lg:justify-end">

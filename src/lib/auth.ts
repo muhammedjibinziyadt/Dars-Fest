@@ -108,17 +108,22 @@ export async function getCurrentJury() {
   return jury;
 }
 
-export async function findPortalTeam(teamNameOrId: string): Promise<PortalTeam | undefined> {
+export async function findPortalTeam(identifier: string): Promise<PortalTeam | undefined> {
   const teams = await getPortalTeams();
-  const lower = teamNameOrId.trim().toLowerCase();
-  return teams.find((team) => team.teamName.toLowerCase() === lower || team.id.toLowerCase() === lower);
+  const lower = identifier.trim().toLowerCase();
+  return teams.find(
+    (team) =>
+      team.teamName.toLowerCase() === lower ||
+      team.id.toLowerCase() === lower ||
+      (team.leaderEmail && team.leaderEmail.toLowerCase() === lower),
+  );
 }
 
-export async function authenticateTeam(teamNameOrId: string, password: string) {
-  const team = await findPortalTeam(teamNameOrId);
+export async function authenticateTeam(identifier: string, password: string) {
+  const team = await findPortalTeam(identifier);
   if (!team) return undefined;
 
-  const email = getTeamFirebaseEmail(team.id);
+  const email = team.leaderEmail || getTeamFirebaseEmail(team.id);
   await verifyPasswordWithFirebaseAuth(email, password);
 
   const store = await cookies();
