@@ -64,7 +64,7 @@ export default async function AdminDashboardPage() {
       <section className="grid gap-6 lg:grid-cols-[2fr_1fr]">
         <div className="rounded-3xl border border-white/10 bg-linear-to-br from-indigo-900/70 via-fuchsia-900/50 to-emerald-900/40 p-8 text-white shadow-[0_25px_80px_rgba(14,165,233,0.15)]">
           <div className="flex flex-wrap items-center justify-between gap-4">
-            <Badge tone="cyan">Funoon Fiesta Control</Badge>
+            <Badge tone="cyan">Maerika 2k26 Control</Badge>
             <span className="text-sm text-white/70">Approval rate • {approvalRate}%</span>
           </div>
           <h1 className="mt-6 text-3xl font-semibold leading-tight">

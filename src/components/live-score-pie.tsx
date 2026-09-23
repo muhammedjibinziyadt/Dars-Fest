@@ -73,7 +73,7 @@ export function LiveScorePie({ teams, liveScores }: LiveScorePieProps) {
     <div className="flex flex-col ">
       <div className="flex flex-col gap-2 p-6 pb-0">
         <div className="flex items-center gap-2">
-          <CardTitle className="text-xl text-white">Funoon Fiesta Team Spread</CardTitle>
+          <CardTitle className="text-xl text-white">Maerika 2k26 Team Spread</CardTitle>
           <Badge
             tone="emerald"
             className="ml-2 flex items-center gap-1 border border-emerald-500/40 bg-emerald-500/10 text-emerald-100"

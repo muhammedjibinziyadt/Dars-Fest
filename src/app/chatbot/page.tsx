@@ -15,7 +15,7 @@ export default function ChatbotPage() {
     const [messages, setMessages] = useState<Message[]>([
         {
             role: "assistant",
-            content: "Hello! I am the Funoon Fiesta AI Assistant. Ask me anything about results, teams, or students! (Malayalam supported)",
+            content: "Hello! I am the Maerika 2k26 AI Assistant. Ask me anything about results, teams, or students! (Malayalam supported)",
         },
     ]);
     const [input, setInput] = useState("");
@@ -78,7 +78,7 @@ export default function ChatbotPage() {
                             <Bot size={20} className="text-white" />
                         </div>
                         <div>
-                            <h1 className="font-semibold text-lg text-gray-900 dark:text-white">Funoon AI</h1>
+                            <h1 className="font-semibold text-lg text-gray-900 dark:text-white">Maerika AI</h1>
                             <p className="text-xs text-gray-500 dark:text-gray-400">Powered by Gemini 2.5</p>
                         </div>
                     </div>

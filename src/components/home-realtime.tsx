@@ -298,7 +298,7 @@ export function HomeRealtime({
                 </Badge>
 
                 <h2 className="text-2xl sm:text-3xl md:text-4xl font-serif text-[#8B4513] mb-3 sm:mb-4">
-                  Maerika Control Room
+                  Maerika 2k26 Control Room
                 </h2>
 
                 <p className="text-gray-700 text-base sm:text-lg leading-relaxed max-w-2xl">
