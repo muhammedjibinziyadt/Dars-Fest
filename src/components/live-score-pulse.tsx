@@ -22,45 +22,7 @@ interface LiveScorePulseProps {
   liveScores: Map<string, number>;
 }
 
-// Team color mappings
-const TEAM_COLORS: Record<string, { primary: string; gradient: string; light: string; stroke: string }> = {
-  SAMARQAND: {
-    primary: "#D72638",
-    gradient: "from-[#D72638] to-[#B01E2E]",
-    light: "#FEE2E2",
-    stroke: "#9F1221",
-  },
-  NAHAVAND: {
-    primary: "#1E3A8A",
-    gradient: "from-[#1E3A8A] to-[#172554]",
-    light: "#DBEAFE",
-    stroke: "#172554",
-  },
-  YAMAMA: {
-    primary: "#7C3AED",
-    gradient: "from-[#7C3AED] to-[#6D28D9]",
-    light: "#EDE9FE",
-    stroke: "#5B21B6",
-  },
-  QURTUBA: {
-    primary: "#FACC15",
-    gradient: "from-[#FACC15] to-[#EAB308]",
-    light: "#FEF9C3",
-    stroke: "#CA8A04",
-  },
-  MUQADDAS: {
-    primary: "#059669",
-    gradient: "from-[#059669] to-[#047857]",
-    light: "#D1FAE5",
-    stroke: "#065F46",
-  },
-  BUKHARA: {
-    primary: "#FB923C",
-    gradient: "from-[#FB923C] to-[#F97316]",
-    light: "#FFEDD5",
-    stroke: "#C2410C",
-  },
-};
+import { getTeamPalette, type TeamPalette } from "@/lib/team-colors";
 
 function getMedalColor(index: number): string {
   switch (index) {
@@ -76,7 +38,7 @@ function getMedalColor(index: number): string {
 }
 
 interface TeamCardProps {
-  team: Team & { totalPoints: number; colors: { primary: string; gradient: string; light: string } };
+  team: Team & { totalPoints: number; colors: TeamPalette };
   index: number;
   maxPoints: number;
 }
@@ -93,16 +55,20 @@ function TeamCard({ team, index, maxPoints }: TeamCardProps) {
       className="relative group"
     >
       <div
-        className={`bg-gradient-to-br ${team.colors.gradient} rounded-2xl shadow-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl transform-gpu p-[3px] ${isTopThree ? 'ring-2 ring-offset-2 ring-offset-[#fffcf5]' : ''
-          }`}
-        style={isTopThree ? {
-          boxShadow: `0 0 0 2px ${getMedalColor(index)}40, 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)`
-        } as React.CSSProperties : {}}
+        className={`rounded-2xl shadow-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl transform-gpu p-[3px] ${
+          isTopThree ? 'ring-2 ring-offset-2 ring-offset-[#fffcf5]' : ''
+        }`}
+        style={{
+          background: team.colors.gradient,
+          boxShadow: isTopThree
+            ? `0 0 0 2px ${getMedalColor(index)}40, 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)`
+            : `0 4px 14px ${team.colors.glow}`
+        }}
       >
         <div className="bg-white rounded-2xl p-3 sm:p-4 md:p-5 backdrop-blur-sm relative overflow-hidden">
           {/* Decorative gradient overlay */}
           <div
-            className="absolute top-0 right-0 w-20 h-20 sm:w-24 sm:h-24 md:w-32 md:h-32 opacity-5 rounded-full blur-3xl"
+            className="absolute top-0 right-0 w-24 h-24 sm:w-28 sm:h-28 md:w-36 md:h-36 opacity-15 rounded-full blur-2xl pointer-events-none"
             style={{ backgroundColor: team.colors.primary }}
           />
 
@@ -113,11 +79,11 @@ function TeamCard({ team, index, maxPoints }: TeamCardProps) {
                   className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 flex items-center justify-center rounded-xl sm:rounded-2xl font-bold text-lg sm:text-xl md:text-2xl shadow-md sm:shadow-lg transition-transform group-hover:scale-110 shrink-0"
                   style={{
                     backgroundColor: team.colors.light,
-                    border: `2px solid ${team.colors.primary}20`,
+                    border: `2px solid ${team.colors.border}`,
                     borderRadius: '1rem'
                   }}
                 >
-                  <span style={{ color: team.colors.primary }}>{team.name.charAt(0)}</span>
+                  <span style={{ color: team.colors.primary }}>{team.name.charAt(0).toUpperCase()}</span>
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-1 sm:gap-2 mb-1">
@@ -133,7 +99,13 @@ function TeamCard({ team, index, maxPoints }: TeamCardProps) {
                     )}
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-[10px] sm:text-xs font-semibold px-1.5 sm:px-2 py-0.5 rounded-full bg-gray-100 text-gray-700">
+                    <span
+                      className="text-[10px] sm:text-xs font-semibold px-2 py-0.5 rounded-full"
+                      style={{
+                        backgroundColor: team.colors.light,
+                        color: team.colors.primary
+                      }}
+                    >
                       Rank #{index + 1}
                     </span>
                   </div>
@@ -151,7 +123,7 @@ function TeamCard({ team, index, maxPoints }: TeamCardProps) {
               <div className="w-full bg-gray-100 rounded-full h-2.5 sm:h-3 md:h-3.5 overflow-hidden shadow-inner">
                 <motion.div
                   initial={{ width: 0 }}
-                  animate={{ width: `${percentage}%` }}
+                  animate={{ width: `${Math.max(percentage, 0)}%` }}
                   transition={{ duration: 0.8, delay: index * 0.1 + 0.3, ease: "easeOut" }}
                   className="h-full rounded-full transition-all duration-500 shadow-sm relative overflow-hidden"
                   style={{
@@ -178,7 +150,7 @@ function TeamCard({ team, index, maxPoints }: TeamCardProps) {
   );
 }
 
-const CustomTooltip = ({ active, payload, label }: any) => {
+const CustomTooltip = ({ active, payload }: any) => {
   if (active && payload && payload.length) {
     const data = payload[0].payload;
     return (
@@ -194,7 +166,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 };
 
 interface DistributionChartProps {
-  teams: Array<Team & { totalPoints: number; colors: { primary: string; stroke: string } }>;
+  teams: Array<Team & { totalPoints: number; colors: TeamPalette }>;
 }
 
 function DesktopDistributionChart({ teams }: DistributionChartProps) {
@@ -223,16 +195,17 @@ function DesktopDistributionChart({ teams }: DistributionChartProps) {
                 tickLine={false}
                 tick={{ fill: '#6B7280', fontSize: 12, fontWeight: 600 }}
                 dy={10}
-                tickFormatter={(value) => value.slice(0, 3).toUpperCase()}
+                tickFormatter={(value) => (value.length > 8 ? `${value.slice(0, 7)}…` : value)}
               />
               <YAxis
                 axisLine={false}
                 tickLine={false}
                 tick={{ fill: '#9CA3AF', fontSize: 12 }}
                 dx={-10}
+                allowDecimals={false}
               />
               <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(0,0,0,0.02)' }} />
-              <Bar dataKey="totalPoints" radius={[8, 8, 0, 0]} animationDuration={1500}>
+              <Bar dataKey="totalPoints" radius={[8, 8, 0, 0]} animationDuration={1500} minPointSize={8}>
                 {teams.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={entry.colors.primary} />
                 ))}
@@ -281,7 +254,7 @@ function MobileDistributionChart({ teams }: DistributionChartProps) {
                 tick={{ fill: '#4B5563', fontSize: 11, fontWeight: 600 }}
               />
               <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(0,0,0,0.02)' }} />
-              <Bar dataKey="totalPoints" radius={[0, 10, 10, 0]} barSize={20} animationDuration={1500}>
+              <Bar dataKey="totalPoints" radius={[0, 10, 10, 0]} barSize={20} animationDuration={1500} minPointSize={8}>
                 {teams.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={entry.colors.primary} />
                 ))}
@@ -297,14 +270,9 @@ function MobileDistributionChart({ teams }: DistributionChartProps) {
 }
 
 export function LiveScorePulse({ teams, liveScores }: LiveScorePulseProps) {
-  const teamsWithScores = teams.map((team) => {
+  const teamsWithScores = teams.map((team, index) => {
     const totalPoints = liveScores.get(team.id) ?? team.total_points;
-    const colors = TEAM_COLORS[team.name] || {
-      primary: "#6B7280",
-      gradient: "from-gray-500 to-gray-600",
-      light: "#F9FAFB",
-      stroke: "#4B5563",
-    };
+    const colors = getTeamPalette(team.color, index);
     return { ...team, totalPoints, colors };
   });
 

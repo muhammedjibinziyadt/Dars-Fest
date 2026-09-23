@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SearchSelect } from "@/components/ui/search-select";
 import { Modal } from "@/components/ui/modal";
+import { ColorPickerInput } from "@/components/ui/color-picker";
 import { useDebounce } from "@/hooks/use-debounce";
 import type { PortalTeam } from "@/lib/types";
 
@@ -617,17 +618,11 @@ export const TeamPortalManager = React.memo(function TeamPortalManager({
                 required
               />
             </div>
-            <div>
-              <label className="text-sm font-semibold text-white/70 mb-2 block">
-                Theme Color
-              </label>
-              <Input
-                name="themeColor"
-                type="text"
-                defaultValue={editingTeam.themeColor || "#0ea5e9"}
-                placeholder="#0ea5e9"
-              />
-            </div>
+            <ColorPickerInput
+              name="themeColor"
+              defaultValue={editingTeam.themeColor || "#0ea5e9"}
+              label="Theme Color"
+            />
             <SubmitButton
               onClick={() => {
                 startTransition(() => {

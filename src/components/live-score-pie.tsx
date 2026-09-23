@@ -19,15 +19,7 @@ interface LiveScorePieProps {
   liveScores: Map<string, number>;
 }
 
-// Match team brand colors used across the app
-const TEAM_COLORS: Record<string, string> = {
-  SAMARQAND: "#D72638",
-  NAHAVAND: "#1E3A8A",
-  YAMAMA: "#7C3AED",
-  QURTUBA: "#FACC15",
-  MUQADDAS: "#059669",
-  BUKHARA: "#FB923C",
-};
+import { getTeamPalette } from "@/lib/team-colors";
 
 export function LiveScorePie({ teams, liveScores }: LiveScorePieProps) {
   const teamsWithScores = teams.map((team) => {
@@ -38,20 +30,11 @@ export function LiveScorePie({ teams, liveScores }: LiveScorePieProps) {
   const sorted = [...teamsWithScores].sort((a, b) => b.totalPoints - a.totalPoints);
 
   const chartData = sorted.map((team, index) => {
-    const fallbackPalette = [
-      "#D72638",
-      "#1E3A8A",
-      "#7C3AED",
-      "#FACC15",
-      "#059669",
-      "#FB923C",
-    ];
-    const fallback = fallbackPalette[index % fallbackPalette.length];
-    const fill = TEAM_COLORS[team.name] ?? fallback;
+    const palette = getTeamPalette(team.color, index);
     return {
       team: team.name,
       points: team.totalPoints,
-      fill,
+      fill: palette.primary,
     };
   });
 
@@ -94,58 +77,58 @@ export function LiveScorePie({ teams, liveScores }: LiveScorePieProps) {
         </CardContent>
       ) : (
         <CardContent className="flex flex-col items-center w-full min-w-0 gap-4 pb-6 pt-2">
-        <ChartContainer
-          config={chartConfig}
-          className="[&_.recharts-text]:fill-white mx-auto h-[280px] md:h-[340px] w-full max-w-[420px]"
-        >
-          <PieChart>
-            <ChartTooltip
-              content={
-                <ChartTooltipContent
-                  nameKey="team"
-                  labelKey="team"
-                  hideLabel
-                  formatter={(value, name) => (
-                    <span className="flex w-full items-center justify-between gap-4">
-                      <span className="text-xs text-muted-foreground">{name}</span>
-                      <span className="font-mono text-xs font-medium">
-                        {formatNumber(value as number)} pts
+          <ChartContainer
+            config={chartConfig}
+            className="[&_.recharts-text]:fill-white mx-auto h-[280px] md:h-[340px] w-full max-w-[420px]"
+          >
+            <PieChart>
+              <ChartTooltip
+                content={
+                  <ChartTooltipContent
+                    nameKey="team"
+                    labelKey="team"
+                    hideLabel
+                    formatter={(value, name) => (
+                      <span className="flex w-full items-center justify-between gap-4">
+                        <span className="text-xs text-muted-foreground">{name}</span>
+                        <span className="font-mono text-xs font-medium">
+                          {formatNumber(value as number)} pts
+                        </span>
                       </span>
-                    </span>
-                  )}
-                />
-              }
-            />
-            <Pie
-              data={chartData}
-              dataKey="points"
-              nameKey="team"
-              innerRadius={60}
-              outerRadius={120}
-              paddingAngle={3}
-              cornerRadius={8}
-            >
-              <LabelList
-                dataKey="points"
-                stroke="none"
-                fontSize={11}
-                fontWeight={500}
-                fill="currentColor"
-                formatter={(value: any) => {
-                  if (typeof value === 'number') {
-                    return formatNumber(value);
-                  }
-                  return String(value ?? '');
-                }}
+                    )}
+                  />
+                }
               />
-            </Pie>
-          </PieChart>
-        </ChartContainer>
-        <p className="text-xs text-white/60">
-          Total points across teams:{" "}
-          <span className="font-semibold text-white">{formatNumber(totalPoints)}</span>
-        </p>
-      </CardContent>
+              <Pie
+                data={chartData}
+                dataKey="points"
+                nameKey="team"
+                innerRadius={60}
+                outerRadius={120}
+                paddingAngle={3}
+                cornerRadius={8}
+              >
+                <LabelList
+                  dataKey="points"
+                  stroke="none"
+                  fontSize={11}
+                  fontWeight={500}
+                  fill="currentColor"
+                  formatter={(value: any) => {
+                    if (typeof value === 'number') {
+                      return formatNumber(value);
+                    }
+                    return String(value ?? '');
+                  }}
+                />
+              </Pie>
+            </PieChart>
+          </ChartContainer>
+          <p className="text-xs text-white/60">
+            Total points across teams:{" "}
+            <span className="font-semibold text-white">{formatNumber(totalPoints)}</span>
+          </p>
+        </CardContent>
       )}
     </div>
   );

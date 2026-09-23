@@ -11,51 +11,7 @@ interface TeamLeadersShowcaseProps {
   teams: Team[];
 }
 
-// Team color mappings with richer palettes
-const TEAM_COLORS: Record<string, { primary: string; gradient: string; light: string; accent: string; shadow: string }> = {
-  SAMARQAND: {
-    primary: "#D72638",
-    gradient: "from-[#D72638] via-[#E94E5E] to-[#B01E2E]",
-    light: "#FFF1F2",
-    accent: "#FFD1D5",
-    shadow: "shadow-red-500/20",
-  },
-  NAHAVAND: {
-    primary: "#1E3A8A",
-    gradient: "from-[#1E3A8A] via-[#3B82F6] to-[#172554]",
-    light: "#EFF6FF",
-    accent: "#BFDBFE",
-    shadow: "shadow-blue-500/20",
-  },
-  YAMAMA: {
-    primary: "#7C3AED",
-    gradient: "from-[#7C3AED] via-[#8B5CF6] to-[#6D28D9]",
-    light: "#F5F3FF",
-    accent: "#DDD6FE",
-    shadow: "shadow-violet-500/20",
-  },
-  QURTUBA: {
-    primary: "#FACC15",
-    gradient: "from-[#FACC15] via-[#FDE047] to-[#CA8A04]",
-    light: "#FEFCE8",
-    accent: "#FEF08A",
-    shadow: "shadow-yellow-500/20",
-  },
-  MUQADDAS: {
-    primary: "#059669",
-    gradient: "from-[#059669] via-[#10B981] to-[#047857]",
-    light: "#ECFDF5",
-    accent: "#A7F3D0",
-    shadow: "shadow-emerald-500/20",
-  },
-  BUKHARA: {
-    primary: "#FB923C",
-    gradient: "from-[#FB923C] via-[#F97316] to-[#C2410C]",
-    light: "#FFF7ED",
-    accent: "#FED7AA",
-    shadow: "shadow-orange-500/20",
-  },
-};
+import { getTeamPalette } from "@/lib/team-colors";
 
 function parseLeaders(leaderString: string): string[] {
   return leaderString
@@ -216,13 +172,7 @@ export function TeamLeadersShowcase({ teams }: TeamLeadersShowcaseProps) {
             >
               {teams.map((team, index) => {
                 const leaders = parseLeaders(team.leader);
-                const colors = TEAM_COLORS[team.name] || {
-                  primary: "#6B7280",
-                  gradient: "from-gray-500 via-gray-600 to-gray-700",
-                  light: "#F9FAFB",
-                  accent: "#E5E7EB",
-                  shadow: "shadow-gray-500/20",
-                };
+                const colors = getTeamPalette(team.color, index);
 
                 const isActive = index === currentIndex;
 
@@ -242,12 +192,20 @@ export function TeamLeadersShowcase({ teams }: TeamLeadersShowcaseProps) {
                     transition={{ duration: 0.4 }}
                   >
                     {/* Card */}
-                    <div className={cn(
-                      "relative bg-white rounded-[2rem] overflow-hidden transition-all duration-500 group",
-                      isActive ? `shadow-2xl ${colors.shadow}` : "shadow-lg"
-                    )}>
+                    <div
+                      className={cn(
+                        "relative bg-white rounded-[2rem] overflow-hidden transition-all duration-500 group",
+                        isActive ? "shadow-2xl" : "shadow-lg"
+                      )}
+                      style={{
+                        boxShadow: isActive ? `0 25px 50px -12px ${colors.glow}` : undefined
+                      }}
+                    >
                       {/* Decorative Header */}
-                      <div className={`h-32 bg-gradient-to-br ${colors.gradient} relative overflow-hidden`}>
+                      <div
+                        className="h-32 relative overflow-hidden"
+                        style={{ background: colors.gradient }}
+                      >
                         <div className="absolute inset-0 opacity-30 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')]" />
                         <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-white/10 rounded-full blur-2xl" />
                         <div className="absolute top-4 left-4">
@@ -290,10 +248,10 @@ export function TeamLeadersShowcase({ teams }: TeamLeadersShowcaseProps) {
                                 />
                               </div>
                               {/* Glowing Ring */}
-                              <div className={cn(
-                                "absolute inset-0 rounded-full blur-xl opacity-40 -z-10 scale-110",
-                                `bg-${colors.primary}`
-                              )} style={{ backgroundColor: colors.primary }} />
+                              <div
+                                className="absolute inset-0 rounded-full blur-xl opacity-50 -z-10 scale-110"
+                                style={{ backgroundColor: colors.primary }}
+                              />
 
                               <div className="absolute bottom-2 right-0 z-20 bg-yellow-400 text-white p-2 rounded-full border-4 border-white shadow-lg">
                                 <Crown className="w-4 h-4" />
@@ -333,13 +291,11 @@ export function TeamLeadersShowcase({ teams }: TeamLeadersShowcaseProps) {
                         {team.contact ? (
                           <a
                             href={`tel:${team.contact}`}
-                            className={cn(
-                              "inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold transition-all duration-300 w-full justify-center group/btn",
-                              `bg-${colors.light} text-${colors.primary} hover:bg-${colors.primary} hover:text-white`
-                            )}
+                            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold transition-all duration-300 w-full justify-center group/btn hover:opacity-90"
                             style={{
                               backgroundColor: colors.light,
-                              color: colors.primary
+                              color: colors.primary,
+                              border: `1px solid ${colors.border}`
                             }}
                           >
                             <Phone className="w-4 h-4" />

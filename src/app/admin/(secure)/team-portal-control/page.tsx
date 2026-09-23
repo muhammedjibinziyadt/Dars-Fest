@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { getPortalStudents, getPortalTeams, getProgramRegistrations, getRegistrationSchedule, savePortalTeam, deletePortalTeam, updateRegistrationSchedule } from "@/lib/team-data";
+import { ColorPickerInput } from "@/components/ui/color-picker";
 import { TeamPortalManager } from "@/components/team-portal-manager";
 import { redirectWithToast } from "@/lib/actions";
 
@@ -120,7 +121,7 @@ export default async function TeamPortalControlPage() {
             <Input name="teamName" placeholder="Team name" required />
             <Input name="leaderName" placeholder="Leader name" required />
             <Input name="password" type="text" placeholder="Password" required />
-            <Input name="themeColor" type="text" placeholder="#0ea5e9" />
+            <ColorPickerInput name="themeColor" defaultValue="#0ea5e9" />
             <Button type="submit" className="w-full">
               Create Team
             </Button>

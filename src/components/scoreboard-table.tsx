@@ -33,8 +33,14 @@ function TeamCard({ team, totalPoints, medals, isActive, onClick }: TeamCardProp
     >
       <div className="flex flex-col space-y-2">
         <div className="flex justify-between items-center">
-          <h3 className="text-sm font-bold text-gray-900">{team.name}</h3>
-          <div className="flex items-center space-x-1">
+          <div className="flex items-center gap-2 min-w-0">
+            <span
+              className="w-3.5 h-3.5 rounded-full shrink-0 shadow-sm"
+              style={{ backgroundColor: team.color || "#0ea5e9" }}
+            />
+            <h3 className="text-sm font-bold text-gray-900 truncate">{team.name}</h3>
+          </div>
+          <div className="flex items-center space-x-1 shrink-0">
             <TrendingUp className="w-4 h-4 text-green-600" />
             <span className="text-sm font-medium text-green-600">{totalPoints}</span>
           </div>
