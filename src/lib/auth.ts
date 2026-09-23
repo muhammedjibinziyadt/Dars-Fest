@@ -8,21 +8,51 @@ import {
   getAdminFirebaseEmail,
   getTeamFirebaseEmail,
   getJuryFirebaseEmail,
+  getAdminAuth,
 } from "./firebase-auth";
 
 export async function isAdminAuthenticated(): Promise<boolean> {
   const store = await cookies();
   const token = store.get(ADMIN_COOKIE)?.value;
-  if (!token) return false;
-  return token.startsWith("admin:");
+  if (!token || !token.startsWith("admin:")) return false;
+  const uid = token.slice(6);
+  if (!uid) return false;
+
+  try {
+    const auth = getAdminAuth();
+    const user = await auth.getUser(uid);
+    const adminEmail = getAdminFirebaseEmail();
+    const isEmailAdmin = user.email?.toLowerCase() === adminEmail;
+    const isClaimAdmin = user.customClaims?.role === "admin";
+    return isEmailAdmin || isClaimAdmin;
+  } catch {
+    return false;
+  }
 }
 
 export async function authenticateAdmin(identifier: string, password: string) {
-  let email = identifier.trim().toLowerCase();
-  if (email === "admin" || !email.includes("@")) {
-    email = getAdminFirebaseEmail();
+  const cleanId = identifier.trim().toLowerCase();
+  const adminEmail = getAdminFirebaseEmail();
+
+  let emailToAuth = cleanId;
+  if (cleanId === "admin") {
+    emailToAuth = adminEmail;
+  } else if (!cleanId.includes("@")) {
+    throw new Error("Invalid admin credentials. Only administrators can access this portal.");
   }
-  const result = await verifyPasswordWithFirebaseAuth(email, password);
+
+  const result = await verifyPasswordWithFirebaseAuth(emailToAuth, password);
+
+  // Strictly verify that the user possesses admin privileges
+  const auth = getAdminAuth();
+  const user = await auth.getUser(result.localId);
+  const isEmailAdmin = user.email?.toLowerCase() === adminEmail;
+  const isClaimAdmin = user.customClaims?.role === "admin";
+
+  if (!isEmailAdmin && !isClaimAdmin) {
+    throw new Error("Access denied: This account does not have administrator privileges.");
+  }
+
   const store = await cookies();
   store.set(ADMIN_COOKIE, `admin:${result.localId}`, {
     httpOnly: true,
@@ -32,6 +62,11 @@ export async function authenticateAdmin(identifier: string, password: string) {
     path: "/",
   });
   return result;
+}
+
+export async function logoutAdmin() {
+  const store = await cookies();
+  store.delete(ADMIN_COOKIE);
 }
 
 export async function findJury(
