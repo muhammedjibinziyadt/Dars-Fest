@@ -1,7 +1,7 @@
 "use client";
 
 interface PrizeEntry {
-  position: 1 | 2 | 3;
+  position: number;
   studentName?: string;
   teamName?: string;
   chestNumber?: string;
@@ -188,13 +188,13 @@ export async function generateResultPoster(data: PosterData, style: PosterStyle 
     const positionY = currentY + index * prizeSpacing;
 
     // Position emoji icons
-    const positionConfig = {
+    const positionConfig: Record<number, { emoji: string }> = {
       1: { emoji: "🥇" }, // Gold
       2: { emoji: "🥈" }, // Silver
       3: { emoji: "🥉" }, // Bronze
     };
 
-    const config = positionConfig[prize.position as keyof typeof positionConfig];
+    const config = positionConfig[prize.position] || { emoji: "🏅" };
 
     // Student/Team Name with emoji icon on the left
     const name = prize.studentName || prize.teamName || "—";

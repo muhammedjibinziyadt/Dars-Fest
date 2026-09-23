@@ -4,7 +4,7 @@ import { Card, CardDescription, CardTitle } from "@/components/ui/card";
 import { getApprovedResults, getJuries, getPrograms, getStudents, getTeams, getOrCreateAdminJury } from "@/lib/data";
 import { getProgramRegistrations } from "@/lib/team-data";
 import { ensureRegisteredCandidates } from "@/lib/registration-guard";
-import { submitResultToPending } from "@/lib/result-service";
+import { submitResultToPending, parsePlacementPayloads } from "@/lib/result-service";
 import { redirectWithToast } from "@/lib/actions";
 import { revalidatePath } from "next/cache";
 
@@ -57,34 +57,18 @@ async function submitResultAction(formData: FormData) {
       }
     }
 
-    // Collect winners and validate
-    const winners = [];
-    for (const { key, gradeKey, position } of [
-      { key: "winner_1", gradeKey: "grade_1", position: 1 as const },
-      { key: "winner_2", gradeKey: "grade_2", position: 2 as const },
-      { key: "winner_3", gradeKey: "grade_3", position: 3 as const },
-    ]) {
-      const value = String(formData.get(key) ?? "");
-      if (!value) {
-        redirectWithToast("/admin/add-result", "All placements are required", "error");
-        return;
-      }
-      winners.push({
-        position,
-        id: value,
-        grade: String(formData.get(gradeKey) ?? "none") as
-          | "A"
-          | "B"
-          | "C"
-          | "none",
-      });
+    // Collect winners dynamically (supports 1, 2, 3, 4 or more candidates)
+    const winners = parsePlacementPayloads(formData);
+    if (winners.length === 0) {
+      redirectWithToast("/admin/add-result", "At least one candidate placement is required.", "error");
+      return;
     }
 
-    // Validate that all three positions have different candidates
-    const winnerIds = winners.map(w => w.id);
+    // Validate that candidates are unique
+    const winnerIds = winners.map((w) => w.id);
     const uniqueWinnerIds = new Set(winnerIds);
-    if (uniqueWinnerIds.size !== 3) {
-      redirectWithToast("/admin/add-result", "1st, 2nd, and 3rd place must have different candidates.", "error");
+    if (uniqueWinnerIds.size !== winners.length) {
+      redirectWithToast("/admin/add-result", "Each candidate can only be awarded one placement.", "error");
       return;
     }
 

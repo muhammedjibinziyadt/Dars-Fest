@@ -12,29 +12,73 @@ import {
   JuryModel,
   PendingResultModel,
   ProgramModel,
+  ProgramRegistrationModel,
   StudentModel,
   TeamModel,
 } from "./models";
 import type { PenaltyEntry, ResultEntry, ResultRecord } from "./types";
 
-type WinnerPayload = {
-  position: 1 | 2 | 3;
+export type WinnerPayload = {
+  position: number;
   id: string;
   grade: "A" | "B" | "C" | "none";
 };
 
-type PenaltyPayload = {
+export type PenaltyPayload = {
   id: string;
   type: "student" | "team";
   points: number;
   reason?: string;
 };
 
-function sanitizeGrade(grade: string | undefined): "A" | "B" | "C" | "none" {
+export function sanitizeGrade(grade: string | undefined): "A" | "B" | "C" | "none" {
   if (grade === "A" || grade === "B" || grade === "C" || grade === "none") {
     return grade;
   }
   return "none";
+}
+
+/**
+ * Parses placement winners from FormData.
+ * Supports both dynamic 'placement_rows' and legacy 'winner_1, winner_2...' fields.
+ */
+export function parsePlacementPayloads(formData: FormData): WinnerPayload[] {
+  const rowValue = String(formData.get("placement_rows") ?? "").trim();
+  if (rowValue) {
+    const rowIds = rowValue
+      .split(",")
+      .map((value) => value.trim())
+      .filter(Boolean);
+
+    const winners: WinnerPayload[] = [];
+    for (const rowId of rowIds) {
+      const id = String(formData.get(`winner_${rowId}`) ?? "").trim();
+      if (!id) continue;
+      const positionRaw = Number(formData.get(`placement_position_${rowId}`) ?? 1);
+      const position = Number.isFinite(positionRaw) && positionRaw > 0 ? positionRaw : 1;
+      const grade = sanitizeGrade(String(formData.get(`grade_${rowId}`) ?? "none"));
+      winners.push({
+        position,
+        id,
+        grade,
+      });
+    }
+    return winners;
+  }
+
+  // Fallback to legacy winner_1, winner_2, winner_3...
+  const winners: WinnerPayload[] = [];
+  for (let i = 1; i <= 20; i++) {
+    const id = String(formData.get(`winner_${i}`) ?? "").trim();
+    if (!id) continue;
+    const grade = sanitizeGrade(String(formData.get(`grade_${i}`) ?? "none"));
+    winners.push({
+      position: i,
+      id,
+      grade,
+    });
+  }
+  return winners;
 }
 
 async function buildEntries(
@@ -45,13 +89,30 @@ async function buildEntries(
     const ids = winners.map((winner) => winner.id);
     const students = await StudentModel.find({ id: { $in: ids } }).lean();
     const studentMap = new Map(students.map((student) => [student.id, student]));
-    return winners.map((winner) => {
-      const student = studentMap.get(winner.id);
+    
+    const entries = [];
+    for (const winner of winners) {
+      let student = studentMap.get(winner.id);
+      if (!student) {
+        student = (await StudentModel.findById(winner.id)) ?? (await StudentModel.findOne({ id: winner.id })) ?? undefined;
+      }
+      if (!student) {
+        const reg = await ProgramRegistrationModel.findOne({ programId: program.id, studentId: winner.id });
+        if (reg) {
+          student = {
+            id: reg.studentId,
+            name: reg.studentName,
+            chest_no: reg.studentChest,
+            team_id: reg.teamId,
+            total_points: 0,
+          } as any;
+        }
+      }
       if (!student) {
         throw new Error("Invalid student selected");
       }
       const grade = sanitizeGrade(winner.grade);
-      return {
+      entries.push({
         position: winner.position,
         student_id: student.id,
         team_id: student.team_id,
@@ -61,19 +122,34 @@ async function buildEntries(
           winner.position,
           grade,
         ),
-      };
-    });
+      });
+    }
+    return entries;
   }
 
   const ids = winners.map((winner) => winner.id);
   const teams = await TeamModel.find({ id: { $in: ids } }).lean();
   const teamMap = new Map(teams.map((team) => [team.id, team]));
-  return winners.map((winner) => {
-    const team = teamMap.get(winner.id);
+  const entries = [];
+  for (const winner of winners) {
+    let team = teamMap.get(winner.id);
+    if (!team) {
+      team = (await TeamModel.findById(winner.id)) ?? (await TeamModel.findOne({ id: winner.id })) ?? undefined;
+    }
+    if (!team) {
+      const reg = await ProgramRegistrationModel.findOne({ programId: program.id, teamId: winner.id });
+      if (reg) {
+        team = {
+          id: reg.teamId,
+          name: reg.teamName,
+          total_points: 0,
+        } as any;
+      }
+    }
     if (!team) {
       throw new Error("Invalid team selected");
     }
-    return {
+    entries.push({
       position: winner.position,
       team_id: team.id,
       grade: "none" as const,
@@ -82,8 +158,9 @@ async function buildEntries(
         winner.position,
         "none",
       ),
-    };
-  });
+    });
+  }
+  return entries;
 }
 
 async function applyEntryScores(entries: ResultEntry[], direction: 1 | -1) {

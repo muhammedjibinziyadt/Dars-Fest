@@ -391,7 +391,7 @@ export async function deleteAssignment(programId: string, juryId: string) {
   await emitAssignmentDeleted(programId, juryId);
 }
 
-const SINGLE_SCORES: Record<1 | 2 | 3, number> = {
+const SINGLE_SCORES: Record<number, number> = {
   1: 10,
   2: 7,
   3: 5,
@@ -403,13 +403,13 @@ const GRADE_BONUS: Record<Exclude<GradeType, "none">, number> = {
   C: 1,
 };
 
-const GROUP_SCORES: Record<1 | 2 | 3, number> = {
+const GROUP_SCORES: Record<number, number> = {
   1: 20,
   2: 15,
   3: 10,
 };
 
-const GENERAL_SCORES: Record<1 | 2 | 3, number> = {
+const GENERAL_SCORES: Record<number, number> = {
   1: 25,
   2: 20,
   3: 15,
@@ -417,20 +417,20 @@ const GENERAL_SCORES: Record<1 | 2 | 3, number> = {
 
 export function calculateScore(
   section: SectionType,
-  position: 1 | 2 | 3,
+  position: number,
   grade: GradeType = "none",
 ): number {
   if (section === "single") {
     const base = SINGLE_SCORES[position] || 0;
-    const bonus = grade !== "none" ? GRADE_BONUS[grade] : 0;
+    const bonus = grade !== "none" ? GRADE_BONUS[grade] || 0 : 0;
     return base + bonus;
   }
 
   if (section === "group") {
-    return GROUP_SCORES[position];
+    return GROUP_SCORES[position] || 0;
   }
 
-  return GENERAL_SCORES[position];
+  return GENERAL_SCORES[position] || 0;
 }
 
 export async function updateLiveScore(teamId: string, delta: number) {

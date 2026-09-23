@@ -287,11 +287,49 @@ export class FirestoreModel<T extends Record<string, any>> {
         if (!matchesAny) return false;
         continue;
       }
+      if (key === "$and" && Array.isArray(val)) {
+        const matchesAll = val.every((sub) => this.matchesFilter(item, sub));
+        if (!matchesAll) return false;
+        continue;
+      }
       const itemVal = item[key];
-      if (val && typeof val === "object" && val !== null) {
+      if (val && typeof val === "object" && !Array.isArray(val) && val !== null) {
         if ("$regex" in val) {
           const pattern = new RegExp(val.$regex, val.$options || "");
           if (!pattern.test(String(itemVal ?? ""))) return false;
+          continue;
+        }
+        if ("$in" in val) {
+          if (!Array.isArray(val.$in) || !val.$in.includes(itemVal)) return false;
+          continue;
+        }
+        if ("$nin" in val) {
+          if (Array.isArray(val.$nin) && val.$nin.includes(itemVal)) return false;
+          continue;
+        }
+        if ("$ne" in val) {
+          if (itemVal === val.$ne) return false;
+          continue;
+        }
+        if ("$exists" in val) {
+          const exists = itemVal !== undefined && itemVal !== null;
+          if (Boolean(val.$exists) !== exists) return false;
+          continue;
+        }
+        if ("$gt" in val) {
+          if (!(itemVal > val.$gt)) return false;
+          continue;
+        }
+        if ("$gte" in val) {
+          if (!(itemVal >= val.$gte)) return false;
+          continue;
+        }
+        if ("$lt" in val) {
+          if (!(itemVal < val.$lt)) return false;
+          continue;
+        }
+        if ("$lte" in val) {
+          if (!(itemVal <= val.$lte)) return false;
           continue;
         }
       }

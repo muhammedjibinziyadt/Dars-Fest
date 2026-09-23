@@ -63,7 +63,7 @@ function ResultPosterPreviewInner({
           programName: program.name,
           section: program.section,
           prizes: prizes.filter((p) => p.position <= 3) as Array<{
-            position: 1 | 2 | 3;
+            position: number;
             studentName?: string;
             teamName?: string;
             chestNumber?: string;

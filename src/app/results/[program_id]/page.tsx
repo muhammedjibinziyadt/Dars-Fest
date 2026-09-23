@@ -122,24 +122,30 @@ export default async function ProgramDetailPage({ params }: ProgramDetailPagePro
                     ? data.teamMap.get(student.team_id)
                     : undefined;
 
-                const positionColors = {
+                const positionColors: Record<number, string> = {
                   1: "bg-yellow-50 border-yellow-300",
                   2: "bg-gray-50 border-gray-300",
                   3: "bg-orange-50 border-orange-300",
                 };
+                const colorClass = positionColors[entry.position] || "bg-indigo-50 border-indigo-200";
+
+                const positionLabel =
+                  entry.position === 1
+                    ? "🥇 1st Place"
+                    : entry.position === 2
+                      ? "🥈 2nd Place"
+                      : entry.position === 3
+                        ? "🥉 3rd Place"
+                        : `🏅 ${entry.position}th Place`;
 
                 return (
                   <div
                     key={`${data.result.id}-${entry.position}`}
-                    className={`rounded-2xl border-2 ${positionColors[entry.position as keyof typeof positionColors]} p-6 shadow-md`}
+                    className={`rounded-2xl border-2 ${colorClass} p-6 shadow-md`}
                   >
                     <div className="flex items-center justify-between mb-4">
                       <p className="text-lg font-bold text-gray-900">
-                        {entry.position === 1
-                          ? "🥇 1st Place"
-                          : entry.position === 2
-                            ? "🥈 2nd Place"
-                            : "🥉 3rd Place"}
+                        {positionLabel}
                       </p>
                     </div>
                     <p className="text-2xl font-bold text-gray-900 mb-2">

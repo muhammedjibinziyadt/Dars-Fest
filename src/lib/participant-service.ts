@@ -22,7 +22,7 @@ export interface ParticipantProfile {
     program: Program;
     status: "registered" | "pending_result" | "completed" | "no_result";
     result?: {
-      position?: 1 | 2 | 3;
+      position?: number;
       grade?: "A" | "B" | "C" | "none";
       score: number;
       programName: string;
@@ -150,7 +150,7 @@ export async function getParticipantProfile(
 
     // Find student's result entry
     let resultEntry: {
-      position?: 1 | 2 | 3;
+      position?: number;
       grade?: "A" | "B" | "C" | "none";
       score: number;
     } | undefined;

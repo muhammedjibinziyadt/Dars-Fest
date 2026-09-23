@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Modal } from "@/components/ui/modal";
 import { SearchSelect } from "@/components/ui/search-select";
+import { Plus, Trash2 } from "lucide-react";
 import type {
   GradeType,
   Jury,
@@ -17,6 +18,13 @@ import type {
   Team,
 } from "@/lib/types";
 
+export interface PlacementItem {
+  id: string;
+  position: number;
+  winnerId: string;
+  grade: GradeType;
+}
+
 interface AddResultFormProps {
   programs: Program[];
   students: Student[];
@@ -26,15 +34,17 @@ interface AddResultFormProps {
   approvedResults?: ResultRecord[]; // List of approved results to check against
   action: (formData: FormData) => Promise<void>;
   lockProgram?: boolean;
-  initial?: Partial<
-    Record<
-      1 | 2 | 3,
-      {
-        winnerId: string;
-        grade?: GradeType;
-      }
-    >
-  >;
+  initial?:
+    | Array<{ position: number; winnerId: string; grade?: GradeType }>
+    | Partial<
+        Record<
+          number,
+          {
+            winnerId: string;
+            grade?: GradeType;
+          }
+        >
+      >;
   initialPenalties?: {
     targetId?: string;
     points?: number;
@@ -52,6 +62,52 @@ const gradeOptions = [
   { value: "C", label: "Grade C (+1)" },
   { value: "none", label: "None" },
 ];
+
+const POSITION_OPTIONS = [
+  { value: 1, label: "🥇 1st Place" },
+  { value: 2, label: "🥈 2nd Place" },
+  { value: 3, label: "🥉 3rd Place" },
+  { value: 4, label: "🏅 4th Place" },
+  { value: 5, label: "🏅 5th Place" },
+  { value: 6, label: "🏅 6th Place" },
+  { value: 7, label: "🏅 7th Place" },
+  { value: 8, label: "🏅 8th Place" },
+  { value: 9, label: "🏅 9th Place" },
+  { value: 10, label: "🏅 10th Place" },
+];
+
+function getInitialPlacementRows(initial?: AddResultFormProps["initial"]): PlacementItem[] {
+  if (Array.isArray(initial) && initial.length > 0) {
+    return initial.map((item, idx) => ({
+      id: `placement-${idx}-${Math.random().toString(36).slice(2, 7)}`,
+      position: item.position ?? idx + 1,
+      winnerId: item.winnerId ?? "",
+      grade: item.grade ?? "A",
+    }));
+  }
+  if (initial && typeof initial === "object") {
+    const keys = Object.keys(initial)
+      .map(Number)
+      .filter((n) => !Number.isNaN(n))
+      .sort((a, b) => a - b);
+    if (keys.length > 0) {
+      return keys.map((pos) => {
+        const item = (initial as Record<number, { winnerId: string; grade?: GradeType }>)[pos];
+        return {
+          id: `placement-${pos}-${Math.random().toString(36).slice(2, 7)}`,
+          position: pos,
+          winnerId: item?.winnerId ?? "",
+          grade: item?.grade ?? "A",
+        };
+      });
+    }
+  }
+  return [
+    { id: "placement-1", position: 1, winnerId: "", grade: "A" },
+    { id: "placement-2", position: 2, winnerId: "", grade: "A" },
+    { id: "placement-3", position: 3, winnerId: "", grade: "A" },
+  ];
+}
 
 export function AddResultForm({
   programs,
@@ -72,10 +128,11 @@ export function AddResultForm({
   const [programId, setProgramId] = useState(programs[0]?.id ?? "");
   const [showRules, setShowRules] = useState(false);
   const [showPublishedModal, setShowPublishedModal] = useState(false);
-  // State to track selected winners for each position
-  const [winner1, setWinner1] = useState<string>(initial?.[1]?.winnerId ?? "");
-  const [winner2, setWinner2] = useState<string>(initial?.[2]?.winnerId ?? "");
-  const [winner3, setWinner3] = useState<string>(initial?.[3]?.winnerId ?? "");
+  
+  // Dynamic placement rows supporting 1, 2, 3, 4 or more candidates
+  const [placementRows, setPlacementRows] = useState<PlacementItem[]>(() =>
+    getInitialPlacementRows(initial),
+  );
   const [duplicateError, setDuplicateError] = useState<string>("");
   const [penaltyRows, setPenaltyRows] = useState<
     {
@@ -102,13 +159,17 @@ export function AddResultForm({
     [programId, programs],
   );
 
-  // Reset winners when program changes
+  // Reset winners when program changes if not in locked initial edit mode
   useEffect(() => {
-    setWinner1(initial?.[1]?.winnerId ?? "");
-    setWinner2(initial?.[2]?.winnerId ?? "");
-    setWinner3(initial?.[3]?.winnerId ?? "");
+    if (!initial || (Array.isArray(initial) ? initial.length === 0 : Object.keys(initial).length === 0)) {
+      setPlacementRows([
+        { id: "placement-1", position: 1, winnerId: "", grade: "A" },
+        { id: "placement-2", position: 2, winnerId: "", grade: "A" },
+        { id: "placement-3", position: 3, winnerId: "", grade: "A" },
+      ]);
+    }
     setDuplicateError("");
-  }, [programId, initial]);
+  }, [programId]);
 
   const programOptions = useMemo(
     () =>
@@ -181,21 +242,60 @@ export function AddResultForm({
   const placementSelectOptions = registeredOptions;
   const penaltySelectOptions = placementSelectOptions;
 
-  // Filter options to exclude already-selected candidates from other positions
-  const winner1Options = useMemo(() => {
-    const selected = [winner2, winner3].filter(Boolean);
-    return placementSelectOptions.filter(opt => !selected.includes(opt.value));
-  }, [placementSelectOptions, winner2, winner3]);
+  // Filter options to exclude already-selected candidates from other rows
+  const getRowCandidateOptions = (currentRowId: string) => {
+    const otherSelectedIds = placementRows
+      .filter((r) => r.id !== currentRowId && Boolean(r.winnerId))
+      .map((r) => r.winnerId);
+    return placementSelectOptions.filter((opt) => !otherSelectedIds.includes(opt.value));
+  };
 
-  const winner2Options = useMemo(() => {
-    const selected = [winner1, winner3].filter(Boolean);
-    return placementSelectOptions.filter(opt => !selected.includes(opt.value));
-  }, [placementSelectOptions, winner1, winner3]);
+  const updateRowWinner = (rowId: string, winnerId: string) => {
+    setPlacementRows((rows) =>
+      rows.map((row) => (row.id === rowId ? { ...row, winnerId } : row)),
+    );
+    setDuplicateError("");
+  };
 
-  const winner3Options = useMemo(() => {
-    const selected = [winner1, winner2].filter(Boolean);
-    return placementSelectOptions.filter(opt => !selected.includes(opt.value));
-  }, [placementSelectOptions, winner1, winner2]);
+  const updateRowGrade = (rowId: string, grade: GradeType) => {
+    setPlacementRows((rows) =>
+      rows.map((row) => (row.id === rowId ? { ...row, grade } : row)),
+    );
+  };
+
+  const updateRowPosition = (rowId: string, position: number) => {
+    setPlacementRows((rows) =>
+      rows.map((row) => (row.id === rowId ? { ...row, position } : row)),
+    );
+    setDuplicateError("");
+  };
+
+  const removePlacementRow = (rowId: string) => {
+    if (placementRows.length <= 1) {
+      setDuplicateError("At least one candidate placement is required.");
+      return;
+    }
+    setPlacementRows((rows) => rows.filter((row) => row.id !== rowId));
+    setDuplicateError("");
+  };
+
+  const addPlacementRow = () => {
+    setPlacementRows((rows) => {
+      const maxPos = rows.reduce((max, r) => Math.max(max, r.position), 0);
+      const nextPos = maxPos > 0 ? maxPos + 1 : rows.length + 1;
+      return [
+        ...rows,
+        {
+          id: `placement-${Math.random().toString(36).slice(2, 9)}`,
+          position: nextPos,
+          winnerId: "",
+          grade: "A",
+        },
+      ];
+    });
+    setDuplicateError("");
+  };
+
   const hasPenaltyOptions = penaltySelectOptions.length > 0;
   const penaltyTypeDefault =
     initialPenalties?.[0]?.type ?? (isSingle ? "student" : "team");
@@ -237,17 +337,24 @@ export function AddResultForm({
       return;
     }
 
-    // Validate that all three positions have different candidates
-    const winners = [winner1, winner2, winner3].filter(Boolean);
-    const uniqueWinners = new Set(winners);
-    
-    if (winners.length !== 3) {
-      setDuplicateError("Please select candidates for all three positions.");
+    // Validate that at least one placement exists
+    if (placementRows.length === 0) {
+      setDuplicateError("Please add at least one candidate placement.");
       return;
     }
-    
-    if (uniqueWinners.size !== 3) {
-      setDuplicateError("1st, 2nd, and 3rd place must have different candidates. Please select unique candidates for each position.");
+
+    // Validate that each placement field has a selected candidate
+    const unselected = placementRows.find((r) => !r.winnerId);
+    if (unselected) {
+      setDuplicateError("Please select a candidate for all placement fields, or delete empty fields.");
+      return;
+    }
+
+    // Validate that all candidates are unique
+    const selectedWinnerIds = placementRows.map((r) => r.winnerId);
+    const uniqueWinnerIds = new Set(selectedWinnerIds);
+    if (uniqueWinnerIds.size !== selectedWinnerIds.length) {
+      setDuplicateError("Each candidate can only be awarded one placement. Please select unique candidates for each field.");
       return;
     }
 
@@ -263,7 +370,6 @@ export function AddResultForm({
         return;
       }
       // For other errors, let Next.js handle them (they'll show in the UI)
-      // Re-throw to allow Next.js error handling
       throw error;
     }
   };
@@ -273,6 +379,37 @@ export function AddResultForm({
       <form onSubmit={handleSubmit} className="space-y-8">
       <input type="hidden" name="program_id" value={selectedProgram?.id} />
       {isJuryMode && <input type="hidden" name="jury_id" value={activeJury?.id ?? ""} />}
+      <input type="hidden" name="placement_rows" value={placementRows.map((r) => r.id).join(",")} />
+      {placementRows.map((row) => (
+        <input
+          key={`hidden-pos-${row.id}`}
+          type="hidden"
+          name={`placement_position_${row.id}`}
+          value={row.position}
+        />
+      ))}
+      {/* Legacy compatibility inputs */}
+      {placementRows.find((r) => r.position === 1) && (
+        <input
+          type="hidden"
+          name="winner_1"
+          value={placementRows.find((r) => r.position === 1)?.winnerId ?? ""}
+        />
+      )}
+      {placementRows.find((r) => r.position === 2) && (
+        <input
+          type="hidden"
+          name="winner_2"
+          value={placementRows.find((r) => r.position === 2)?.winnerId ?? ""}
+        />
+      )}
+      {placementRows.find((r) => r.position === 3) && (
+        <input
+          type="hidden"
+          name="winner_3"
+          value={placementRows.find((r) => r.position === 3)?.winnerId ?? ""}
+        />
+      )}
 
       {showProgramSelector && (
       <Card>
@@ -313,10 +450,9 @@ export function AddResultForm({
         <Badge tone="pink">Step 2 · Winners</Badge>
         <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
           <div>
-            <CardTitle>Add podium placements</CardTitle>
+            <CardTitle>Podium placements & candidate results</CardTitle>
             <CardDescription className="mt-2">
-              Select {isSingle ? "students" : "teams"} for 1st, 2nd and 3rd. Grades apply
-              only to single events.
+              Select {isSingle ? "students" : "teams"} and their placements. You can add more candidates or delete placements as needed.
             </CardDescription>
           </div>
           <Button
@@ -346,55 +482,94 @@ export function AddResultForm({
             {duplicateError}
           </p>
         )}
-        <div className="mt-6 grid gap-5">
-          {[1, 2, 3].map((position) => {
-            const slot = position as 1 | 2 | 3;
-            // Get the appropriate options and state for each position
-            const positionOptions = position === 1 ? winner1Options : position === 2 ? winner2Options : winner3Options;
-            const positionValue = position === 1 ? winner1 : position === 2 ? winner2 : winner3;
-            const positionSetter = position === 1 ? setWinner1 : position === 2 ? setWinner2 : setWinner3;
-            
+
+        {/* Dynamic Placement Cards */}
+        <div className="mt-6 space-y-4">
+          {placementRows.map((row) => {
+            const rowCandidateOptions = getRowCandidateOptions(row.id);
             return (
-            <div
-              key={position}
-              className="rounded-2xl border border-white/10 bg-white/5 p-4"
-            >
-              <p className="text-sm font-semibold text-white">
-                {position === 1
-                  ? "1st Place"
-                  : position === 2
-                    ? "2nd Place"
-                    : "3rd Place"}
-              </p>
-              <div className="mt-3">
-                <SearchSelect
-                  name={`winner_${position}`}
-                  required
-                  value={positionValue}
-                  onValueChange={(value) => {
-                    positionSetter(value);
-                    setDuplicateError(""); // Clear error when user changes selection
-                  }}
-                  options={positionOptions}
-                  placeholder={`Search ${isSingle ? "student" : "team"}...`}
-                  disabled={!hasEligibleCandidates}
-                />
+              <div
+                key={row.id}
+                className="rounded-2xl border border-white/10 bg-white/5 p-4 space-y-3 transition-all hover:border-white/20"
+              >
+                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-3">
+                  <div className="flex items-center gap-2.5">
+                    <span className="text-xs uppercase tracking-wider text-white/60 font-semibold">Position:</span>
+                    <select
+                      value={row.position}
+                      onChange={(e) => updateRowPosition(row.id, Number(e.target.value))}
+                      className="rounded-xl border border-white/20 bg-slate-900/90 px-3 py-1.5 text-sm font-semibold text-white focus:border-fuchsia-500 focus:outline-none focus:ring-1 focus:ring-fuchsia-500 cursor-pointer"
+                    >
+                      {POSITION_OPTIONS.map((opt) => (
+                        <option key={opt.value} value={opt.value} className="bg-slate-900 text-white">
+                          {opt.label}
+                        </option>
+                      ))}
+                      {!POSITION_OPTIONS.some((o) => o.value === row.position) && (
+                        <option value={row.position} className="bg-slate-900 text-white">
+                          🏅 {row.position}th Place
+                        </option>
+                      )}
+                    </select>
+                  </div>
+
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => removePlacementRow(row.id)}
+                    disabled={placementRows.length <= 1}
+                    className="h-8 px-2.5 text-xs text-red-400 hover:bg-red-500/10 hover:text-red-300 gap-1.5 transition-colors disabled:opacity-40"
+                    title={placementRows.length <= 1 ? "At least one candidate placement is required" : "Delete this placement field"}
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                    <span>Delete</span>
+                  </Button>
+                </div>
+
+                <div className="pt-1">
+                  <SearchSelect
+                    name={`winner_${row.id}`}
+                    required
+                    value={row.winnerId}
+                    onValueChange={(value) => updateRowWinner(row.id, value)}
+                    options={rowCandidateOptions}
+                    placeholder={`Search ${isSingle ? "student" : "team"}...`}
+                    disabled={!hasEligibleCandidates}
+                  />
+                </div>
+
+                {isSingle ? (
+                  <SearchSelect
+                    name={`grade_${row.id}`}
+                    value={row.grade}
+                    onValueChange={(value) => updateRowGrade(row.id, value as GradeType)}
+                    disabled={!hasEligibleCandidates}
+                    options={gradeOptions}
+                    placeholder="Select grade"
+                  />
+                ) : (
+                  <input type="hidden" name={`grade_${row.id}`} value="none" />
+                )}
               </div>
-              {isSingle ? (
-                <SearchSelect
-                  className="mt-3"
-                  name={`grade_${position}`}
-                  defaultValue={initial?.[slot]?.grade ?? "A"}
-                  disabled={!hasEligibleCandidates}
-                  options={gradeOptions}
-                  placeholder="Select grade"
-                />
-              ) : (
-                <input type="hidden" name={`grade_${position}`} value="none" />
-              )}
-            </div>
             );
           })}
+        </div>
+
+        {/* Add Placement Button */}
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 pt-2">
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={addPlacementRow}
+            className="gap-2 border-white/20 bg-white/10 hover:bg-white/15 text-white"
+          >
+            <Plus className="h-4 w-4 text-emerald-400" />
+            <span>Add Placement</span>
+          </Button>
+          <span className="text-xs text-white/50">
+            {placementRows.length} candidate {placementRows.length === 1 ? "field" : "fields"} configured
+          </span>
         </div>
         {isJuryMode && !showProgramSelector && (
           <div className="mt-6 space-y-3 rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-white/70">

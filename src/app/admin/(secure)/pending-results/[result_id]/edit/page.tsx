@@ -10,7 +10,7 @@ import {
 import { getProgramRegistrations } from "@/lib/team-data";
 import type { GradeType } from "@/lib/types";
 import { ensureRegisteredCandidates } from "@/lib/registration-guard";
-import { updatePendingResultEntries } from "@/lib/result-service";
+import { updatePendingResultEntries, parsePlacementPayloads } from "@/lib/result-service";
 import { redirectWithToast } from "@/lib/actions";
 import { revalidatePath } from "next/cache";
 
@@ -19,22 +19,15 @@ interface EditPendingResultPageProps {
 }
 
 function buildInitialEntries(result: Awaited<ReturnType<typeof getPendingResultById>>) {
-  const initial: Partial<
-    Record<
-      1 | 2 | 3,
-      {
-        winnerId: string;
-        grade?: GradeType;
-      }
-    >
-  > = {};
+  const initial: Array<{ position: number; winnerId: string; grade?: GradeType }> = [];
   result?.entries.forEach((entry) => {
     const winnerId = entry.student_id ?? entry.team_id ?? "";
     if (!winnerId) return;
-    initial[entry.position as 1 | 2 | 3] = {
+    initial.push({
+      position: entry.position,
       winnerId,
       grade: entry.grade,
-    };
+    });
   });
   return initial;
 }
@@ -109,18 +102,15 @@ export default async function EditPendingResultPage({
   async function updatePendingAction(formData: FormData) {
     "use server";
     try {
-      const winners = [1, 2, 3].map((position) => {
-        const value = String(formData.get(`winner_${position}`) ?? "").trim();
-        if (!value) {
-          throw new Error("All placements are required.");
-        }
-        const grade = String(formData.get(`grade_${position}`) ?? "none") as GradeType;
-        return {
-          position: position as 1 | 2 | 3,
-          id: value,
-          grade,
-        };
-      });
+      const winners = parsePlacementPayloads(formData);
+      if (winners.length === 0) {
+        throw new Error("At least one candidate placement is required.");
+      }
+      const winnerIds = winners.map((w) => w.id);
+      const uniqueWinnerIds = new Set(winnerIds);
+      if (uniqueWinnerIds.size !== winners.length) {
+        throw new Error("Each candidate can only be awarded one placement.");
+      }
       const penaltyType = String(formData.get("penalty_type") ?? "none");
       const penaltyTarget = String(formData.get("penalty_target") ?? "").trim();
       const penaltyPointsRaw = String(formData.get("penalty_points") ?? "").trim();
