@@ -107,6 +107,8 @@ export async function getPortalStudents(): Promise<PortalStudent[]> {
     teamId: student.team_id,
     teamName: teamMap.get(student.team_id) ?? "Unknown",
     score: student.total_points ?? 0,
+    individualScore: student.individual_points ?? 0,
+    groupScore: student.group_points ?? 0,
     avatar: student.avatar,
   }));
 }

@@ -14,7 +14,11 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       {
         protocol: "https",
-        hostname: "images.unsplash.com",
+        hostname: "**",
+      },
+      {
+        protocol: "http",
+        hostname: "**",
       },
     ],
   },
@@ -33,30 +37,6 @@ const pwaConfig = withPWA({
   skipWaiting: true,
   disable: process.env.NODE_ENV === "development",
   runtimeCaching: [
-    {
-      urlPattern: /^https?.*/,
-      handler: "NetworkFirst",
-      options: {
-        cacheName: "offlineCache",
-        expiration: {
-          maxEntries: 200,
-          maxAgeSeconds: 24 * 60 * 60, // 24 hours
-        },
-        networkTimeoutSeconds: 10,
-      },
-    },
-    {
-      urlPattern: /\/api\/.*/i,
-      handler: "NetworkFirst",
-      options: {
-        cacheName: "apiCache",
-        expiration: {
-          maxEntries: 50,
-          maxAgeSeconds: 5 * 60, // 5 minutes
-        },
-        networkTimeoutSeconds: 10,
-      },
-    },
     {
       urlPattern: /\.(?:png|jpg|jpeg|svg|gif|webp|ico)$/,
       handler: "CacheFirst",
@@ -77,6 +57,30 @@ const pwaConfig = withPWA({
           maxEntries: 100,
           maxAgeSeconds: 30 * 24 * 60 * 60, // 30 days
         },
+      },
+    },
+    {
+      urlPattern: /\/api\/.*/i,
+      handler: "NetworkFirst",
+      options: {
+        cacheName: "apiCache",
+        expiration: {
+          maxEntries: 50,
+          maxAgeSeconds: 5 * 60, // 5 minutes
+        },
+        networkTimeoutSeconds: 30,
+      },
+    },
+    {
+      urlPattern: /^https?.*/,
+      handler: "NetworkFirst",
+      options: {
+        cacheName: "offlineCache",
+        expiration: {
+          maxEntries: 200,
+          maxAgeSeconds: 24 * 60 * 60, // 24 hours
+        },
+        networkTimeoutSeconds: 30,
       },
     },
   ],

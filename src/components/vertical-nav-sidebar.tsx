@@ -6,6 +6,7 @@ import {
   Home,
   Trophy,
   BarChart3,
+  Award,
   Search,
   Bot
 } from "lucide-react";
@@ -15,6 +16,7 @@ const navItems = [
   { href: "/", label: "Home", icon: Home },
   { href: "/results", label: "Results", icon: Trophy },
   { href: "/scoreboard", label: "Scoreboard", icon: BarChart3 },
+  { href: "/top-scorers", label: "Top Scorers", icon: Award },
   { href: "/participant", label: "Find Participant", icon: Search },
   { href: "/chatbot", label: "AI Assistant", icon: Bot },
 ];

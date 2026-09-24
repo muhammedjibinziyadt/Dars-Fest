@@ -699,18 +699,15 @@ export function AddResultForm({
         }
       >
         <div className="space-y-4 text-sm">
-          <p>Single events add grade bonus on top of podium points.</p>
           <div className="grid gap-3 rounded-2xl border border-white/10 bg-slate-900/70 p-4">
-            <p className="font-semibold">Single · Podium</p>
-            <p>1st: 10 · 2nd: 7 · 3rd: 5</p>
-            <p className="font-semibold">Grade Bonus</p>
-            <p>A: +5 · B: +3 · C: +1</p>
+            <p className="font-semibold text-amber-400">Single Events</p>
+            <p className="text-white/80">1st: 10 pts · 2nd: 7 pts · 3rd: 5 pts</p>
           </div>
           <div className="grid gap-3 rounded-2xl border border-white/10 bg-slate-900/70 p-4">
-            <p className="font-semibold">Group</p>
-            <p>1st 20 · 2nd 15 · 3rd 10</p>
-            <p className="font-semibold">General</p>
-            <p>1st 25 · 2nd 20 · 3rd 15</p>
+            <p className="font-semibold text-amber-400">Group Events</p>
+            <p className="text-white/80">1st: 20 pts · 2nd: 10 pts</p>
+            <p className="font-semibold text-amber-400">General Events</p>
+            <p className="text-white/80">1st: 25 pts · 2nd: 20 pts · 3rd: 15 pts</p>
           </div>
         </div>
       </Modal>

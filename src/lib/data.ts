@@ -27,7 +27,8 @@ import {
   getJuryFirebaseEmail,
 } from "./firebase-auth";
 
-function normalize<T>(docs: T[]): T[] {
+export function normalize<T>(docs: T[]): T[] {
+  if (!docs || !Array.isArray(docs)) return [];
   return docs.map((doc) => JSON.parse(JSON.stringify(doc)));
 }
 
@@ -397,16 +398,9 @@ const SINGLE_SCORES: Record<number, number> = {
   3: 5,
 };
 
-const GRADE_BONUS: Record<Exclude<GradeType, "none">, number> = {
-  A: 5,
-  B: 3,
-  C: 1,
-};
-
 const GROUP_SCORES: Record<number, number> = {
   1: 20,
-  2: 15,
-  3: 10,
+  2: 10,
 };
 
 const GENERAL_SCORES: Record<number, number> = {
@@ -418,12 +412,10 @@ const GENERAL_SCORES: Record<number, number> = {
 export function calculateScore(
   section: SectionType,
   position: number,
-  grade: GradeType = "none",
+  _grade: GradeType = "none",
 ): number {
   if (section === "single") {
-    const base = SINGLE_SCORES[position] || 0;
-    const bonus = grade !== "none" ? GRADE_BONUS[grade] || 0 : 0;
-    return base + bonus;
+    return SINGLE_SCORES[position] || 0;
   }
 
   if (section === "group") {
@@ -443,11 +435,21 @@ export async function updateLiveScore(teamId: string, delta: number) {
   await updateTeamTotals(teamId, delta);
 }
 
-export async function updateStudentScore(studentId: string, delta: number) {
+export async function updateStudentScore(
+  studentId: string,
+  delta: number,
+  category: "single" | "group" | "general" = "single",
+) {
   await connectDB();
+  const inc: Record<string, number> = { total_points: delta };
+  if (category === "single") {
+    inc.individual_points = delta;
+  } else if (category === "group") {
+    inc.group_points = delta;
+  }
   await StudentModel.updateOne(
     { id: studentId },
-    { $inc: { total_points: delta } },
+    { $inc: inc },
     { upsert: false },
   );
 }
@@ -462,6 +464,9 @@ export async function resetLiveScores() {
   await Promise.all([
     LiveScoreModel.updateMany({}, { $set: { total_points: 0 } }),
     TeamModel.updateMany({}, { $set: { total_points: 0 } }),
-    StudentModel.updateMany({}, { $set: { total_points: 0 } }),
+    StudentModel.updateMany(
+      {},
+      { $set: { total_points: 0, individual_points: 0, group_points: 0 } },
+    ),
   ]);
 }

@@ -56,13 +56,17 @@ if (!globalForCache.__firestoreCache) {
 const cache = globalForCache.__firestoreCache;
 const CACHE_TTL_MS = 25_000; // 25 seconds in-memory cache
 
+const inFlightRequests = new Map<string, Promise<any[]>>();
+
 export function invalidateCache(collectionName?: string) {
   if (collectionName) {
     delete cache[collectionName];
+    inFlightRequests.delete(collectionName);
   } else {
     for (const key of Object.keys(cache)) {
       delete cache[key];
     }
+    inFlightRequests.clear();
   }
 }
 
@@ -107,16 +111,25 @@ export class FirestoreModel<T extends Record<string, any>> {
       if (cached && now - cached.timestamp < CACHE_TTL_MS) {
         allDocs = cached.data;
       } else {
-        const snapshot = await this.col.get();
-        const fresh: T[] = [];
-        snapshot.forEach((doc) => {
-          fresh.push(doc.data() as T);
-        });
-        cache[this.collectionName] = {
-          data: fresh,
-          timestamp: now,
-        };
-        allDocs = fresh;
+        let pending = inFlightRequests.get(this.collectionName);
+        if (!pending) {
+          pending = (async () => {
+            const snapshot = await this.col.get();
+            const fresh: T[] = [];
+            snapshot.forEach((doc) => {
+              fresh.push(doc.data() as T);
+            });
+            cache[this.collectionName] = {
+              data: fresh,
+              timestamp: Date.now(),
+            };
+            return fresh;
+          })().finally(() => {
+            inFlightRequests.delete(this.collectionName);
+          });
+          inFlightRequests.set(this.collectionName, pending);
+        }
+        allDocs = (await pending) as T[];
       }
 
       let results = allDocs;

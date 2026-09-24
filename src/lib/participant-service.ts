@@ -159,7 +159,10 @@ export async function getParticipantProfile(
 
     if (result) {
       // Find entry for this student
-      const entry = result.entries.find((e) => e.student_id === student.id);
+      let entry = result.entries.find((e) => e.student_id === student.id);
+      if (!entry && program.section === "group") {
+        entry = result.entries.find((e) => e.team_id === student.team_id);
+      }
       if (entry) {
         resultEntry = {
           position: entry.position,

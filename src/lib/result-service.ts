@@ -163,14 +163,32 @@ async function buildEntries(
   return entries;
 }
 
-async function applyEntryScores(entries: ResultEntry[], direction: 1 | -1) {
+async function applyEntryScores(
+  entries: ResultEntry[],
+  direction: 1 | -1,
+  programInfo?: { id: string; section?: string },
+) {
   for (const entry of entries) {
     const delta = entry.score * direction;
     if (entry.student_id) {
-      await updateStudentScore(entry.student_id, delta);
+      await updateStudentScore(entry.student_id, delta, "single");
     }
     if (entry.team_id) {
       await updateLiveScore(entry.team_id, delta);
+
+      // If group program, also award points to all students of this team registered for this program
+      if (programInfo?.section === "group" && programInfo?.id && entry.score > 0) {
+        const registrations = await ProgramRegistrationModel.find({
+          programId: programInfo.id,
+          teamId: entry.team_id,
+        }).lean();
+
+        for (const reg of registrations) {
+          if (reg.studentId) {
+            await updateStudentScore(reg.studentId, delta, "group");
+          }
+        }
+      }
     }
   }
 }
@@ -331,7 +349,12 @@ export async function approveResult(resultId: string) {
   };
   await ApprovedResultModel.create(approvedRecord);
 
-  await applyEntryScores(record.entries, 1);
+  const program = await ProgramModel.findOne({ id: record.program_id }).lean();
+  await applyEntryScores(
+    record.entries,
+    1,
+    program ? { id: program.id, section: program.section } : undefined,
+  );
   await applyPenalties(record.penalties, 1);
 
   await updateAssignmentStatus(record.program_id, record.jury_id, "completed");
@@ -411,7 +434,7 @@ export async function updateApprovedResult(
   if (!program) throw new Error("Program not found");
   const entries = await buildEntries(program, winners);
   const penalties = await buildPenaltyEntries(penaltiesPayload);
-  await applyEntryScores(record.entries, -1);
+  await applyEntryScores(record.entries, -1, { id: program.id, section: program.section });
   await applyPenalties(record.penalties, -1);
   await ApprovedResultModel.updateOne(
     { id: resultId },
@@ -421,7 +444,7 @@ export async function updateApprovedResult(
       submitted_at: new Date().toISOString(),
     },
   );
-  await applyEntryScores(entries, 1);
+  await applyEntryScores(entries, 1, { id: program.id, section: program.section });
   await applyPenalties(penalties, 1);
   revalidatePath("/");
   revalidatePath("/scoreboard");
@@ -433,7 +456,12 @@ export async function deleteApprovedResult(resultId: string) {
   await connectDB();
   const record = await ApprovedResultModel.findOne({ id: resultId }).lean();
   if (!record) return;
-  await applyEntryScores(record.entries, -1);
+  const program = await ProgramModel.findOne({ id: record.program_id }).lean();
+  await applyEntryScores(
+    record.entries,
+    -1,
+    program ? { id: program.id, section: program.section } : undefined,
+  );
   await applyPenalties(record.penalties, -1);
   await ApprovedResultModel.deleteOne({ id: resultId });
   await updateAssignmentStatus(record.program_id, record.jury_id, "submitted");

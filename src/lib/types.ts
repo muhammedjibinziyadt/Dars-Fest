@@ -21,6 +21,8 @@ export interface Student {
   chest_no: string;
   avatar?: string;
   total_points: number;
+  individual_points?: number;
+  group_points?: number;
 }
 
 export interface Program {
@@ -92,6 +94,8 @@ export interface PortalStudent {
   teamId: string;
   teamName: string;
   score: number;
+  individualScore?: number;
+  groupScore?: number;
   avatar?: string;
 }
 
