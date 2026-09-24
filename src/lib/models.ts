@@ -54,7 +54,7 @@ if (!globalForCache.__firestoreCache) {
 }
 
 const cache = globalForCache.__firestoreCache;
-const CACHE_TTL_MS = 25_000; // 25 seconds in-memory cache
+const CACHE_TTL_MS = 60_000; // 60 seconds in-memory cache
 
 const inFlightRequests = new Map<string, Promise<any[]>>();
 
@@ -67,6 +67,17 @@ export function invalidateCache(collectionName?: string) {
       delete cache[key];
     }
     inFlightRequests.clear();
+  }
+
+  // Clear global top-scorers cache if relevant collections changed
+  if (
+    !collectionName ||
+    ["students", "teams", "programs", "results_approved", "program_registrations", "live_scores"].includes(collectionName)
+  ) {
+    const g = globalThis as any;
+    if (g.__topScorersCache) {
+      delete g.__topScorersCache;
+    }
   }
 }
 

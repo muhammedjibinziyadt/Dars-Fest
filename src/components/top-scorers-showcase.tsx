@@ -14,8 +14,6 @@ import {
   Users,
   User,
   Star,
-  Flame,
-  Info,
 } from "lucide-react";
 import type { TopScorerItem, TopScorerCategory, TopScorerDataResult } from "@/lib/top-scorer-service";
 
@@ -149,49 +147,6 @@ export function TopScorersShowcase({
           </p>
         </div>
       )}
-
-      {/* Point Rules Card Banner */}
-      <div className="bg-gradient-to-r from-amber-50 via-orange-50 to-amber-50 border border-amber-200/80 rounded-2xl p-4 sm:p-5 shadow-sm">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-md shadow-amber-500/20">
-              <Info className="w-5 h-5" />
-            </div>
-            <div>
-              <h4 className="text-sm font-bold text-amber-950">Official Scoring System</h4>
-              <p className="text-xs text-amber-800">
-                Points approved by the fest coordination committee
-              </p>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 text-xs">
-            <div className="bg-white/80 backdrop-blur-sm rounded-xl px-3 py-2 border border-amber-200/60 flex items-center gap-2">
-              <User className="w-4 h-4 text-amber-700 shrink-0" />
-              <div>
-                <span className="font-bold text-gray-900">Individual: </span>
-                <span className="text-gray-700">1st = 10 · 2nd = 7 · 3rd = 5</span>
-              </div>
-            </div>
-
-            <div className="bg-white/80 backdrop-blur-sm rounded-xl px-3 py-2 border border-amber-200/60 flex items-center gap-2">
-              <Users className="w-4 h-4 text-orange-700 shrink-0" />
-              <div>
-                <span className="font-bold text-gray-900">Group: </span>
-                <span className="text-gray-700">1st = 20 · 2nd = 10</span>
-              </div>
-            </div>
-
-            <div className="bg-white/80 backdrop-blur-sm rounded-xl px-3 py-2 border border-amber-200/60 flex items-center gap-2 sm:col-span-2 lg:col-span-1">
-              <Flame className="w-4 h-4 text-amber-600 shrink-0" />
-              <div>
-                <span className="font-bold text-gray-900">General: </span>
-                <span className="text-gray-700">1st = 25 · 2nd = 20 · 3rd = 15</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
 
       {/* Category Tabs & Search Bar */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
