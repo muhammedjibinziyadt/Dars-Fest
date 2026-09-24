@@ -82,11 +82,21 @@ async function createStudentAction(formData: FormData) {
       teamId: team.id,
       avatar,
     });
+
+    if (team.leaderEmail) {
+      const { sendMembersAddedEmail } = await import("@/lib/email-service");
+      sendMembersAddedEmail({
+        to: team.leaderEmail,
+        leaderName: team.leaderName,
+        teamName: team.teamName,
+        members: [{ name, chestNumber }],
+      }).catch((e) => console.warn("Failed to send member added email:", e));
+    }
   } catch (error) {
     redirectWithMessage((error as Error).message);
   }
   revalidatePath("/team/register-students");
-  redirectWithMessage("Student added successfully.", "success");
+  redirectWithMessage("Student added successfully and team leader notified via email.", "success");
 }
 
 async function updateStudentAction(formData: FormData) {

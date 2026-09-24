@@ -77,12 +77,26 @@ async function mutateProgram(
   const candidateLimit = payload.candidateLimit ?? 1;
 
   if (mode === "create") {
-    await createProgram({
+    const createdProg = await createProgram({
       name: payload.name,
       section: payload.section,
       stage,
       candidateLimit,
     });
+
+    // Broadcast new program announcement and email to all team leaders
+    try {
+      const { createProgramCreatedNotification } = await import("@/lib/notification-service");
+      await createProgramCreatedNotification({
+        id: (createdProg as any)?.id,
+        name: payload.name,
+        section: payload.section,
+        stage,
+        candidateLimit,
+      });
+    } catch (e) {
+      console.warn("Failed to broadcast new program email/notification:", e);
+    }
   } else {
     if (!payload.id) throw new Error("Program ID required");
     await updateProgramById(payload.id, {
@@ -313,8 +327,25 @@ async function importProgramsAction(formData: FormData) {
       });
       successCount++;
     }
+
+    // Broadcast email to all team leaders about the newly imported programs
+    try {
+      const { sendNewProgramsEmail } = await import("@/lib/email-service");
+      const importedPrograms = entries.map((e) => ({
+        name: e.data.name,
+        section: e.data.section,
+        stage: e.data.stage === "true",
+        candidateLimit: Number(e.data.candidate_limit || 1),
+      }));
+      sendNewProgramsEmail({ programs: importedPrograms }).catch((e) =>
+        console.warn("Failed to dispatch imported programs email:", e)
+      );
+    } catch (e) {
+      console.warn("Import programs email error:", e);
+    }
+
     revalidatePath("/admin/programs");
-    redirectWithToast("/admin/programs", `Successfully imported ${successCount} program(s)!`, "success");
+    redirectWithToast("/admin/programs", `Successfully imported ${successCount} program(s) and notified team leaders!`, "success");
   } catch (error: any) {
     // Check if it's a redirect error - if so, re-throw it
     if (error?.digest === "NEXT_REDIRECT" || error?.message === "NEXT_REDIRECT") {

@@ -78,6 +78,18 @@ async function registerProgramAction(formData: FormData) {
       teamId: team.id,
       teamName: team.teamName,
     });
+
+    if (team.leaderEmail) {
+      const { sendRegistrationSuccessEmail } = await import("@/lib/email-service");
+      sendRegistrationSuccessEmail({
+        to: team.leaderEmail,
+        leaderName: team.leaderName,
+        teamName: team.teamName,
+        programName: program.name,
+        section: program.section,
+        candidates: [{ name: student.name, chestNumber: student.chestNumber }],
+      }).catch((e) => console.warn("Failed to dispatch registration email:", e));
+    }
   } catch (error: any) {
     // Handle duplicate registration error (race condition protection)
     if (error.message.includes("already registered")) {
@@ -87,7 +99,7 @@ async function registerProgramAction(formData: FormData) {
   }
   
   revalidatePath("/team/program-register");
-  redirectWithMessage("Registration submitted.", "success");
+  redirectWithMessage("Registration submitted and confirmation sent to team leader.", "success");
 }
 
 async function registerMultipleStudentsAction(formData: FormData) {
@@ -182,6 +194,26 @@ async function registerMultipleStudentsAction(formData: FormData) {
     }
   }
 
+  if (team.leaderEmail && successCount > 0) {
+    const registeredList = selectedStudents
+      .filter((s) => !registrationErrors.some((e) => e.startsWith(`${s.name}:`)))
+      .map((s) => ({ name: s.name, chestNumber: s.chestNumber }));
+
+    try {
+      const { sendRegistrationSuccessEmail } = await import("@/lib/email-service");
+      sendRegistrationSuccessEmail({
+        to: team.leaderEmail,
+        leaderName: team.leaderName,
+        teamName: team.teamName,
+        programName: program.name,
+        section: program.section,
+        candidates: registeredList,
+      }).catch((e) => console.warn("Failed to dispatch group registration email:", e));
+    } catch (e) {
+      console.warn("Email service import error:", e);
+    }
+  }
+
   revalidatePath("/team/program-register");
   
   if (registrationErrors.length > 0) {
@@ -192,7 +224,7 @@ async function registerMultipleStudentsAction(formData: FormData) {
   }
   
   redirectWithMessage(
-    `Successfully registered ${successCount} student${successCount !== 1 ? "s" : ""}.`,
+    `Successfully registered ${successCount} student${successCount !== 1 ? "s" : ""} and notified team leader.`,
     "success",
   );
 }

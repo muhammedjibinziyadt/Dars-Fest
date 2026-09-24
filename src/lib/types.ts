@@ -137,12 +137,13 @@ export interface ReplacementRequest {
 
 export interface Notification {
   id: string;
-  type: "result_published";
+  type: "result_published" | "program_created" | "schedule_updated" | "member_added" | "announcement" | string;
   title: string;
   message: string;
-  programId: string;
-  programName: string;
-  resultId: string;
+  programId?: string;
+  programName?: string;
+  resultId?: string;
+  link?: string;
   read: boolean;
   createdAt: string;
 }

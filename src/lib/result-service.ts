@@ -357,11 +357,34 @@ export async function approveResult(resultId: string) {
   );
   await applyPenalties(record.penalties, 1);
 
-  await updateAssignmentStatus(record.program_id, record.jury_id, "completed");
+  // Build winners summary for notifications and team leader email
+  let winnersList: Array<{ position: number; studentName?: string; teamName?: string; grade?: string }> = [];
+  try {
+    const studentIds = record.entries.map((e) => e.student_id).filter(Boolean);
+    const teamIds = record.entries.map((e) => e.team_id).filter(Boolean);
+    const [students, teams] = await Promise.all([
+      studentIds.length > 0 ? StudentModel.find({ id: { $in: studentIds } }).lean() : [],
+      teamIds.length > 0 ? TeamModel.find({ id: { $in: teamIds } }).lean() : [],
+    ]);
+    const studentMap = new Map((students as any[]).map((s) => [s.id, s.name]));
+    const teamMap = new Map((teams as any[]).map((t) => [t.id, t.name]));
 
-  // Create notification for all users
+    winnersList = record.entries
+      .slice()
+      .sort((a, b) => a.position - b.position)
+      .map((e) => ({
+        position: e.position,
+        studentName: e.student_id ? studentMap.get(e.student_id) : undefined,
+        teamName: e.team_id ? teamMap.get(e.team_id) : undefined,
+        grade: e.grade,
+      }));
+  } catch (err) {
+    console.warn("Failed to build winners list for notification:", err);
+  }
+
+  // Create notification for all users and broadcast email to all team leaders
   const { createResultPublishedNotification } = await import("./notification-service");
-  await createResultPublishedNotification(resultId, record.program_id);
+  await createResultPublishedNotification(resultId, record.program_id, winnersList);
 
   // Emit real-time event
   const { emitResultApproved } = await import("./pusher");

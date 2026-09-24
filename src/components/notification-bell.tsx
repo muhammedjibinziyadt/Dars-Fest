@@ -72,8 +72,8 @@ export function NotificationBell({
   }, []);
 
   const handleNotificationClick = useCallback(async (notification: Notification) => {
-    // Navigate to result page first
-    router.push(`/results/${notification.programId}`);
+    const targetUrl = notification.link || (notification.programId ? `/results/${notification.programId}` : "/scoreboard");
+    router.push(targetUrl);
     setIsOpen(false);
 
     // Mark as read after navigation

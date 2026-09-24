@@ -100,6 +100,21 @@ async function upsertStudent(formData: FormData, mode: "create" | "update") {
       chest_no: chest_no!,
       avatar: payload.avatar || undefined,
     });
+
+    try {
+      const { getTeamLeaderInfo, sendMembersAddedEmail } = await import("@/lib/email-service");
+      const teamInfo = await getTeamLeaderInfo(payload.team_id);
+      if (teamInfo?.leaderEmail) {
+        sendMembersAddedEmail({
+          to: teamInfo.leaderEmail,
+          leaderName: teamInfo.leaderName,
+          teamName: teamInfo.teamName,
+          members: [{ name: payload.name, chestNumber: chest_no! }],
+        }).catch((err) => console.warn("Failed to send member added email:", err));
+      }
+    } catch (err) {
+      console.warn("Email service error:", err);
+    }
   } else {
     if (!payload.id) throw new Error("Student ID missing");
     const updateData: Record<string, any> = {
@@ -255,8 +270,9 @@ async function importStudentsAction(formData: FormData) {
     existingStudents.map((s) => s.chest_no.trim().toUpperCase())
   );
   
-  // Track chest numbers within this import batch to prevent duplicates in the same CSV
+    // Track chest numbers within this import batch to prevent duplicates in the same CSV
   const importBatchChestNumbers = new Set<string>();
+  const teamMembersMap = new Map<string, Array<{ name: string; chestNumber: string }>>();
   
   for (const entry of entries) {
     // Skip empty rows
@@ -334,6 +350,10 @@ async function importStudentsAction(formData: FormData) {
       
       // Add to existing set to prevent duplicates in subsequent rows of the same import
       existingChestNumbers.add(chest_no);
+
+      const teamList = teamMembersMap.get(resolvedTeamId) || [];
+      teamList.push({ name: parsed.data.name, chestNumber: chest_no });
+      teamMembersMap.set(resolvedTeamId, teamList);
     } catch (error: any) {
       // Provide user-friendly error message
       if (error.message.includes("Chest number")) {
@@ -346,8 +366,27 @@ async function importStudentsAction(formData: FormData) {
       return;
     }
   }
+
+  // Notify team leaders of imported members
+  try {
+    const { getTeamLeaderInfo, sendMembersAddedEmail } = await import("@/lib/email-service");
+    for (const [teamId, members] of teamMembersMap.entries()) {
+      const teamInfo = await getTeamLeaderInfo(teamId);
+      if (teamInfo?.leaderEmail) {
+        sendMembersAddedEmail({
+          to: teamInfo.leaderEmail,
+          leaderName: teamInfo.leaderName,
+          teamName: teamInfo.teamName,
+          members,
+        }).catch((e) => console.warn("Failed to dispatch import email for team", teamId, e));
+      }
+    }
+  } catch (err) {
+    console.warn("Failed to send import student notifications:", err);
+  }
+
   revalidatePath("/admin/students");
-  redirectWithToast("/admin/students", `Successfully imported ${importBatchChestNumbers.size} student(s)!`, "success");
+  redirectWithToast("/admin/students", `Successfully imported ${importBatchChestNumbers.size} student(s) and notified team leaders!`, "success");
   } catch (error: any) {
     if (error?.digest === "NEXT_REDIRECT" || error?.message === "NEXT_REDIRECT") {
       throw error;

@@ -454,6 +454,24 @@ export async function approveReplacementRequest(
       },
     },
   );
+
+  // Notify team leader via email
+  try {
+    const { getTeamLeaderInfo, sendReplacementStatusEmail } = await import("./email-service");
+    const teamInfo = await getTeamLeaderInfo(request.teamId);
+    if (teamInfo?.leaderEmail) {
+      sendReplacementStatusEmail({
+        to: teamInfo.leaderEmail,
+        teamName: request.teamName,
+        programName: request.programName,
+        oldStudentName: request.oldStudentName,
+        newStudentName: request.newStudentName,
+        status: "approved",
+      }).catch((e) => console.warn("Failed to send replacement approved email:", e));
+    }
+  } catch (e) {
+    console.warn("Replacement approval email error:", e);
+  }
 }
 
 export async function rejectReplacementRequest(
@@ -461,6 +479,9 @@ export async function rejectReplacementRequest(
   reviewedBy: string,
 ): Promise<void> {
   await connectDB();
+  const request = await ReplacementRequestModel.findOne({ id: requestId }).lean();
+  if (!request) return;
+
   await ReplacementRequestModel.updateOne(
     { id: requestId },
     {
@@ -471,5 +492,24 @@ export async function rejectReplacementRequest(
       },
     },
   );
+
+  // Notify team leader via email
+  try {
+    const { getTeamLeaderInfo, sendReplacementStatusEmail } = await import("./email-service");
+    const teamInfo = await getTeamLeaderInfo(request.teamId);
+    if (teamInfo?.leaderEmail) {
+      sendReplacementStatusEmail({
+        to: teamInfo.leaderEmail,
+        teamName: request.teamName,
+        programName: request.programName,
+        oldStudentName: request.oldStudentName,
+        newStudentName: request.newStudentName,
+        status: "rejected",
+        reason: request.reason,
+      }).catch((e) => console.warn("Failed to send replacement rejected email:", e));
+    }
+  } catch (e) {
+    console.warn("Replacement rejection email error:", e);
+  }
 }
 
