@@ -1,7 +1,7 @@
 {
-  "name": "Funoon Fiesta",
-  "short_name": "Funoon Fiesta",
-  "description": "A premier platform for students to showcase their talents and highlight the rich art forms of Islamic culture. Live scoreboard, admin controls, and jury tools.",
+  "name": "Maerika 2k26",
+  "short_name": "Maerika 2k26",
+  "description": "'കലായുഗ ഭാവുകം' എന്ന പ്രമേയത്തിലൂടെ, യുവത്വത്തെ കാർന്നുതിന്നുന്ന ലഹരിയെന്ന വിപത്തിനെതിരെ കലയെയും അറിവിനെയും ഞങ്ങൾ ആയുധമാക്കുന്നു. ചിന്തകൾക്ക് മൂർച്ചകൂട്ടാനും സർഗശേഷികളെ നാടിന്റെ നന്മയ്ക്കായി വഴിതിരിച്ചുവിടാനും ഈ വേദി കരുത്തുപകരുന്നു. വിനാശകരമായ ലഹരിയുടെ വഴികളിൽ നിന്ന് കലയുടെയും സംസ്കാരത്തിന്റെയും വിശുദ്ധിയിലേക്ക് വിദ്യാർത്ഥി സമൂഹത്തെ കൈപിടിച്ചുയർത്താനുള്ള ഒരു സർഗ്ഗാത്മക മുന്നേറ്റമാണിത്.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#020617",
@@ -72,21 +72,35 @@
       "form_factor": "narrow"
     }
   ],
-  "categories": ["education", "entertainment", "social"],
+  "categories": [
+    "education",
+    "entertainment",
+    "social"
+  ],
   "shortcuts": [
     {
       "name": "Scoreboard",
       "short_name": "Scoreboard",
       "description": "View live scoreboard",
       "url": "/scoreboard",
-      "icons": [{ "src": "/icon-192x192.png", "sizes": "192x192" }]
+      "icons": [
+        {
+          "src": "/icon-192x192.png",
+          "sizes": "192x192"
+        }
+      ]
     },
     {
       "name": "Results",
       "short_name": "Results",
       "description": "View results",
       "url": "/results",
-      "icons": [{ "src": "/icon-192x192.png", "sizes": "192x192" }]
+      "icons": [
+        {
+          "src": "/icon-192x192.png",
+          "sizes": "192x192"
+        }
+      ]
     }
   ],
   "share_target": {
@@ -100,4 +114,3 @@
     }
   }
 }
-
