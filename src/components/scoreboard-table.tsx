@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import { Trophy, Medal, ChevronRight, TrendingUp } from "lucide-react";
 import type { Team, Program, ResultRecord, ResultEntry, Student } from "@/lib/types";
@@ -208,12 +208,39 @@ export function ScoreboardTable({
   const [expandedProgram, setExpandedProgram] = useState<string | null>(null);
 
   const teamNames = teams.map((t) => t.name);
-  const studentMap = new Map(students.map((s) => [s.id, s]));
+  const studentMap = useMemo(() => new Map(students.map((s) => [s.id, s])), [students]);
 
-  // Organize programs by section
-  const singlePrograms = programs.filter((p) => p.section === "single");
-  const groupPrograms = programs.filter((p) => p.section === "group");
-  const generalPrograms = programs.filter((p) => p.section === "general");
+  // Only include programs that have published (approved) results with entries
+  const publishedProgramIds = useMemo(
+    () =>
+      new Set(
+        results
+          .filter((r) => r.entries && r.entries.length > 0)
+          .map((r) => r.program_id),
+      ),
+    [results],
+  );
+
+  const publishedPrograms = useMemo(() => {
+    const foundPrograms = programs.filter((p) => publishedProgramIds.has(p.id));
+    const foundIds = new Set(foundPrograms.map((p) => p.id));
+    const missingIds = Array.from(publishedProgramIds).filter((id) => !foundIds.has(id));
+    const fallbackPrograms: Program[] = missingIds.map((id) => ({
+      id,
+      name: "Program",
+      section: "single",
+      stage: true,
+    }));
+    return [...foundPrograms, ...fallbackPrograms];
+  }, [programs, publishedProgramIds]);
+
+  // Organize published programs by section
+  const singlePrograms = publishedPrograms.filter((p) => p.section === "single");
+  const groupPrograms = publishedPrograms.filter((p) => p.section === "group");
+  const generalPrograms = publishedPrograms.filter((p) => p.section === "general");
+  const otherPrograms = publishedPrograms.filter(
+    (p) => !["single", "group", "general"].includes(p.section),
+  );
 
   const getTotalPointsForTeam = (teamId: string): number => {
     return liveScores.get(teamId) ?? 0;
@@ -339,7 +366,10 @@ export function ScoreboardTable({
           { title: "Single Programs", programs: singlePrograms },
           { title: "Group Programs", programs: groupPrograms },
           { title: "General Programs", programs: generalPrograms },
-        ].map(({ title, programs: sectionPrograms }) => (
+          { title: "Other Programs", programs: otherPrograms },
+        ]
+          .filter(({ programs: sectionPrograms }) => sectionPrograms.length > 0)
+          .map(({ title, programs: sectionPrograms }) => (
           <motion.div
             key={title}
             initial={{ opacity: 0, y: 20 }}
@@ -392,7 +422,7 @@ export function ScoreboardTable({
   );
 
   const renderDesktopView = () => {
-    const allPrograms = [...singlePrograms, ...groupPrograms, ...generalPrograms];
+    const allPrograms = [...singlePrograms, ...groupPrograms, ...generalPrograms, ...otherPrograms];
 
     return (
       <div className="overflow-x-auto rounded-lg bg-white border border-gray-200 shadow-lg">
@@ -410,6 +440,8 @@ export function ScoreboardTable({
           <tbody className="divide-y divide-gray-200">
             {allPrograms.map((program) => {
               const programResults = results.filter((r) => r.program_id === program.id);
+              if (programResults.length === 0) return null;
+
               return (
                 <tr
                   key={program.id}
@@ -495,7 +527,7 @@ export function ScoreboardTable({
     </div>
   );
 
-  const hasData = results.length > 0;
+  const hasData = results.length > 0 && publishedPrograms.length > 0;
 
   return (
     <div className="container mx-auto px-4 py-12 md:px-12">
