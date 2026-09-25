@@ -56,7 +56,7 @@ export function AdminLoginForm({ action }: AdminLoginFormProps) {
             <input
               name="username"
               type="text"
-              placeholder="admin@gmail.com"
+              placeholder="admin or admin@maerika.com"
               autoComplete="username"
               required
               className="h-12 w-full rounded-2xl border border-white/15 bg-white/[0.06] pl-11 pr-4 text-sm text-white placeholder:text-white/35 transition-all duration-200 hover:border-white/30 hover:bg-white/[0.09] focus:border-rose-400 focus:bg-slate-900/90 focus:outline-none focus:ring-4 focus:ring-rose-500/15"

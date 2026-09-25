@@ -28,7 +28,7 @@ export function getJuryFirebaseEmail(juryId: string, customEmail?: string): stri
 }
 
 export function getAdminFirebaseEmail(): string {
-  return process.env.ADMIN_EMAIL || "admin@gmail.com";
+  return process.env.ADMIN_EMAIL || "admin@maerika.com";
 }
 
 /**
