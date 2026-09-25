@@ -2,7 +2,7 @@
 
 import React, { useEffect, useMemo, useState, useCallback } from "react";
 import { useFormStatus } from "react-dom";
-import { CheckCircle2, LayoutList, Search, Trash2, Eye, Pencil, FileText } from "lucide-react";
+import { CheckCircle2, LayoutList, Search, Trash2, Eye, Pencil, FileText, Shuffle } from "lucide-react";
 import { showSuccess, showError } from "@/lib/toast";
 
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,7 @@ import { Modal } from "@/components/ui/modal";
 import { useDebounce } from "@/hooks/use-debounce";
 import type { Jury, Program, ProgramRegistration, Student } from "@/lib/types";
 import { ProgramParticipantsPdfModal } from "./program-participants-pdf-modal";
+import { ProgramChestLotModal } from "./program-chest-lot-modal";
 
 interface ProgramManagerProps {
   programs: Program[];
@@ -108,6 +109,8 @@ export const ProgramManager = React.memo(function ProgramManager({
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showPdfModal, setShowPdfModal] = useState(false);
+  const [showLotModal, setShowLotModal] = useState(false);
+  const [lotProgramId, setLotProgramId] = useState<string | undefined>(undefined);
   const juryOptions = useMemo(
     () => juries.map((jury) => ({ value: jury.id, label: jury.name })),
     [juries],
@@ -210,6 +213,19 @@ export const ProgramManager = React.memo(function ProgramManager({
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          <Button
+            type="button"
+            variant="secondary"
+            className="gap-2 border-cyan-500/30 bg-cyan-500/10 text-cyan-300 hover:bg-cyan-500/20"
+            onClick={() => {
+              setLotProgramId(selected.size === 1 ? Array.from(selected)[0] : undefined);
+              setShowLotModal(true);
+            }}
+            title="Select program and shuffle chest numbers to assign lots (A, B, C, D...)"
+          >
+            <Shuffle className="h-4 w-4 text-cyan-400" />
+            Shuffle Chest Lots
+          </Button>
           <Button
             type="button"
             variant="secondary"
@@ -367,6 +383,20 @@ export const ProgramManager = React.memo(function ProgramManager({
                   Last updated · <span className="text-white/50">Auto</span>
                 </div>
                 <div className="flex flex-wrap gap-2 w-full xl:ml-auto xl:w-auto xl:justify-end" >
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="gap-1.5 border border-cyan-500/20 bg-cyan-500/5 text-cyan-300 hover:bg-cyan-500/15"
+                    onClick={() => {
+                      setLotProgramId(program.id);
+                      setShowLotModal(true);
+                    }}
+                    title="Draw lots & shuffle chest codes (A, B, C...)"
+                  >
+                    <Shuffle className="h-3.5 w-3.5" />
+                    Lot
+                  </Button>
                   <Button
                     type="button"
                     variant="secondary"
@@ -569,6 +599,18 @@ export const ProgramManager = React.memo(function ProgramManager({
         registrations={registrations}
         students={students}
         selectedProgramIds={Array.from(selected)}
+      />
+
+      <ProgramChestLotModal
+        open={showLotModal}
+        onClose={() => {
+          setShowLotModal(false);
+          setLotProgramId(undefined);
+        }}
+        programs={programs}
+        registrations={registrations}
+        students={students}
+        initialProgramId={lotProgramId}
       />
     </div>
   );
