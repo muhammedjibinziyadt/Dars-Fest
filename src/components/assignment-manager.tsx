@@ -17,6 +17,7 @@ import {
   Calendar,
   Award,
   Trash2,
+  Lock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -368,6 +369,24 @@ export const AssignmentManager = React.memo(function AssignmentManager({
                                     <span>•</span>
                                     <span>{programStage ? "On Stage" : "Off Stage"}</span>
                                   </div>
+                                  {assignment.notes && (
+                                    <div className="mt-2.5 flex items-start gap-2 rounded-lg border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-xs text-amber-200">
+                                      <Lock className="h-3.5 w-3.5 text-amber-400 shrink-0 mt-0.5" />
+                                      <div className="min-w-0 flex-1">
+                                        <div className="flex items-center gap-2">
+                                          <span className="font-semibold text-amber-300">Jury Judgment Note</span>
+                                          {assignment.notes_updated_at && (
+                                            <span className="text-[10px] text-amber-300/60">
+                                              ({new Date(assignment.notes_updated_at).toLocaleDateString()})
+                                            </span>
+                                          )}
+                                        </div>
+                                        <p className="mt-1 whitespace-pre-wrap text-amber-100/90 leading-relaxed">
+                                          {assignment.notes}
+                                        </p>
+                                      </div>
+                                    </div>
+                                  )}
                                 </div>
                                 <div className="flex items-center gap-3 lg:justify-end">
                                   <div
@@ -454,6 +473,24 @@ export const AssignmentManager = React.memo(function AssignmentManager({
                       <span>•</span>
                       <span className="capitalize">{programSection}</span>
                     </div>
+                    {assignment.notes && (
+                      <div className="mt-2.5 flex items-start gap-2 rounded-lg border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-xs text-amber-200">
+                        <Lock className="h-3.5 w-3.5 text-amber-400 shrink-0 mt-0.5" />
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold text-amber-300">Jury Judgment Note</span>
+                            {assignment.notes_updated_at && (
+                              <span className="text-[10px] text-amber-300/60">
+                                ({new Date(assignment.notes_updated_at).toLocaleDateString()})
+                              </span>
+                            )}
+                          </div>
+                          <p className="mt-1 whitespace-pre-wrap text-amber-100/90 leading-relaxed">
+                            {assignment.notes}
+                          </p>
+                        </div>
+                      </div>
+                    )}
                   </div>
                   <div className="flex items-center gap-3 lg:justify-end">
                     <div

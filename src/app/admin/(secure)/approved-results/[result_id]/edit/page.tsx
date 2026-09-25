@@ -129,7 +129,8 @@ export default async function EditApprovedResultPage({
         ...winners.map((winner) => winner.id),
         ...penalties.map((penalty) => penalty.id),
       ]);
-      await updateApprovedResult(result_id, winners, penalties);
+      const notes = String(formData.get("notes") ?? "").trim();
+      await updateApprovedResult(result_id, winners, penalties, notes);
       revalidatePath("/admin/approved-results");
       redirectWithToast("/admin/approved-results", "Result updated successfully!", "success");
     } catch (error: any) {
@@ -156,6 +157,7 @@ export default async function EditApprovedResultPage({
         lockProgram
         initial={initial}
         initialPenalties={initialPenaltyList}
+        initialNotes={result.notes || ""}
         submitLabel="Update Approved Result"
       />
     </div>

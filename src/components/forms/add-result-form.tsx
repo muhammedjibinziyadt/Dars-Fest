@@ -54,6 +54,7 @@ interface AddResultFormProps {
   mode?: "default" | "jury";
   juryName?: string;
   defaultJuryId?: string;
+  initialNotes?: string;
 }
 
 const gradeOptions = [
@@ -124,6 +125,7 @@ export function AddResultForm({
   mode = "default",
   juryName,
   defaultJuryId,
+  initialNotes,
 }: AddResultFormProps) {
   const [programId, setProgramId] = useState(programs[0]?.id ?? "");
   const [showRules, setShowRules] = useState(false);
@@ -665,28 +667,59 @@ export function AddResultForm({
         </Card>
       )}
 
-      {!isJuryMode && (
       <Card>
-        <Badge tone="emerald">Step 3 · Submit</Badge>
-        <CardTitle className="mt-4">Assign responsible jury (Optional)</CardTitle>
-        <CardDescription className="mt-2">
-          {defaultJuryId 
-            ? "Leave blank to assign to Admin. Once you submit, the record lands in Pending Results for approval."
-            : "Once you submit, the record lands in Pending Results for approval."}
+        <div className="flex items-center justify-between">
+          <Badge tone="amber">🔒 Judgment Notes · Admin & Jury Only</Badge>
+          <span className="text-xs text-amber-300/80 font-medium">Strictly Confidential</span>
+        </div>
+        <CardTitle className="mt-3">Confidential Judgment Notes & Observations</CardTitle>
+        <CardDescription className="mt-1">
+          Add any evaluation notes, scoring justification, or remarks for the program. Strictly visible only to Admin and Jury (never shown to students, teams, or public).
         </CardDescription>
-        {defaultJuryId && <input type="hidden" name="default_jury_id" value={defaultJuryId} />}
-        <SearchSelect
-          className="mt-6"
-          name="jury_id"
-          defaultValue={defaultJuryId ?? juries[0]?.id}
-          disabled={lockProgram}
-          options={juries.map((jury) => ({ value: jury.id, label: jury.name }))}
-          placeholder="Select jury (defaults to Admin if not selected)"
-        />
-          <Button type="submit" className="mt-4" disabled={!hasEligibleCandidates}>
-          {submitLabel}
-        </Button>
+        <div className="mt-4">
+          <textarea
+            name="notes"
+            defaultValue={initialNotes ?? ""}
+            rows={4}
+            placeholder="e.g. Candidate evaluation notes, criteria breakdown, or confidential remarks for organizers..."
+            className="w-full rounded-2xl border border-white/10 bg-slate-950/60 p-3.5 text-sm text-white placeholder-white/30 focus:border-indigo-400 focus:outline-none focus:ring-1 focus:ring-indigo-400 transition"
+          />
+        </div>
       </Card>
+
+      {isJuryMode ? (
+        <Card>
+          <Badge tone="emerald">Final Step · Submit</Badge>
+          <CardTitle className="mt-4">Submit Evaluation to Admin</CardTitle>
+          <CardDescription className="mt-2">
+            Submitting as <span className="font-semibold text-white">{juryName || activeJury?.name || "Assigned Jury"}</span>. Once submitted, your scores and private judgment notes will land in Pending Results for Admin approval.
+          </CardDescription>
+          <Button type="submit" className="mt-6" disabled={!hasEligibleCandidates}>
+            {submitLabel || "Submit Result to Pending"}
+          </Button>
+        </Card>
+      ) : (
+        <Card>
+          <Badge tone="emerald">Step 3 · Submit</Badge>
+          <CardTitle className="mt-4">Assign responsible jury (Optional)</CardTitle>
+          <CardDescription className="mt-2">
+            {defaultJuryId 
+              ? "Leave blank to assign to Admin. Once you submit, the record lands in Pending Results for approval."
+              : "Once you submit, the record lands in Pending Results for approval."}
+          </CardDescription>
+          {defaultJuryId && <input type="hidden" name="default_jury_id" value={defaultJuryId} />}
+          <SearchSelect
+            className="mt-6"
+            name="jury_id"
+            defaultValue={defaultJuryId ?? juries[0]?.id}
+            disabled={lockProgram}
+            options={juries.map((jury) => ({ value: jury.id, label: jury.name }))}
+            placeholder="Select jury (defaults to Admin if not selected)"
+          />
+          <Button type="submit" className="mt-4" disabled={!hasEligibleCandidates}>
+            {submitLabel}
+          </Button>
+        </Card>
       )}
       <Modal
         open={showRules}

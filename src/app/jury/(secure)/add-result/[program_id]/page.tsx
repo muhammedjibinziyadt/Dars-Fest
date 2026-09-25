@@ -67,12 +67,15 @@ async function jurySubmitResultAction(formData: FormData) {
     ...penalties.map((penalty) => penalty.id),
   ]);
 
+  const notes = String(formData.get("notes") ?? "").trim();
+
   try {
     await submitResultToPending({
       programId,
       juryId: jury.id,
       winners,
       penalties,
+      notes,
     });
   } catch (error: any) {
     // Handle published program error
@@ -135,6 +138,7 @@ export default async function JuryAddResultPage({
         action={jurySubmitResultAction}
         mode="jury"
         juryName={jury.name}
+        initialNotes={assignment.notes || ""}
       />
     </div>
   );

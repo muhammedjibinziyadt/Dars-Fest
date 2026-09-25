@@ -13,6 +13,7 @@ interface EnrichedAssignment {
   section: string;
   stage: boolean;
   status: AssignedProgram["status"];
+  notes?: string;
 }
 
 interface JuryProgramsRealtimeProps {

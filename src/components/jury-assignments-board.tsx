@@ -2,13 +2,16 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { Calendar, CheckCircle2, ClipboardList, Clock, Filter, Layers, Search } from "lucide-react";
+import { Calendar, CheckCircle2, ClipboardList, Clock, Filter, Layers, Search, Lock, PenLine, FileText } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Modal } from "@/components/ui/modal";
 import type { AssignedProgram } from "@/lib/types";
+import { saveJudgmentNoteAction } from "@/app/jury/(secure)/programs/actions";
+import { showSuccess, showError } from "@/lib/toast";
 
 interface EnrichedAssignment {
   id: string;
@@ -17,6 +20,7 @@ interface EnrichedAssignment {
   section: string;
   stage: boolean;
   status: AssignedProgram["status"];
+  notes?: string;
 }
 
 const STATUS_CONFIG: Record<
@@ -53,6 +57,42 @@ const FILTERS: Array<{ value: "all" | AssignedProgram["status"]; label: string }
 export function JuryAssignmentsBoard({ assignments }: { assignments: EnrichedAssignment[] }) {
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<(typeof FILTERS)[number]["value"]>("all");
+  const [localNotes, setLocalNotes] = useState<Record<string, string>>(() => {
+    const initial: Record<string, string> = {};
+    assignments.forEach((a) => {
+      if (a.notes) initial[a.programId] = a.notes;
+    });
+    return initial;
+  });
+  const [noteModalTarget, setNoteModalTarget] = useState<{
+    programId: string;
+    programName: string;
+  } | null>(null);
+  const [noteText, setNoteText] = useState("");
+  const [isSavingNote, setIsSavingNote] = useState(false);
+
+  const handleOpenNoteModal = (programId: string, programName: string) => {
+    setNoteModalTarget({ programId, programName });
+    setNoteText(localNotes[programId] || "");
+  };
+
+  const handleSaveNote = async () => {
+    if (!noteModalTarget) return;
+    try {
+      setIsSavingNote(true);
+      await saveJudgmentNoteAction(noteModalTarget.programId, noteText);
+      setLocalNotes((prev) => ({
+        ...prev,
+        [noteModalTarget.programId]: noteText.trim(),
+      }));
+      showSuccess("Judgment note saved! (Visible only to Jury and Admin)");
+      setNoteModalTarget(null);
+    } catch (err: any) {
+      showError(err?.message || "Failed to save judgment note.");
+    } finally {
+      setIsSavingNote(false);
+    }
+  };
 
   const stats = useMemo(() => {
     const pending = assignments.filter((item) => item.status === "pending").length;
@@ -133,6 +173,7 @@ export function JuryAssignmentsBoard({ assignments }: { assignments: EnrichedAss
             const statusMeta = STATUS_CONFIG[assignment.status];
             const StatusIcon = statusMeta.icon;
             const isLocked = assignment.status !== "pending";
+            const currentNote = localNotes[assignment.programId];
 
             return (
               <Card
@@ -160,6 +201,26 @@ export function JuryAssignmentsBoard({ assignments }: { assignments: EnrichedAss
                         {assignment.stage ? "On stage" : "Off stage"}
                       </span>
                     </div>
+
+                    {/* Judgment Note Preview */}
+                    {currentNote ? (
+                      <div className="mt-3 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-3.5 text-xs">
+                        <div className="flex items-center justify-between gap-2 mb-1.5">
+                          <span className="flex items-center gap-1.5 font-bold uppercase tracking-wider text-amber-300 text-[11px]">
+                            <Lock className="h-3 w-3" />
+                            Judgment Note (Private · Jury & Admin only)
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => handleOpenNoteModal(assignment.programId, assignment.programName)}
+                            className="text-amber-400 hover:text-amber-200 underline font-medium"
+                          >
+                            Edit
+                          </button>
+                        </div>
+                        <p className="text-white/80 whitespace-pre-wrap">{currentNote}</p>
+                      </div>
+                    ) : null}
                   </div>
                   <div className="w-full lg:w-auto">
                     <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-white/70">
@@ -181,8 +242,14 @@ export function JuryAssignmentsBoard({ assignments }: { assignments: EnrichedAss
                           </Button>
                         </Link>
                       )}
-                      <Button variant="secondary" className="w-full border border-white/10 text-white/80" disabled>
-                        View briefing (coming soon)
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        className="w-full gap-2 border border-amber-500/30 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20"
+                        onClick={() => handleOpenNoteModal(assignment.programId, assignment.programName)}
+                      >
+                        <PenLine className="h-4 w-4" />
+                        {currentNote ? "Edit Judgment Note" : "Add Judgment Note"}
                       </Button>
                     </div>
                   </div>
@@ -192,6 +259,54 @@ export function JuryAssignmentsBoard({ assignments }: { assignments: EnrichedAss
           })
         )}
       </div>
+
+      {/* Judgment Note Editor Modal */}
+      {noteModalTarget && (
+        <Modal
+          open={!!noteModalTarget}
+          title={`Judgment Note - ${noteModalTarget.programName}`}
+          onClose={() => setNoteModalTarget(null)}
+          actions={
+            <div className="flex gap-2">
+              <Button
+                variant="ghost"
+                onClick={() => setNoteModalTarget(null)}
+                disabled={isSavingNote}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleSaveNote}
+                loading={isSavingNote}
+                className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold"
+              >
+                Save Note
+              </Button>
+            </div>
+          }
+        >
+          <div className="space-y-4 text-sm">
+            <div className="flex items-center gap-2 p-3 rounded-xl border border-amber-500/30 bg-amber-500/10 text-amber-300 text-xs">
+              <Lock className="h-4 w-4 shrink-0" />
+              <span>
+                <strong>Confidential Judgment Note:</strong> Only you (Jury) and Fest Admins can read this note. It is NEVER shown to students, teams, or the public.
+              </span>
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-white/70 block mb-1.5 uppercase tracking-wider">
+                Evaluation Notes & Observations:
+              </label>
+              <textarea
+                rows={6}
+                value={noteText}
+                onChange={(e) => setNoteText(e.target.value)}
+                placeholder="Write your judging criteria observations, participant remarks, scoring rationale, or feedback for admin..."
+                className="w-full rounded-2xl border border-white/15 bg-white/5 p-4 text-sm text-white placeholder-white/40 focus:border-amber-400 focus:outline-none focus:ring-1 focus:ring-amber-400"
+              />
+            </div>
+          </div>
+        </Modal>
+      )}
     </div>
   );
 }

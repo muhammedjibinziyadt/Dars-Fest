@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useState, useCallback } from "react";
-import { CheckCircle2, Eye, Pencil, Search, Trash2, Calendar, User, Award } from "lucide-react";
+import { CheckCircle2, Eye, Pencil, Search, Trash2, Calendar, User, Award, Lock } from "lucide-react";
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
@@ -255,6 +255,13 @@ export const ResultManager = React.memo(function ResultManager({
                     <User className="h-3 w-3" />
                     {jury?.name ?? "Unknown Jury"}
                   </p>
+                  {result.notes && (
+                    <div className="mt-2 flex items-center gap-1.5 rounded-lg border border-amber-500/25 bg-amber-500/10 px-2.5 py-1 text-xs text-amber-200/90 w-fit">
+                      <Lock className="h-3 w-3 text-amber-400 shrink-0" />
+                      <span className="font-semibold text-amber-300">Jury Note:</span>
+                      <span className="line-clamp-1 max-w-[260px] text-amber-100/80">{result.notes}</span>
+                    </div>
+                  )}
                 </div>
                 <div className="flex flex-col gap-2 w-full sm:flex-row sm:flex-wrap sm:gap-3 xl:max-w-md">
                   {result.entries.map((entry) => (
@@ -431,6 +438,17 @@ export const ResultManager = React.memo(function ResultManager({
               <p className="text-sm text-white/60">Total Score</p>
               <p className="text-2xl font-bold text-emerald-300">{getTotalScore(viewResult)}</p>
             </div>
+            {viewResult.notes && (
+              <div className="rounded-2xl border border-amber-500/30 bg-amber-950/20 p-4">
+                <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-amber-400">
+                  <Lock className="h-3.5 w-3.5" />
+                  <span>Private Judgment Note · Admin & Jury Only</span>
+                </div>
+                <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-amber-100/90">
+                  {viewResult.notes}
+                </p>
+              </div>
+            )}
             <div className="space-y-3">
               <p className="text-sm font-semibold text-white">Winners</p>
               {viewResult.entries.map((entry) => {

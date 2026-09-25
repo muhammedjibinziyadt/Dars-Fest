@@ -79,12 +79,15 @@ async function submitResultAction(formData: FormData) {
       ...penalties.map((penalty) => penalty.id),
     ]);
 
+    const notes = String(formData.get("notes") ?? "").trim();
+
     try {
       await submitResultToPending({
         programId,
         juryId,
         winners,
         penalties,
+        notes,
       });
       revalidatePath("/admin/pending-results");
       redirectWithToast("/admin/pending-results", "Result submitted successfully! Waiting for approval.", "success");

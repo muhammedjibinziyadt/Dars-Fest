@@ -383,6 +383,31 @@ export async function updateAssignmentStatus(
   await AssignedProgramModel.updateOne({ program_id: programId, jury_id: juryId }, { status });
 }
 
+export async function updateAssignmentNotes(
+  programId: string,
+  juryId: string,
+  notes: string,
+) {
+  await connectDB();
+  const notesUpdatedAt = new Date().toISOString();
+  await AssignedProgramModel.updateOne(
+    { program_id: programId, jury_id: juryId },
+    { notes: notes.trim(), notes_updated_at: notesUpdatedAt },
+  );
+
+  // If a pending result exists for this program and jury, keep notes in sync
+  await PendingResultModel.updateOne(
+    { program_id: programId, jury_id: juryId },
+    { notes: notes.trim() },
+  );
+
+  // If approved result exists, also sync
+  await ApprovedResultModel.updateOne(
+    { program_id: programId, jury_id: juryId },
+    { notes: notes.trim() },
+  );
+}
+
 export async function deleteAssignment(programId: string, juryId: string) {
   await connectDB();
   await AssignedProgramModel.deleteOne({ program_id: programId, jury_id: juryId });

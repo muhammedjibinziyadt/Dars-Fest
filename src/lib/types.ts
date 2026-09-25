@@ -44,6 +44,8 @@ export interface AssignedProgram {
   program_id: string;
   jury_id: string;
   status: "pending" | "submitted" | "completed";
+  notes?: string;
+  notes_updated_at?: string;
 }
 
 export interface ResultEntry {

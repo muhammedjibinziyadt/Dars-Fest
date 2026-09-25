@@ -129,7 +129,8 @@ export default async function EditPendingResultPage({
         ...winners.map((winner) => winner.id),
         ...penalties.map((penalty) => penalty.id),
       ]);
-      await updatePendingResultEntries(result_id, winners, penalties);
+      const notes = String(formData.get("notes") ?? "").trim();
+      await updatePendingResultEntries(result_id, winners, penalties, notes);
       revalidatePath("/admin/pending-results");
       redirectWithToast("/admin/pending-results", "Result updated successfully!", "success");
     } catch (error: any) {
@@ -156,6 +157,7 @@ export default async function EditPendingResultPage({
         lockProgram
         initial={initial}
         initialPenalties={initialPenaltyList}
+        initialNotes={result.notes || ""}
         submitLabel="Update Pending Result"
       />
     </div>
