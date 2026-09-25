@@ -15,6 +15,7 @@ import {
   PenSquare,
   type LucideIcon,
   Users,
+  Shuffle,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -46,6 +47,7 @@ const ICONS = {
   addResult: PenSquare,
   pending: Hourglass,
   approved: BadgeCheck,
+  shuffle: Shuffle,
 } satisfies Record<string, LucideIcon>;
 
 type IconName = keyof typeof ICONS;
