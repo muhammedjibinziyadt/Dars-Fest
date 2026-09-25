@@ -23,6 +23,8 @@ import {
   getProgramsWithLimits,
   isRegistrationOpen
 } from "@/lib/team-data";
+import { getTeamPointsSummary } from "@/lib/team-points";
+import { TeamDashboardStatsGrid } from "@/components/team-dashboard-stats-grid";
 import { formatNumber } from "@/lib/utils";
 
 export default async function TeamDashboardPage() {
@@ -30,11 +32,12 @@ export default async function TeamDashboardPage() {
   if (!team) {
     redirect("/team/login");
   }
-  const [students, registrations, programs, isOpen] = await Promise.all([
+  const [students, registrations, programs, isOpen, pointsSummary] = await Promise.all([
     getPortalStudents(),
     getProgramRegistrations(),
     getProgramsWithLimits(),
     isRegistrationOpen(),
+    getTeamPointsSummary(team.id),
   ]);
   
   const teamStudents = students.filter((student) => student.teamId === team.id);
@@ -71,7 +74,7 @@ export default async function TeamDashboardPage() {
     {
       label: "Team Members",
       value: teamStudents.length,
-      icon: Users,
+      iconName: "Users" as const,
       color: "from-cyan-500 to-blue-600",
       bgColor: "bg-cyan-500/10",
       borderColor: "border-cyan-500/30",
@@ -80,7 +83,7 @@ export default async function TeamDashboardPage() {
     {
       label: "Registrations",
       value: teamRegistrations.length,
-      icon: Calendar,
+      iconName: "Calendar" as const,
       color: "from-fuchsia-500 to-pink-600",
       bgColor: "bg-fuchsia-500/10",
       borderColor: "border-fuchsia-500/30",
@@ -89,7 +92,7 @@ export default async function TeamDashboardPage() {
     {
       label: "Programs",
       value: uniquePrograms,
-      icon: FileText,
+      iconName: "FileText" as const,
       color: "from-emerald-500 to-teal-600",
       bgColor: "bg-emerald-500/10",
       borderColor: "border-emerald-500/30",
@@ -98,11 +101,12 @@ export default async function TeamDashboardPage() {
     {
       label: "Total Points",
       value: formatNumber(totalPoints),
-      icon: Trophy,
-      color: "from-amber-500 to-orange-600",
+      iconName: "Trophy" as const,
+      color: "from-amber-400 to-orange-500",
       bgColor: "bg-amber-500/10",
       borderColor: "border-amber-500/30",
-      link: "/team/dashboard",
+      link: "/team/points",
+      isPoints: true,
     },
   ];
 
@@ -152,26 +156,7 @@ export default async function TeamDashboardPage() {
         </div>
 
         {/* Mobile Stats Cards */}
-        <div className="grid grid-cols-2 gap-3">
-          {stats.map((stat) => {
-            const Icon = stat.icon;
-            return (
-              <Link key={stat.label} href={stat.link}>
-                <Card className="group relative overflow-hidden border-white/10 bg-white/5 p-4 transition-all duration-200 hover:bg-white/10 hover:border-white/20 active:scale-[0.98]">
-                  <div className="flex flex-col items-start gap-3">
-                    <div className={`rounded-lg bg-gradient-to-br ${stat.color} p-2.5`}>
-                      <Icon className="h-4 w-4 text-white" />
-                    </div>
-                    <div className="w-full">
-                      <p className="text-xs font-medium text-white/70 mb-1">{stat.label}</p>
-                      <p className="text-xl font-bold text-white">{stat.value}</p>
-                    </div>
-                  </div>
-                </Card>
-              </Link>
-            );
-          })}
-        </div>
+        <TeamDashboardStatsGrid stats={stats} summary={pointsSummary} isMobile={true} />
 
         {/* Mobile Quick Actions */}
         <div>
@@ -319,29 +304,7 @@ export default async function TeamDashboardPage() {
         </div>
 
         {/* Desktop Stats Grid */}
-        <div className="grid grid-cols-4 gap-4">
-          {stats.map((stat) => {
-            const Icon = stat.icon;
-            return (
-              <Link key={stat.label} href={stat.link}>
-                <Card className="group relative overflow-hidden border-white/10 bg-white/5 p-6 transition-all duration-300 hover:bg-white/10 hover:border-white/20 hover:scale-[1.02] hover:shadow-xl">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex-1">
-                      <p className="text-sm font-medium text-white/70 mb-2">{stat.label}</p>
-                      <p className="text-3xl font-bold text-white">{stat.value}</p>
-                    </div>
-                    <div className={`rounded-2xl bg-gradient-to-br ${stat.color} p-3 shadow-lg`}>
-                      <Icon className="h-6 w-6 text-white" />
-                    </div>
-                  </div>
-                  <div className="flex items-center text-xs text-cyan-300 opacity-0 group-hover:opacity-100 transition-opacity">
-                    View details <ArrowRight className="ml-1 h-3 w-3" />
-                  </div>
-                </Card>
-              </Link>
-            );
-          })}
-        </div>
+        <TeamDashboardStatsGrid stats={stats} summary={pointsSummary} isMobile={false} />
 
         {/* Desktop Main Content Grid */}
         <div className="grid grid-cols-12 gap-6">

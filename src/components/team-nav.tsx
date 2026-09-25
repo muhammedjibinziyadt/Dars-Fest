@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, X, LayoutDashboard, UserPlus, Calendar, RefreshCw } from "lucide-react";
+import { Menu, X, LayoutDashboard, UserPlus, Calendar, RefreshCw, Trophy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils";
 
 const navItems = [
   { href: "/team/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/team/points", label: "Points & Winners", icon: Trophy },
   { href: "/team/register-students", label: "Register Students", icon: UserPlus },
   { href: "/team/program-register", label: "Program Registration", icon: Calendar },
   { href: "/team/replacement-request", label: "Replacement Request", icon: RefreshCw },
