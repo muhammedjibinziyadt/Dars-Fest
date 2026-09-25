@@ -54,7 +54,7 @@ export default function JuryLoginPage() {
       <JuryLoginForm action={juryLoginAction} />
 
       {/* Footer Navigation */}
-      <div className="mt-8 space-y-4 text-center">
+      <div className="mt-8 text-center">
         <Link
           href="/scoreboard"
           className="inline-flex items-center gap-1.5 text-xs font-medium text-white/60 hover:text-white transition-colors"
@@ -62,17 +62,6 @@ export default function JuryLoginPage() {
           <ArrowLeft className="w-3.5 h-3.5" />
           <span>Back to Scoreboard</span>
         </Link>
-
-        <div className="flex items-center justify-center gap-2 text-xs text-white/40">
-          <span>Other portals:</span>
-          <Link href="/admin/login" className="text-rose-400 hover:text-rose-300 transition-colors underline-offset-4 hover:underline">
-            Admin Control
-          </Link>
-          <span>•</span>
-          <Link href="/team/login" className="text-emerald-400 hover:text-emerald-300 transition-colors underline-offset-4 hover:underline">
-            Team Portal
-          </Link>
-        </div>
       </div>
     </main>
   );

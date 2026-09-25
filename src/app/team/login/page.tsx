@@ -55,7 +55,7 @@ export default async function TeamLoginPage() {
       <TeamLoginForm action={teamLoginAction} />
 
       {/* Footer Navigation */}
-      <div className="mt-8 space-y-4 text-center">
+      <div className="mt-8 text-center">
         <Link
           href="/scoreboard"
           className="inline-flex items-center gap-1.5 text-xs font-medium text-white/60 hover:text-white transition-colors"
@@ -63,17 +63,6 @@ export default async function TeamLoginPage() {
           <ArrowLeft className="w-3.5 h-3.5" />
           <span>Back to Scoreboard</span>
         </Link>
-
-        <div className="flex items-center justify-center gap-2 text-xs text-white/40">
-          <span>Other portals:</span>
-          <Link href="/admin/login" className="text-rose-400 hover:text-rose-300 transition-colors underline-offset-4 hover:underline">
-            Admin Control
-          </Link>
-          <span>•</span>
-          <Link href="/jury/login" className="text-cyan-400 hover:text-cyan-300 transition-colors underline-offset-4 hover:underline">
-            Jury Portal
-          </Link>
-        </div>
       </div>
     </main>
   );
