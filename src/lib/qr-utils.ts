@@ -6,7 +6,7 @@ import QRCode from "qrcode";
  * This allows direct scanning to view participant profile
  */
 export async function generateParticipantQR(chestNumber: string, baseUrl?: string): Promise<string> {
-  const urlBase = baseUrl || process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+  const urlBase = baseUrl || process.env.NEXT_PUBLIC_BASE_URL || "https://maerika-2k26.jawharathululoomsuffadars.online";
   const url = `${urlBase}/participant/${chestNumber}`;
   
   try {
@@ -32,7 +32,7 @@ export async function generateParticipantQR(chestNumber: string, baseUrl?: strin
  */
 export async function generateParticipantQRSVG(chestNumber: string): Promise<string> {
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 
-                  (typeof window !== "undefined" ? window.location.origin : "http://localhost:3000");
+                  (typeof window !== "undefined" ? window.location.origin : "https://maerika-2k26.jawharathululoomsuffadars.online");
   const url = `${baseUrl}/participant/${chestNumber}`;
   
   try {

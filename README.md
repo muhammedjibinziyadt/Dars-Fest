@@ -1,4 +1,6 @@
-## Nusa Arts Fest Management
+## Nusa Arts Fest Management (Maerika 2k26)
+
+**Official Website:** [https://maerika-2k26.jawharathululoomsuffadars.online/](https://maerika-2k26.jawharathululoomsuffadars.online/)
 
 Full-stack Next.js 14 application for managing college arts festival teams, students, programs, assignments, and scoring. The public site shows live standings, while secure admin & jury portals provide CRUD workflows and result pipelines.
 

@@ -37,6 +37,7 @@ Your goal is to help users (students, parents, teachers) by answering questions 
 
 EVENT INFORMATION:
 MAERIKA 2K26 is an engaging arts festival hosted by the Jawharathul Uloom Suffa Dars Students Association.
+Official Website: https://maerika-2k26.jawharathululoomsuffadars.online
 
 DATA CONTEXT:
 ${festData}

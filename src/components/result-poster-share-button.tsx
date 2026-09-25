@@ -84,8 +84,13 @@ export function ResultPosterShareButton({
       // Generate the poster image
       const imgData = await generateResultPoster(posterData, style);
 
-      // Create caption
-      const caption = `Maerika 2k26\n\n${program.name} result`;
+      // Create share URL and caption
+      const officialSiteUrl = "https://maerika-2k26.jawharathululoomsuffadars.online";
+      const shareUrl = typeof window !== "undefined" && window.location?.origin
+        ? `${window.location.origin}/results/${program.id}`
+        : `${officialSiteUrl}/results/${program.id}`;
+
+      const caption = `Maerika 2k26 - കലായുഗ ഭാവുകം\n\n🏆 ${program.name} Result\n\nLive Results: ${shareUrl}\nOfficial Website: ${officialSiteUrl}`;
 
       // Convert data URL to blob
       const blob = dataURLToBlob(imgData);
@@ -132,7 +137,7 @@ export function ResultPosterShareButton({
             await navigator.share({
               title: `${program.name} Result - Maerika 2k26`,
               text: caption,
-              url: "https://funoonfiesta.noorululama.org",
+              url: shareUrl,
             });
             return;
           } catch (error) {
@@ -175,7 +180,7 @@ export function ResultPosterShareButton({
             await navigator.share({
               title: `${program.name} Result - Maerika 2k26`,
               text: caption,
-              url: "https://funoonfiesta.noorululama.org",
+              url: shareUrl,
             });
           } catch (error) {
             // Show instructions if share fails

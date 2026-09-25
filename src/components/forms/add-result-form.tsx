@@ -35,16 +35,16 @@ interface AddResultFormProps {
   action: (formData: FormData) => Promise<void>;
   lockProgram?: boolean;
   initial?:
-    | Array<{ position: number; winnerId: string; grade?: GradeType }>
-    | Partial<
-        Record<
-          number,
-          {
-            winnerId: string;
-            grade?: GradeType;
-          }
-        >
-      >;
+  | Array<{ position: number; winnerId: string; grade?: GradeType }>
+  | Partial<
+    Record<
+      number,
+      {
+        winnerId: string;
+        grade?: GradeType;
+      }
+    >
+  >;
   initialPenalties?: {
     targetId?: string;
     points?: number;
@@ -70,11 +70,6 @@ const POSITION_OPTIONS = [
   { value: 3, label: "🥉 3rd Place" },
   { value: 4, label: "🏅 4th Place" },
   { value: 5, label: "🏅 5th Place" },
-  { value: 6, label: "🏅 6th Place" },
-  { value: 7, label: "🏅 7th Place" },
-  { value: 8, label: "🏅 8th Place" },
-  { value: 9, label: "🏅 9th Place" },
-  { value: 10, label: "🏅 10th Place" },
 ];
 
 function getInitialPlacementRows(initial?: AddResultFormProps["initial"]): PlacementItem[] {
@@ -130,7 +125,7 @@ export function AddResultForm({
   const [programId, setProgramId] = useState(programs[0]?.id ?? "");
   const [showRules, setShowRules] = useState(false);
   const [showPublishedModal, setShowPublishedModal] = useState(false);
-  
+
   // Dynamic placement rows supporting 1, 2, 3, 4 or more candidates
   const [placementRows, setPlacementRows] = useState<PlacementItem[]>(() =>
     getInitialPlacementRows(initial),
@@ -178,9 +173,8 @@ export function AddResultForm({
       programs.map((program) => ({
         value: program.id,
         label: program.name,
-        meta: `${program.section}${
-          program.stage ? " · On stage" : " · Off stage"
-        }`,
+        meta: `${program.section}${program.stage ? " · On stage" : " · Off stage"
+          }`,
       })),
     [programs],
   );
@@ -329,10 +323,10 @@ export function AddResultForm({
   // Handle form submission - check if program is published before submitting
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    
+
     // Clear previous duplicate error
     setDuplicateError("");
-    
+
     // Check if program is already published before submission
     if (isProgramPublished) {
       setShowPublishedModal(true);
@@ -379,279 +373,218 @@ export function AddResultForm({
   return (
     <>
       <form onSubmit={handleSubmit} className="space-y-8">
-      <input type="hidden" name="program_id" value={selectedProgram?.id} />
-      {isJuryMode && <input type="hidden" name="jury_id" value={activeJury?.id ?? ""} />}
-      <input type="hidden" name="placement_rows" value={placementRows.map((r) => r.id).join(",")} />
-      {placementRows.map((row) => (
-        <input
-          key={`hidden-pos-${row.id}`}
-          type="hidden"
-          name={`placement_position_${row.id}`}
-          value={row.position}
-        />
-      ))}
-      {/* Legacy compatibility inputs */}
-      {placementRows.find((r) => r.position === 1) && (
-        <input
-          type="hidden"
-          name="winner_1"
-          value={placementRows.find((r) => r.position === 1)?.winnerId ?? ""}
-        />
-      )}
-      {placementRows.find((r) => r.position === 2) && (
-        <input
-          type="hidden"
-          name="winner_2"
-          value={placementRows.find((r) => r.position === 2)?.winnerId ?? ""}
-        />
-      )}
-      {placementRows.find((r) => r.position === 3) && (
-        <input
-          type="hidden"
-          name="winner_3"
-          value={placementRows.find((r) => r.position === 3)?.winnerId ?? ""}
-        />
-      )}
-
-      {showProgramSelector && (
-      <Card>
-        <Badge tone="cyan">Step 1 · Program</Badge>
-          <CardTitle className="mt-4">
-            {isJuryMode && lockProgram ? "Program locked in" : "Select a program"}
-          </CardTitle>
-        <CardDescription className="mt-2">
-            {isJuryMode && lockProgram
-              ? "Admins have assigned this program to you. Review the details before entering results."
-              : "We auto-fill stage, section, and scoring rules."}
-        </CardDescription>
-        <div className="mt-6">
-            {isJuryMode && lockProgram ? (
-              <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                <p className="text-sm text-white/60">Program</p>
-                <p className="text-2xl font-semibold text-white">{selectedProgram?.name}</p>
-              </div>
-            ) : (
-          <SearchSelect
-            name="program_selector"
-            options={programOptions}
-            value={programId}
-            onValueChange={(next) => setProgramId(next)}
-            disabled={lockProgram}
-            placeholder="Search program..."
+        <input type="hidden" name="program_id" value={selectedProgram?.id} />
+        {isJuryMode && <input type="hidden" name="jury_id" value={activeJury?.id ?? ""} />}
+        <input type="hidden" name="placement_rows" value={placementRows.map((r) => r.id).join(",")} />
+        {placementRows.map((row) => (
+          <input
+            key={`hidden-pos-${row.id}`}
+            type="hidden"
+            name={`placement_position_${row.id}`}
+            value={row.position}
           />
-            )}
-        </div>
-        <div className="mt-4 rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-white/80">
-          <p>Section: {selectedProgram?.section}</p>
-          <p>Stage: {selectedProgram?.stage ? "On stage" : "Off stage"}</p>
-        </div>
-      </Card>
-      )}
+        ))}
+        {/* Legacy compatibility inputs */}
+        {placementRows.find((r) => r.position === 1) && (
+          <input
+            type="hidden"
+            name="winner_1"
+            value={placementRows.find((r) => r.position === 1)?.winnerId ?? ""}
+          />
+        )}
+        {placementRows.find((r) => r.position === 2) && (
+          <input
+            type="hidden"
+            name="winner_2"
+            value={placementRows.find((r) => r.position === 2)?.winnerId ?? ""}
+          />
+        )}
+        {placementRows.find((r) => r.position === 3) && (
+          <input
+            type="hidden"
+            name="winner_3"
+            value={placementRows.find((r) => r.position === 3)?.winnerId ?? ""}
+          />
+        )}
 
-      <Card>
-        <Badge tone="pink">Step 2 · Winners</Badge>
-        <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <CardTitle>Podium placements & candidate results</CardTitle>
+        {showProgramSelector && (
+          <Card>
+            <Badge tone="cyan">Step 1 · Program</Badge>
+            <CardTitle className="mt-4">
+              {isJuryMode && lockProgram ? "Program locked in" : "Select a program"}
+            </CardTitle>
             <CardDescription className="mt-2">
-              Select {isSingle ? "students" : "teams"} and their placements. You can add more candidates or delete placements as needed.
+              {isJuryMode && lockProgram
+                ? "Admins have assigned this program to you. Review the details before entering results."
+                : "We auto-fill stage, section, and scoring rules."}
             </CardDescription>
-          </div>
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={() => setShowRules(true)}
-          >
-            View scoring matrix
-          </Button>
-        </div>
-        {isJuryMode && !showProgramSelector && (
-          <div className="mt-4 rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-white/70">
-            <p className="text-xs uppercase tracking-widest text-white/50">Program</p>
-            <p className="text-xl font-semibold text-white">{selectedProgram?.name}</p>
-            <p className="text-xs text-white/50 mt-1">
-              Section: {selectedProgram?.section}
-            </p>
-          </div>
-        )}
-        {!useFallbackOptions && !hasEligibleCandidates && (
-          <p className="mt-4 rounded-2xl border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
-            No registered candidates for this program yet.
-          </p>
-        )}
-        {duplicateError && (
-          <p className="mt-4 rounded-2xl border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-200">
-            {duplicateError}
-          </p>
-        )}
-
-        {/* Dynamic Placement Cards */}
-        <div className="mt-6 space-y-4">
-          {placementRows.map((row) => {
-            const rowCandidateOptions = getRowCandidateOptions(row.id);
-            return (
-              <div
-                key={row.id}
-                className="rounded-2xl border border-white/10 bg-white/5 p-4 space-y-3 transition-all hover:border-white/20"
-              >
-                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-3">
-                  <div className="flex items-center gap-2.5">
-                    <span className="text-xs uppercase tracking-wider text-white/60 font-semibold">Position:</span>
-                    <select
-                      value={row.position}
-                      onChange={(e) => updateRowPosition(row.id, Number(e.target.value))}
-                      className="rounded-xl border border-white/20 bg-slate-900/90 px-3 py-1.5 text-sm font-semibold text-white focus:border-fuchsia-500 focus:outline-none focus:ring-1 focus:ring-fuchsia-500 cursor-pointer"
-                    >
-                      {POSITION_OPTIONS.map((opt) => (
-                        <option key={opt.value} value={opt.value} className="bg-slate-900 text-white">
-                          {opt.label}
-                        </option>
-                      ))}
-                      {!POSITION_OPTIONS.some((o) => o.value === row.position) && (
-                        <option value={row.position} className="bg-slate-900 text-white">
-                          🏅 {row.position}th Place
-                        </option>
-                      )}
-                    </select>
-                  </div>
-
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => removePlacementRow(row.id)}
-                    disabled={placementRows.length <= 1}
-                    className="h-8 px-2.5 text-xs text-red-400 hover:bg-red-500/10 hover:text-red-300 gap-1.5 transition-colors disabled:opacity-40"
-                    title={placementRows.length <= 1 ? "At least one candidate placement is required" : "Delete this placement field"}
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                    <span>Delete</span>
-                  </Button>
+            <div className="mt-6">
+              {isJuryMode && lockProgram ? (
+                <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                  <p className="text-sm text-white/60">Program</p>
+                  <p className="text-2xl font-semibold text-white">{selectedProgram?.name}</p>
                 </div>
+              ) : (
+                <SearchSelect
+                  name="program_selector"
+                  options={programOptions}
+                  value={programId}
+                  onValueChange={(next) => setProgramId(next)}
+                  disabled={lockProgram}
+                  placeholder="Search program..."
+                />
+              )}
+            </div>
+            <div className="mt-4 rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-white/80">
+              <p>Section: {selectedProgram?.section}</p>
+              <p>Stage: {selectedProgram?.stage ? "On stage" : "Off stage"}</p>
+            </div>
+          </Card>
+        )}
 
-                <div className="pt-1">
-                  <SearchSelect
-                    name={`winner_${row.id}`}
-                    required
-                    value={row.winnerId}
-                    onValueChange={(value) => updateRowWinner(row.id, value)}
-                    options={rowCandidateOptions}
-                    placeholder={`Search ${isSingle ? "student" : "team"}...`}
-                    disabled={!hasEligibleCandidates}
-                  />
-                </div>
-
-                {isSingle ? (
-                  <SearchSelect
-                    name={`grade_${row.id}`}
-                    value={row.grade}
-                    onValueChange={(value) => updateRowGrade(row.id, value as GradeType)}
-                    disabled={!hasEligibleCandidates}
-                    options={gradeOptions}
-                    placeholder="Select grade"
-                  />
-                ) : (
-                  <input type="hidden" name={`grade_${row.id}`} value="none" />
-                )}
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Add Placement Button */}
-        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 pt-2">
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={addPlacementRow}
-            className="gap-2 border-white/20 bg-white/10 hover:bg-white/15 text-white"
-          >
-            <Plus className="h-4 w-4 text-emerald-400" />
-            <span>Add Placement</span>
-          </Button>
-          <span className="text-xs text-white/50">
-            {placementRows.length} candidate {placementRows.length === 1 ? "field" : "fields"} configured
-          </span>
-        </div>
-        {isJuryMode && !showProgramSelector && (
-          <div className="mt-6 space-y-3 rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-white/70">
-            <p className="text-xs uppercase tracking-widest text-white/50">Logged in as</p>
-            <p className="text-lg font-semibold text-white">{juryName ?? activeJury?.name}</p>
-            <p className="text-xs text-white/50">
-              Double-check placements before submitting — edits aren’t possible afterward.
-            </p>
-            <Button type="submit" className="mt-2 w-full" disabled={!hasEligibleCandidates}>
-              Submit evaluation
+        <Card>
+          <Badge tone="pink">Step 2 · Winners</Badge>
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <CardTitle>Podium placements & candidate results</CardTitle>
+              <CardDescription className="mt-2">
+                Select {isSingle ? "students" : "teams"} and their placements. You can add more candidates or delete placements as needed.
+              </CardDescription>
+            </div>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => setShowRules(true)}
+            >
+              View scoring matrix
             </Button>
           </div>
-        )}
-      </Card>
+          {isJuryMode && !showProgramSelector && (
+            <div className="mt-4 rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-white/70">
+              <p className="text-xs uppercase tracking-widest text-white/50">Program</p>
+              <p className="text-xl font-semibold text-white">{selectedProgram?.name}</p>
+              <p className="text-xs text-white/50 mt-1">
+                Section: {selectedProgram?.section}
+              </p>
+            </div>
+          )}
+          {!useFallbackOptions && !hasEligibleCandidates && (
+            <p className="mt-4 rounded-2xl border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
+              No registered candidates for this program yet.
+            </p>
+          )}
+          {duplicateError && (
+            <p className="mt-4 rounded-2xl border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-200">
+              {duplicateError}
+            </p>
+          )}
 
-      <input type="hidden" name="penalty_rows" value={penaltyRowIds.join(",")} />
-      {penaltyRows.length === 0 ? (
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-white/60 flex flex-wrap items-center justify-between gap-3">
-          <p className="text-white/80">Need to deduct points for a no-show?</p>
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={addPenaltyRow}
-            disabled={!hasPenaltyOptions}
-          >
-            Add penalty
-          </Button>
-        </div>
-      ) : (
-        <Card>
-          <Badge tone="amber">Optional · Minus Points</Badge>
-          <CardTitle className="mt-4">No-show penalty</CardTitle>
-          <CardDescription className="mt-2">
-            Apply a deduction when a {isSingle ? "registered participant" : "team"} fails to appear.
-            Leave blank to skip.
-          </CardDescription>
+          {/* Dynamic Placement Cards */}
           <div className="mt-6 space-y-4">
-            {penaltyRows.map((row) => {
-              const rowType = row.type ?? penaltyTypeDefault;
+            {placementRows.map((row) => {
+              const rowCandidateOptions = getRowCandidateOptions(row.id);
               return (
                 <div
                   key={row.id}
-                  className="rounded-2xl border border-white/10 bg-white/5 p-4"
+                  className="rounded-2xl border border-white/10 bg-white/5 p-4 space-y-3 transition-all hover:border-white/20"
                 >
-                  <input type="hidden" name={`penalty_type_${row.id}`} value={rowType} />
-                  <div className="flex flex-col gap-4 md:flex-row md:items-center">
-                    <div className="flex-1">
-                      <SearchSelect
-                        name={`penalty_target_${row.id}`}
-                        options={penaltySelectOptions}
-                        placeholder={`Select a ${isSingle ? "participant" : "team"} to penalize`}
-                        defaultValue={row.defaultTarget ?? ""}
-                        disabled={!hasPenaltyOptions}
-                      />
-                    </div>
-                    <div className="flex items-center gap-3 md:w-60">
-                      <Input
-                        name={`penalty_points_${row.id}`}
-                        type="number"
-                        min={0}
-                        step={1}
-                        placeholder="Penalty points"
-                        defaultValue={row.defaultPoints ?? 5}
-                        disabled={!hasPenaltyOptions}
-                      />
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        className="text-xs text-white/80"
-                        onClick={() => removePenaltyRow(row.id)}
+                  <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-3">
+                    <div className="flex items-center gap-2.5">
+                      <span className="text-xs uppercase tracking-wider text-white/60 font-semibold">Position:</span>
+                      <select
+                        value={row.position}
+                        onChange={(e) => updateRowPosition(row.id, Number(e.target.value))}
+                        className="rounded-xl border border-white/20 bg-slate-900/90 px-3 py-1.5 text-sm font-semibold text-white focus:border-fuchsia-500 focus:outline-none focus:ring-1 focus:ring-fuchsia-500 cursor-pointer"
                       >
-                        Remove
-                      </Button>
+                        {POSITION_OPTIONS.map((opt) => (
+                          <option key={opt.value} value={opt.value} className="bg-slate-900 text-white">
+                            {opt.label}
+                          </option>
+                        ))}
+                        {!POSITION_OPTIONS.some((o) => o.value === row.position) && (
+                          <option value={row.position} className="bg-slate-900 text-white">
+                            🏅 {row.position}th Place
+                          </option>
+                        )}
+                      </select>
                     </div>
+
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => removePlacementRow(row.id)}
+                      disabled={placementRows.length <= 1}
+                      className="h-8 px-2.5 text-xs text-red-400 hover:bg-red-500/10 hover:text-red-300 gap-1.5 transition-colors disabled:opacity-40"
+                      title={placementRows.length <= 1 ? "At least one candidate placement is required" : "Delete this placement field"}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                      <span>Delete</span>
+                    </Button>
                   </div>
+
+                  <div className="pt-1">
+                    <SearchSelect
+                      name={`winner_${row.id}`}
+                      required
+                      value={row.winnerId}
+                      onValueChange={(value) => updateRowWinner(row.id, value)}
+                      options={rowCandidateOptions}
+                      placeholder={`Search ${isSingle ? "student" : "team"}...`}
+                      disabled={!hasEligibleCandidates}
+                    />
+                  </div>
+
+                  {isSingle ? (
+                    <SearchSelect
+                      name={`grade_${row.id}`}
+                      value={row.grade}
+                      onValueChange={(value) => updateRowGrade(row.id, value as GradeType)}
+                      disabled={!hasEligibleCandidates}
+                      options={gradeOptions}
+                      placeholder="Select grade"
+                    />
+                  ) : (
+                    <input type="hidden" name={`grade_${row.id}`} value="none" />
+                  )}
                 </div>
               );
             })}
           </div>
-          <div className="mt-4 flex flex-wrap gap-3">
+
+          {/* Add Placement Button */}
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-3 pt-2">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={addPlacementRow}
+              className="gap-2 border-white/20 bg-white/10 hover:bg-white/15 text-white"
+            >
+              <Plus className="h-4 w-4 text-emerald-400" />
+              <span>Add Placement</span>
+            </Button>
+            <span className="text-xs text-white/50">
+              {placementRows.length} candidate {placementRows.length === 1 ? "field" : "fields"} configured
+            </span>
+          </div>
+          {isJuryMode && !showProgramSelector && (
+            <div className="mt-6 space-y-3 rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-white/70">
+              <p className="text-xs uppercase tracking-widest text-white/50">Logged in as</p>
+              <p className="text-lg font-semibold text-white">{juryName ?? activeJury?.name}</p>
+              <p className="text-xs text-white/50">
+                Double-check placements before submitting — edits aren’t possible afterward.
+              </p>
+              <Button type="submit" className="mt-2 w-full" disabled={!hasEligibleCandidates}>
+                Submit evaluation
+              </Button>
+            </div>
+          )}
+        </Card>
+
+        <input type="hidden" name="penalty_rows" value={penaltyRowIds.join(",")} />
+        {penaltyRows.length === 0 ? (
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-white/60 flex flex-wrap items-center justify-between gap-3">
+            <p className="text-white/80">Need to deduct points for a no-show?</p>
             <Button
               type="button"
               variant="secondary"
@@ -661,104 +594,165 @@ export function AddResultForm({
               Add penalty
             </Button>
           </div>
-          <p className="mt-3 text-xs text-white/50">
-            Enter the number of points to deduct. Each entry reduces the team total only.
-          </p>
-        </Card>
-      )}
+        ) : (
+          <Card>
+            <Badge tone="amber">Optional · Minus Points</Badge>
+            <CardTitle className="mt-4">No-show penalty</CardTitle>
+            <CardDescription className="mt-2">
+              Apply a deduction when a {isSingle ? "registered participant" : "team"} fails to appear.
+              Leave blank to skip.
+            </CardDescription>
+            <div className="mt-6 space-y-4">
+              {penaltyRows.map((row) => {
+                const rowType = row.type ?? penaltyTypeDefault;
+                return (
+                  <div
+                    key={row.id}
+                    className="rounded-2xl border border-white/10 bg-white/5 p-4"
+                  >
+                    <input type="hidden" name={`penalty_type_${row.id}`} value={rowType} />
+                    <div className="flex flex-col gap-4 md:flex-row md:items-center">
+                      <div className="flex-1">
+                        <SearchSelect
+                          name={`penalty_target_${row.id}`}
+                          options={penaltySelectOptions}
+                          placeholder={`Select a ${isSingle ? "participant" : "team"} to penalize`}
+                          defaultValue={row.defaultTarget ?? ""}
+                          disabled={!hasPenaltyOptions}
+                        />
+                      </div>
+                      <div className="flex items-center gap-3 md:w-60">
+                        <Input
+                          name={`penalty_points_${row.id}`}
+                          type="number"
+                          min={0}
+                          step={1}
+                          placeholder="Penalty points"
+                          defaultValue={row.defaultPoints ?? 5}
+                          disabled={!hasPenaltyOptions}
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          className="text-xs text-white/80"
+                          onClick={() => removePenaltyRow(row.id)}
+                        >
+                          Remove
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <div className="mt-4 flex flex-wrap gap-3">
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={addPenaltyRow}
+                disabled={!hasPenaltyOptions}
+              >
+                Add penalty
+              </Button>
+            </div>
+            <p className="mt-3 text-xs text-white/50">
+              Enter the number of points to deduct. Each entry reduces the team total only.
+            </p>
+          </Card>
+        )}
 
-      <Card>
-        <div className="flex items-center justify-between">
-          <Badge tone="amber">🔒 Judgment Notes · Admin & Jury Only</Badge>
-          <span className="text-xs text-amber-300/80 font-medium">Strictly Confidential</span>
-        </div>
-        <CardTitle className="mt-3">Confidential Judgment Notes & Observations</CardTitle>
-        <CardDescription className="mt-1">
-          Add any evaluation notes, scoring justification, or remarks for the program. Strictly visible only to Admin and Jury (never shown to students, teams, or public).
-        </CardDescription>
-        <div className="mt-4">
-          <textarea
-            name="notes"
-            defaultValue={initialNotes ?? ""}
-            rows={4}
-            placeholder="e.g. Candidate evaluation notes, criteria breakdown, or confidential remarks for organizers..."
-            className="w-full rounded-2xl border border-white/10 bg-slate-950/60 p-3.5 text-sm text-white placeholder-white/30 focus:border-indigo-400 focus:outline-none focus:ring-1 focus:ring-indigo-400 transition"
-          />
-        </div>
-      </Card>
+        <Card>
+          <div className="flex items-center justify-between">
+            <Badge tone="amber">🔒 Judgment Notes · Admin & Jury Only</Badge>
+            <span className="text-xs text-amber-300/80 font-medium">Strictly Confidential</span>
+          </div>
+          <CardTitle className="mt-3">Confidential Judgment Notes & Observations</CardTitle>
+          <CardDescription className="mt-1">
+            Add any evaluation notes, scoring justification, or remarks for the program. Strictly visible only to Admin and Jury (never shown to students, teams, or public).
+          </CardDescription>
+          <div className="mt-4">
+            <textarea
+              name="notes"
+              defaultValue={initialNotes ?? ""}
+              rows={4}
+              placeholder="e.g. Candidate evaluation notes, criteria breakdown, or confidential remarks for organizers..."
+              className="w-full rounded-2xl border border-white/10 bg-slate-950/60 p-3.5 text-sm text-white placeholder-white/30 focus:border-indigo-400 focus:outline-none focus:ring-1 focus:ring-indigo-400 transition"
+            />
+          </div>
+        </Card>
 
-      {isJuryMode ? (
-        <Card>
-          <Badge tone="emerald">Final Step · Submit</Badge>
-          <CardTitle className="mt-4">Submit Evaluation to Admin</CardTitle>
-          <CardDescription className="mt-2">
-            Submitting as <span className="font-semibold text-white">{juryName || activeJury?.name || "Assigned Jury"}</span>. Once submitted, your scores and private judgment notes will land in Pending Results for Admin approval.
-          </CardDescription>
-          <Button type="submit" className="mt-6" disabled={!hasEligibleCandidates}>
-            {submitLabel || "Submit Result to Pending"}
-          </Button>
-        </Card>
-      ) : (
-        <Card>
-          <Badge tone="emerald">Step 3 · Submit</Badge>
-          <CardTitle className="mt-4">Assign responsible jury (Optional)</CardTitle>
-          <CardDescription className="mt-2">
-            {defaultJuryId 
-              ? "Leave blank to assign to Admin. Once you submit, the record lands in Pending Results for approval."
-              : "Once you submit, the record lands in Pending Results for approval."}
-          </CardDescription>
-          {defaultJuryId && <input type="hidden" name="default_jury_id" value={defaultJuryId} />}
-          <SearchSelect
-            className="mt-6"
-            name="jury_id"
-            defaultValue={defaultJuryId ?? juries[0]?.id}
-            disabled={lockProgram}
-            options={juries.map((jury) => ({ value: jury.id, label: jury.name }))}
-            placeholder="Select jury (defaults to Admin if not selected)"
-          />
-          <Button type="submit" className="mt-4" disabled={!hasEligibleCandidates}>
-            {submitLabel}
-          </Button>
-        </Card>
-      )}
-      <Modal
-        open={showRules}
-        onClose={() => setShowRules(false)}
-        title="Scoring Matrix"
-        actions={
-          <Button type="button" variant="secondary" onClick={() => setShowRules(false)}>
-            Close
-          </Button>
-        }
-      >
-        <div className="space-y-4 text-sm">
-          <div className="grid gap-3 rounded-2xl border border-white/10 bg-slate-900/70 p-4">
-            <p className="font-semibold text-amber-400">Single Events</p>
-            <p className="text-white/80">1st: 10 pts · 2nd: 7 pts · 3rd: 5 pts</p>
+        {isJuryMode ? (
+          <Card>
+            <Badge tone="emerald">Final Step · Submit</Badge>
+            <CardTitle className="mt-4">Submit Evaluation to Admin</CardTitle>
+            <CardDescription className="mt-2">
+              Submitting as <span className="font-semibold text-white">{juryName || activeJury?.name || "Assigned Jury"}</span>. Once submitted, your scores and private judgment notes will land in Pending Results for Admin approval.
+            </CardDescription>
+            <Button type="submit" className="mt-6" disabled={!hasEligibleCandidates}>
+              {submitLabel || "Submit Result to Pending"}
+            </Button>
+          </Card>
+        ) : (
+          <Card>
+            <Badge tone="emerald">Step 3 · Submit</Badge>
+            <CardTitle className="mt-4">Assign responsible jury (Optional)</CardTitle>
+            <CardDescription className="mt-2">
+              {defaultJuryId
+                ? "Leave blank to assign to Admin. Once you submit, the record lands in Pending Results for approval."
+                : "Once you submit, the record lands in Pending Results for approval."}
+            </CardDescription>
+            {defaultJuryId && <input type="hidden" name="default_jury_id" value={defaultJuryId} />}
+            <SearchSelect
+              className="mt-6"
+              name="jury_id"
+              defaultValue={defaultJuryId ?? juries[0]?.id}
+              disabled={lockProgram}
+              options={juries.map((jury) => ({ value: jury.id, label: jury.name }))}
+              placeholder="Select jury (defaults to Admin if not selected)"
+            />
+            <Button type="submit" className="mt-4" disabled={!hasEligibleCandidates}>
+              {submitLabel}
+            </Button>
+          </Card>
+        )}
+        <Modal
+          open={showRules}
+          onClose={() => setShowRules(false)}
+          title="Scoring Matrix"
+          actions={
+            <Button type="button" variant="secondary" onClick={() => setShowRules(false)}>
+              Close
+            </Button>
+          }
+        >
+          <div className="space-y-4 text-sm">
+            <div className="grid gap-3 rounded-2xl border border-white/10 bg-slate-900/70 p-4">
+              <p className="font-semibold text-amber-400">Single Events</p>
+              <p className="text-white/80">1st: 10 pts · 2nd: 7 pts · 3rd: 5 pts</p>
+            </div>
+            <div className="grid gap-3 rounded-2xl border border-white/10 bg-slate-900/70 p-4">
+              <p className="font-semibold text-amber-400">Group Events</p>
+              <p className="text-white/80">1st: 20 pts · 2nd: 10 pts</p>
+              <p className="font-semibold text-amber-400">General Events</p>
+              <p className="text-white/80">1st: 25 pts · 2nd: 20 pts · 3rd: 15 pts</p>
+            </div>
           </div>
-          <div className="grid gap-3 rounded-2xl border border-white/10 bg-slate-900/70 p-4">
-            <p className="font-semibold text-amber-400">Group Events</p>
-            <p className="text-white/80">1st: 20 pts · 2nd: 10 pts</p>
-            <p className="font-semibold text-amber-400">General Events</p>
-            <p className="text-white/80">1st: 25 pts · 2nd: 20 pts · 3rd: 15 pts</p>
-          </div>
-        </div>
-      </Modal>
-      
-      {/* Published Program Modal */}
-      <Modal
-        open={showPublishedModal}
-        onClose={() => setShowPublishedModal(false)}
-        title="Program Already Published"
-        actions={
-          <Button type="button" variant="secondary" onClick={() => setShowPublishedModal(false)}>
-            Close
-          </Button>
-        }
-      >
-        <p className="text-white/90">This program is already published.</p>
-      </Modal>
-    </form>
+        </Modal>
+
+        {/* Published Program Modal */}
+        <Modal
+          open={showPublishedModal}
+          onClose={() => setShowPublishedModal(false)}
+          title="Program Already Published"
+          actions={
+            <Button type="button" variant="secondary" onClick={() => setShowPublishedModal(false)}>
+              Close
+            </Button>
+          }
+        >
+          <p className="text-white/90">This program is already published.</p>
+        </Modal>
+      </form>
     </>
   );
 }

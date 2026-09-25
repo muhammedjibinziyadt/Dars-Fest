@@ -12,7 +12,7 @@ export function getResendClient(): Resend | null {
 }
 
 export function getDefaultFrom(): string {
-  const from = process.env.RESEND_FROM_EMAIL || "Maerika 2K26 <noreply@maerika2k26.jawharathululoomsuffadars.online>";
+  const from = process.env.RESEND_FROM_EMAIL || "Maerika 2K26 <admin@maerika2k26.jawharathululoomsuffadars.online>";
   return from.replace(/^["']|["']$/g, "").trim();
 }
 
@@ -22,7 +22,7 @@ export function getDefaultReplyTo(): string {
 }
 
 export function getBaseUrl(): string {
-  const url = process.env.NEXT_PUBLIC_BASE_URL || process.env.NEXT_PUBLIC_APP_URL || "https://maerika2k26.vercel.app";
+  const url = process.env.NEXT_PUBLIC_BASE_URL || process.env.NEXT_PUBLIC_APP_URL || "https://maerika-2k26.jawharathululoomsuffadars.online";
   return url.replace(/\/+$/, "");
 }
 
@@ -657,9 +657,8 @@ export async function sendResultPublishedEmail({
               The official results for <strong>${programName}</strong> have been published and recorded into the scoreboard.
             </p>
 
-            ${
-              winners.length > 0
-                ? `
+            ${winners.length > 0
+      ? `
             <table style="width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 14px;">
               <thead>
                 <tr style="background-color: #f5f5f4; text-align: left;">
@@ -674,8 +673,8 @@ export async function sendResultPublishedEmail({
               </tbody>
             </table>
             `
-                : ""
-            }
+      : ""
+    }
 
             <div style="text-align: center; margin-top: 30px;">
               <a href="${resultUrl}" class="btn">View Live Poster & Full Scores</a>

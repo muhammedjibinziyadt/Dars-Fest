@@ -31,7 +31,19 @@ export const metadata: Metadata = {
   title: "Maerika 2k26 - കലായുഗ ഭാവുകം",
   description:
     "ലഹരിയുടെ കാർമേഘങ്ങൾ നാടിനെ മൂടുന്ന വർത്തമാനകാലത്ത്, സർഗാത്മകതയുടെ വെളിച്ചം കൊണ്ട് പ്രതിരോധം തീർക്കുകയാണ് ഞങ്ങളുടെ ദർസ് ഫെസ്റ്റ്.",
-  metadataBase: new URL("https://dars-fest.vercel.app/"),
+  metadataBase: new URL("https://maerika-2k26.jawharathululoomsuffadars.online/"),
+  alternates: {
+    canonical: "https://maerika-2k26.jawharathululoomsuffadars.online/",
+  },
+  openGraph: {
+    title: "Maerika 2k26 - കലായുഗ ഭാവുകം",
+    description:
+      "ലഹരിയുടെ കാർമേഘങ്ങൾ നാടിനെ മൂടുന്ന വർത്തമാനകാലത്ത്, സർഗാത്മകതയുടെ വെളിച്ചം കൊണ്ട് പ്രതിരോധം തീർക്കുകയാണ് ഞങ്ങളുടെ ദർസ് ഫെസ്റ്റ്.",
+    url: "https://maerika-2k26.jawharathululoomsuffadars.online/",
+    siteName: "Maerika 2k26",
+    locale: "ml_IN",
+    type: "website",
+  },
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,

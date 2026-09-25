@@ -13,8 +13,42 @@ import {
 import { formatNumber } from "@/lib/utils";
 import { ResultPosterPreview } from "@/components/result-poster-preview";
 
+import type { Metadata } from "next";
+
 interface ProgramDetailPageProps {
   params: Promise<{ program_id: string }>;
+}
+
+export async function generateMetadata({ params }: ProgramDetailPageProps): Promise<Metadata> {
+  const { program_id } = await params;
+  const programs = await getPrograms();
+  const program = programs.find((p) => p.id === program_id);
+
+  if (!program) {
+    return {
+      title: "Program Not Found - Maerika 2k26",
+    };
+  }
+
+  const title = `${program.name} Results - Maerika 2k26`;
+  const description = `View official podium winners, scores, and result poster for ${program.name} (${program.section}) at Maerika 2k26 Arts Fest.`;
+  const url = `https://maerika-2k26.jawharathululoomsuffadars.online/results/${program_id}`;
+
+  return {
+    title,
+    description,
+    alternates: {
+      canonical: url,
+    },
+    openGraph: {
+      title,
+      description,
+      url,
+      siteName: "Maerika 2k26",
+      locale: "ml_IN",
+      type: "article",
+    },
+  };
 }
 
 async function getProgramDetail(programId: string) {

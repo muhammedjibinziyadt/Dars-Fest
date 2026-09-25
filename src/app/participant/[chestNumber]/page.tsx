@@ -5,8 +5,40 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 
+import type { Metadata } from "next";
+
 interface ParticipantPageProps {
     params: Promise<{ chestNumber: string }>;
+}
+
+export async function generateMetadata({ params }: ParticipantPageProps): Promise<Metadata> {
+    const { chestNumber } = await params;
+    const profile = await getParticipantProfile(chestNumber);
+    if (!profile) {
+        return {
+            title: "Participant Not Found - Maerika 2k26",
+        };
+    }
+
+    const title = `${profile.student.name} (Chest #${profile.student.chest_no}) - Maerika 2k26`;
+    const description = `View participant profile, event registrations, and live results for ${profile.student.name} at Maerika 2k26 Arts Fest.`;
+    const url = `https://maerika-2k26.jawharathululoomsuffadars.online/participant/${chestNumber}`;
+
+    return {
+        title,
+        description,
+        alternates: {
+            canonical: url,
+        },
+        openGraph: {
+            title,
+            description,
+            url,
+            siteName: "Maerika 2k26",
+            locale: "ml_IN",
+            type: "profile",
+        },
+    };
 }
 
 export default async function ParticipantPage({ params }: ParticipantPageProps) {
