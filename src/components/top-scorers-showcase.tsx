@@ -224,8 +224,8 @@ export function TopScorersShowcase({
       ) : (
         <div className="space-y-8">
           {/* PODIUM SECTION (Top 3) */}
-          <div className="relative pt-6 pb-2">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 lg:gap-6 items-end">
+          <div className="relative pt-2 pb-2">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 lg:gap-6 items-stretch">
               {/* 2nd Place (Silver) */}
               {topThree[1] && (
                 <div className="order-2 md:order-1">
@@ -247,9 +247,9 @@ export function TopScorersShowcase({
                 </div>
               )}
 
-              {/* 1st Place (Gold / Crown) */}
+              {/* 1st Place (Gold) */}
               {topThree[0] && (
-                <div className="order-1 md:order-2 md:-translate-y-4">
+                <div className="order-1 md:order-2">
                   <PodiumCard
                     item={topThree[0]}
                     position={1}
@@ -437,160 +437,108 @@ function PodiumCard({
   isExpanded,
   onToggle,
 }: PodiumCardProps) {
-  const isFirst = position === 1;
-  const isSecond = position === 2;
-  const isThird = position === 3;
-
   const config = {
     1: {
-      border: "border-amber-300 ring-2 ring-amber-400/40 shadow-amber-200/50",
-      badgeBg: "bg-gradient-to-r from-amber-500 to-yellow-500 text-white shadow-amber-500/30",
-      title: "1st Place · Champion",
-      medalEmoji: "🥇",
-      headerBg: "bg-gradient-to-b from-amber-100/70 via-amber-50/30 to-white",
-      crownColor: "text-amber-500",
+      badge: "bg-amber-100 text-amber-900 border-amber-200/80",
+      label: "🥇 1st Place",
+      ring: "ring-2 ring-amber-400 ring-offset-2",
+      border: "border-amber-300/80 shadow-md shadow-amber-500/5",
     },
     2: {
-      border: "border-slate-300 ring-1 ring-slate-300/40 shadow-slate-200/40",
-      badgeBg: "bg-gradient-to-r from-slate-500 to-gray-600 text-white shadow-slate-500/30",
-      title: "2nd Place · Runner-Up",
-      medalEmoji: "🥈",
-      headerBg: "bg-gradient-to-b from-slate-100/70 via-slate-50/30 to-white",
-      crownColor: "text-slate-400",
+      badge: "bg-slate-100 text-slate-700 border-slate-200",
+      label: "🥈 2nd Place",
+      ring: "ring-2 ring-slate-300 ring-offset-2",
+      border: "border-gray-200 shadow-sm",
     },
     3: {
-      border: "border-orange-300 ring-1 ring-orange-300/40 shadow-orange-200/40",
-      badgeBg: "bg-gradient-to-r from-amber-700 to-orange-700 text-white shadow-orange-500/30",
-      title: "3rd Place",
-      medalEmoji: "🥉",
-      headerBg: "bg-gradient-to-b from-orange-100/60 via-orange-50/30 to-white",
-      crownColor: "text-amber-700",
+      badge: "bg-orange-50 text-orange-800 border-orange-200/80",
+      label: "🥉 3rd Place",
+      ring: "ring-2 ring-orange-300 ring-offset-2",
+      border: "border-gray-200 shadow-sm",
     },
   }[position];
 
   return (
     <div
-      className={`relative bg-white rounded-3xl border ${config.border} shadow-xl overflow-hidden transition-all duration-300 hover:shadow-2xl`}
+      className={`bg-white rounded-2xl border ${config.border} p-4 sm:p-5 transition-all duration-200 hover:shadow-md flex flex-col justify-between`}
     >
-      {/* Top Accent Header */}
-      <div className={`p-4 sm:p-5 ${config.headerBg} border-b border-gray-100 text-center relative`}>
-        {/* Crown for 1st */}
-        {isFirst && (
-          <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-amber-500 text-white p-1 rounded-full shadow-lg">
-            <Crown className="w-5 h-5 fill-white" />
-          </div>
-        )}
-
-        <div className="flex justify-between items-center mb-3">
+      <div>
+        {/* Top: Rank Badge & Chest Number */}
+        <div className="flex items-center justify-between gap-2">
           <span
-            className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold shadow-sm ${config.badgeBg}`}
+            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border ${config.badge}`}
           >
-            <span>{config.medalEmoji}</span>
-            <span>{config.title}</span>
+            {config.label}
           </span>
-
-          <span className="text-xs font-mono font-bold text-gray-500">
-            CHEST: {item.student.chest_no}
+          <span className="text-xs font-mono font-medium text-gray-400">
+            #{item.student.chest_no}
           </span>
         </div>
 
-        {/* Avatar */}
-        <div className="relative mx-auto mb-3">
+        {/* Student Avatar & Identity */}
+        <div className="flex flex-col items-center text-center mt-3">
           <div
-            className={`relative w-20 h-20 sm:w-24 sm:h-24 mx-auto rounded-full overflow-hidden p-1 shadow-md ${
-              isFirst
-                ? "bg-gradient-to-tr from-amber-400 via-yellow-300 to-amber-500"
-                : isSecond
-                ? "bg-gradient-to-tr from-slate-300 via-gray-200 to-slate-400"
-                : "bg-gradient-to-tr from-orange-400 via-amber-300 to-orange-600"
-            }`}
+            className={`relative w-20 h-20 sm:w-22 sm:h-22 rounded-full overflow-hidden ${config.ring} bg-gray-100 shrink-0`}
           >
-            <div className="relative w-full h-full rounded-full overflow-hidden bg-white">
-              <StudentAvatarDisplay
-                src={item.student.avatar}
-                name={item.student.name}
-                initialsClassName="text-base font-bold text-gray-700 bg-gray-100"
-              />
-            </div>
+            <StudentAvatarDisplay
+              src={item.student.avatar}
+              name={item.student.name}
+              initialsClassName="text-base font-bold text-gray-700 bg-gray-100"
+            />
+          </div>
+
+          <h3 className="text-base sm:text-lg font-bold text-gray-900 mt-3 truncate max-w-full">
+            {item.student.name}
+          </h3>
+
+          <div className="inline-flex items-center gap-1.5 text-xs text-gray-500 mt-0.5">
+            <span
+              className="w-2 h-2 rounded-full shrink-0"
+              style={{ backgroundColor: item.team.color }}
+            />
+            <span className="truncate">{item.team.name}</span>
           </div>
         </div>
 
-        {/* Student Name & Team */}
-        <h3 className="text-lg sm:text-xl font-bold text-gray-900 truncate">
-          {item.student.name}
-        </h3>
+        {/* Score & Breakdown (Clean, NO nested boxes) */}
+        <div className="text-center mt-3 pt-3 border-t border-gray-100">
+          <div className="text-3xl sm:text-4xl font-black text-[#8B4513] tracking-tight">
+            {activeScore}
+            <span className="text-xs font-normal text-gray-400 ml-1">pts</span>
+          </div>
 
-        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/90 border border-gray-200 text-xs font-medium text-gray-700 mt-1 shadow-sm">
-          <span
-            className="w-2.5 h-2.5 rounded-full shrink-0"
-            style={{ backgroundColor: item.team.color }}
-          />
-          <span className="truncate max-w-[140px]">{item.team.name}</span>
+          {category === "overall" && (
+            <p className="text-xs text-gray-500 mt-1">
+              Ind: <span className="font-semibold text-gray-700">{item.individualPoints}</span> · Grp: <span className="font-semibold text-gray-700">{item.groupPoints}</span>
+            </p>
+          )}
+
+          {/* Medals Summary */}
+          <div className="flex items-center justify-center gap-4 text-xs font-semibold text-gray-600 mt-2.5">
+            <span title="Gold Medals">🥇 {item.medals.gold}</span>
+            <span title="Silver Medals">🥈 {item.medals.silver}</span>
+            <span title="Bronze Medals">🥉 {item.medals.bronze}</span>
+          </div>
         </div>
       </div>
 
-      {/* Points & Stats Body */}
-      <div className="p-4 sm:p-5 space-y-4">
-        {/* Main Score Display */}
-        <div className="text-center py-2 bg-gradient-to-r from-gray-50 via-amber-50/40 to-gray-50 rounded-2xl border border-gray-100">
-          <div className="text-xs uppercase tracking-wider font-semibold text-gray-500">
-            {category === "individual"
-              ? "Individual Points"
-              : category === "group"
-              ? "Group Points"
-              : "Total Points"}
-          </div>
-          <div className="text-3xl sm:text-4xl font-black text-[#8B4513] tracking-tight mt-0.5">
-            {activeScore}
-            <span className="text-xs font-normal text-gray-500 ml-1">pts</span>
-          </div>
-        </div>
-
-        {/* Points breakdown */}
-        <div className="grid grid-cols-2 gap-2 text-center text-xs">
-          <div className="bg-amber-50/60 rounded-xl p-2 border border-amber-100">
-            <span className="text-gray-500 block text-[10px]">Individual</span>
-            <span className="font-bold text-amber-900 text-sm">{item.individualPoints} pts</span>
-          </div>
-          <div className="bg-orange-50/60 rounded-xl p-2 border border-orange-100">
-            <span className="text-gray-500 block text-[10px]">Group</span>
-            <span className="font-bold text-orange-900 text-sm">{item.groupPoints} pts</span>
-          </div>
-        </div>
-
-        {/* Medals */}
-        <div className="flex items-center justify-around py-2 border-t border-b border-gray-100 text-xs font-semibold text-gray-700">
-          <div className="flex items-center gap-1" title="Gold Medals">
-            <span>🥇</span>
-            <span>{item.medals.gold}</span>
-          </div>
-          <div className="flex items-center gap-1" title="Silver Medals">
-            <span>🥈</span>
-            <span>{item.medals.silver}</span>
-          </div>
-          <div className="flex items-center gap-1" title="Bronze Medals">
-            <span>🥉</span>
-            <span>{item.medals.bronze}</span>
-          </div>
-        </div>
-
-        {/* View Programs Button */}
+      {/* Won Events Collapsible */}
+      <div className="mt-3 pt-2 border-t border-gray-100">
         <button
           onClick={onToggle}
-          className="w-full flex items-center justify-center gap-1.5 py-2 px-3 text-xs font-semibold text-[#8B4513] bg-amber-500/10 hover:bg-amber-500/20 rounded-xl transition-colors"
+          className="w-full flex items-center justify-center gap-1 text-xs font-semibold text-[#8B4513] hover:text-[#6B3410] py-1 transition-colors cursor-pointer"
         >
-          <span>{isExpanded ? "Hide Won Events" : "View Won Events"}</span>
+          <span>{isExpanded ? "Hide events" : `Won events (${item.achievements.length})`}</span>
           {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
         </button>
 
-        {/* Expanded Events */}
         <AnimatePresence>
           {isExpanded && (
             <motion.div
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: "auto" }}
               exit={{ opacity: 0, height: 0 }}
-              className="overflow-hidden pt-1"
+              className="overflow-hidden pt-2"
             >
               <AchievementsList item={item} />
             </motion.div>
@@ -603,34 +551,31 @@ function PodiumCard({
 
 function AchievementsList({ item }: { item: TopScorerItem }) {
   if (item.achievements.length === 0) {
-    return <p className="text-xs text-gray-500 py-1 text-center">No program placements on record.</p>;
+    return <p className="text-xs text-gray-400 py-1 text-center">No won events yet.</p>;
   }
 
   return (
-    <div className="space-y-1.5 text-xs">
-      <div className="font-bold text-gray-700 text-[11px] uppercase tracking-wider mb-1">
-        Winning Events ({item.achievements.length}):
-      </div>
+    <div className="space-y-1.5 text-xs max-h-48 overflow-y-auto pr-0.5">
       {item.achievements.map((ach, idx) => (
         <div
           key={`${ach.programId}-${idx}`}
-          className="flex items-center justify-between gap-2 p-2 rounded-lg bg-white border border-gray-100 text-xs shadow-2xs"
+          className="flex items-center justify-between gap-2 p-2 rounded-xl bg-gray-50 border border-gray-100"
         >
-          <div className="flex items-center gap-2 min-w-0">
-            <span className="text-sm">
+          <div className="flex items-center gap-1.5 min-w-0">
+            <span className="text-sm shrink-0">
               {ach.position === 1 ? "🥇" : ach.position === 2 ? "🥈" : "🥉"}
             </span>
             <div className="min-w-0">
-              <span className="font-medium text-gray-900 truncate block">
+              <span className="font-semibold text-gray-900 truncate block text-xs">
                 {ach.programName}
               </span>
               <span className="text-[10px] text-gray-500">
-                {ach.isGroup ? "Group Program" : "Individual Program"}
+                {ach.isGroup ? "Group" : "Individual"}
                 {ach.grade && ach.grade !== "none" ? ` · Grade ${ach.grade}` : ""}
               </span>
             </div>
           </div>
-          <span className="font-bold text-[#8B4513] shrink-0">+{ach.score} pts</span>
+          <span className="font-bold text-[#8B4513] shrink-0 text-xs">+{ach.score} pts</span>
         </div>
       ))}
     </div>
