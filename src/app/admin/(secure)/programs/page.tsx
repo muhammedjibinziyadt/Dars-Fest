@@ -12,6 +12,7 @@ import {
   getApprovedResults,
   getJuries,
   getPrograms,
+  getStudents,
   updateProgramById,
 } from "@/lib/data";
 import { getProgramRegistrations, removeRegistrationsByProgram } from "@/lib/team-data";
@@ -357,10 +358,11 @@ async function importProgramsAction(formData: FormData) {
 }
 
 export default async function ProgramsPage() {
-  const [programs, juries, registrations] = await Promise.all([
+  const [programs, juries, registrations, students] = await Promise.all([
     getPrograms(),
     getJuries(),
     getProgramRegistrations(),
+    getStudents(),
   ]);
 
   const programsWithLimits = programs.map((program) => ({
@@ -452,6 +454,8 @@ export default async function ProgramsPage() {
         bulkAssignAction={bulkAssignProgramsAction}
         juries={juries}
         candidateCounts={registrationCounts}
+        registrations={registrations}
+        students={students}
       />
     </div>
   );

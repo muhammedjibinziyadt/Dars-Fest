@@ -2,7 +2,7 @@
 
 import React, { useEffect, useMemo, useState, useCallback } from "react";
 import { useFormStatus } from "react-dom";
-import { CheckCircle2, LayoutList, Search, Trash2, Eye, Pencil } from "lucide-react";
+import { CheckCircle2, LayoutList, Search, Trash2, Eye, Pencil, FileText } from "lucide-react";
 import { showSuccess, showError } from "@/lib/toast";
 
 import { Button } from "@/components/ui/button";
@@ -10,7 +10,8 @@ import { Input } from "@/components/ui/input";
 import { SearchSelect } from "@/components/ui/search-select";
 import { Modal } from "@/components/ui/modal";
 import { useDebounce } from "@/hooks/use-debounce";
-import type { Jury, Program } from "@/lib/types";
+import type { Jury, Program, ProgramRegistration, Student } from "@/lib/types";
+import { ProgramParticipantsPdfModal } from "./program-participants-pdf-modal";
 
 interface ProgramManagerProps {
   programs: Program[];
@@ -20,6 +21,8 @@ interface ProgramManagerProps {
   bulkAssignAction: (formData: FormData) => Promise<void>;
   juries: Jury[];
   candidateCounts?: Record<string, number>;
+  registrations?: ProgramRegistration[];
+  students?: Student[];
 }
 
 type SortOption = "latest" | "az";
@@ -89,6 +92,8 @@ export const ProgramManager = React.memo(function ProgramManager({
   bulkAssignAction,
   juries,
   candidateCounts = {},
+  registrations = [],
+  students = [],
 }: ProgramManagerProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
@@ -102,6 +107,7 @@ export const ProgramManager = React.memo(function ProgramManager({
   const [pageSize, setPageSize] = useState<number>(Number(pageSizeOptions[0].value));
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showPdfModal, setShowPdfModal] = useState(false);
   const juryOptions = useMemo(
     () => juries.map((jury) => ({ value: jury.id, label: jury.name })),
     [juries],
@@ -203,7 +209,17 @@ export const ProgramManager = React.memo(function ProgramManager({
             Search, filter, and bulk-select programs before assigning juries.
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            type="button"
+            variant="secondary"
+            className="gap-2 border-amber-500/30 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20"
+            onClick={() => setShowPdfModal(true)}
+            title="Download participant chest numbers PDF for programs"
+          >
+            <FileText className="h-4 w-4 text-amber-400" />
+            Participants PDF {selected.size > 0 ? `(${selected.size})` : ""}
+          </Button>
           <Button
             type="button"
             variant="secondary"
@@ -545,6 +561,15 @@ export const ProgramManager = React.memo(function ProgramManager({
           <BulkDeleteSubmitButton count={selected.size} />
         </form>
       </Modal>
+
+      <ProgramParticipantsPdfModal
+        open={showPdfModal}
+        onClose={() => setShowPdfModal(false)}
+        programs={sortedPrograms}
+        registrations={registrations}
+        students={students}
+        selectedProgramIds={Array.from(selected)}
+      />
     </div>
   );
 });
