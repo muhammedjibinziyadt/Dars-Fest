@@ -307,7 +307,7 @@ export function HomeRealtime({
                   enjoyable experience.
                 </p>
 
-                <div className="mt-4 flex flex-wrap items-center gap-3">
+                <div className="mt-4">
                   <Link href="/admin/login">
                     <Button
                       variant="secondary"
@@ -316,16 +316,6 @@ export function HomeRealtime({
                       Admin Login
                     </Button>
                   </Link>
-
-                  <a
-                    href="https://maerika-2k26.jawharathululoomsuffadars.online"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 text-xs sm:text-sm text-amber-900 bg-amber-50 hover:bg-amber-100 border border-amber-200 px-3 py-2 rounded-lg font-medium transition-colors"
-                  >
-                    <span>🌐 Official Site:</span>
-                    <span className="font-semibold underline">maerika-2k26.jawharathululoomsuffadars.online</span>
-                  </a>
                 </div>
               </div>
 
