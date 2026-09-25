@@ -11,7 +11,6 @@ import {
 } from "@/components/ui/card";
 import { useRouter } from "next/navigation";
 import { LiveScorePulse } from "@/components/live-score-pulse";
-import { TeamLeadersShowcase } from "@/components/team-leaders-showcase";
 import { useScoreboardUpdates } from "@/hooks/use-realtime";
 import type { Team } from "@/lib/types";
 
@@ -209,12 +208,6 @@ export function HomeRealtime({
         </div>
       </section>
 
-      {/* Team Leaders Section */}
-      <section className="bg-white py-12 sm:py-16 md:py-20">
-        <div className="container mx-auto max-w-7xl px-4 sm:px-5 md:px-8">
-          <TeamLeadersShowcase teams={initialTeams} />
-        </div>
-      </section>
 
       {/* About Maerika Logo Section */}
       <section className="bg-[#fffcf5] py-12 sm:py-16 md:py-20">
