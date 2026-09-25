@@ -292,3 +292,15 @@ input[type="checkbox"]:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+/* Chrome/Safari/Edge Dark Mode Autofill Text Fix */
+input:-webkit-autofill,
+input:-webkit-autofill:hover, 
+input:-webkit-autofill:focus, 
+input:-webkit-autofill:active {
+  -webkit-text-fill-color: #ffffff !important;
+  -webkit-box-shadow: 0 0 0px 1000px rgba(15, 23, 42, 0.92) inset !important;
+  box-shadow: 0 0 0px 1000px rgba(15, 23, 42, 0.92) inset !important;
+  caret-color: #ffffff !important;
+  transition: background-color 5000s ease-in-out 0s;
+}

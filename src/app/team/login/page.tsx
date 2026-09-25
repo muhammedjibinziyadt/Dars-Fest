@@ -1,6 +1,9 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
+import { Badge } from "@/components/ui/badge";
 import { TeamLoginForm } from "@/components/team-login-form";
 import { authenticateTeam, getCurrentTeam } from "@/lib/auth";
+import { Users, ArrowLeft } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -29,9 +32,49 @@ export default async function TeamLoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-950 px-4 py-10 text-white">
+    <main className="mx-auto flex min-h-screen w-full max-w-md flex-col justify-center px-4 py-12 sm:px-6">
+      {/* Header */}
+      <div className="mb-8 space-y-3 text-center">
+        <div className="inline-flex items-center justify-center p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 shadow-inner">
+          <Users className="w-8 h-8" />
+        </div>
+        <div>
+          <Badge tone="emerald" className="mx-auto mb-2">
+            Team Portal
+          </Badge>
+          <h1 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">
+            Team Portal Login
+          </h1>
+          <p className="mt-2 text-sm text-white/70">
+            Sign in to register candidates, view assigned programs, and track results.
+          </p>
+        </div>
+      </div>
+
+      {/* Form Card */}
       <TeamLoginForm action={teamLoginAction} />
-    </div>
+
+      {/* Footer Navigation */}
+      <div className="mt-8 space-y-4 text-center">
+        <Link
+          href="/scoreboard"
+          className="inline-flex items-center gap-1.5 text-xs font-medium text-white/60 hover:text-white transition-colors"
+        >
+          <ArrowLeft className="w-3.5 h-3.5" />
+          <span>Back to Scoreboard</span>
+        </Link>
+
+        <div className="flex items-center justify-center gap-2 text-xs text-white/40">
+          <span>Other portals:</span>
+          <Link href="/admin/login" className="text-rose-400 hover:text-rose-300 transition-colors underline-offset-4 hover:underline">
+            Admin Control
+          </Link>
+          <span>•</span>
+          <Link href="/jury/login" className="text-cyan-400 hover:text-cyan-300 transition-colors underline-offset-4 hover:underline">
+            Jury Portal
+          </Link>
+        </div>
+      </div>
+    </main>
   );
 }
-
