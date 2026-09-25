@@ -265,11 +265,13 @@ export async function submitResultToPending({
   juryId,
   winners,
   penalties: penaltyPayloads,
+  notes,
 }: {
   programId: string;
   juryId: string;
   winners: WinnerPayload[];
   penalties?: PenaltyPayload[] | null;
+  notes?: string;
 }) {
   await connectDB();
   const [program, jury] = await Promise.all([
@@ -310,6 +312,7 @@ export async function submitResultToPending({
     submitted_at: new Date().toISOString(),
     entries,
     penalties,
+    notes: notes || undefined,
     status: "pending",
   };
 
@@ -416,6 +419,7 @@ export async function updatePendingResultEntries(
   resultId: string,
   winners: WinnerPayload[],
   penaltiesPayload?: PenaltyPayload[] | null,
+  notes?: string,
 ) {
   await connectDB();
   const record = await PendingResultModel.findOne({ id: resultId }).lean();
@@ -432,6 +436,7 @@ export async function updatePendingResultEntries(
     {
       entries,
       penalties,
+      ...(notes !== undefined ? { notes: notes || undefined } : {}),
       submitted_at: new Date().toISOString(),
     },
   );
@@ -447,6 +452,7 @@ export async function updateApprovedResult(
   resultId: string,
   winners: WinnerPayload[],
   penaltiesPayload?: PenaltyPayload[] | null,
+  notes?: string,
 ) {
   await connectDB();
   const record = await ApprovedResultModel.findOne({ id: resultId }).lean();
@@ -464,6 +470,7 @@ export async function updateApprovedResult(
     {
       entries,
       penalties,
+      ...(notes !== undefined ? { notes: notes || undefined } : {}),
       submitted_at: new Date().toISOString(),
     },
   );
