@@ -70,7 +70,7 @@ function ResultPosterPreviewInner({
           }>,
         };
 
-        // Generate all 3 poster styles
+        // Generate all 3 official result poster style variations
         const styles: PosterStyle[] = [1, 2, 3];
         const urlMap = new Map<PosterStyle, string>();
 
@@ -100,7 +100,7 @@ function ResultPosterPreviewInner({
       <div className="flex items-center justify-center p-12 bg-gray-50 rounded-lg border border-gray-200">
         <div className="flex flex-col items-center gap-3">
           <Loader2 className="w-8 h-8 text-gray-400 animate-spin" />
-          <p className="text-sm text-gray-500">Generating poster preview...</p>
+          <p className="text-sm text-gray-500">Generating poster previews...</p>
         </div>
       </div>
     );
@@ -119,23 +119,36 @@ function ResultPosterPreviewInner({
   }
 
   const styles: PosterStyle[] = [1, 2, 3];
-  const styleNames = {
-    1: "Style 1",
-    2: "Style 2",
-    3: "Style 3",
+  const styleNames: Record<PosterStyle, string> = {
+    1: "Classic Cream",
+    2: "Royal Blue",
+    3: "Emerald Green",
   };
 
   return (
     <div className="space-y-6">
-      <h3 className="text-lg font-semibold text-gray-900">Poster Previews</h3>
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-xl font-bold text-gray-900">Poster Previews</h3>
+        </div>
+      </div>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {styles.map((style) => {
           const posterUrl = posterUrls.get(style);
           if (!posterUrl) return null;
 
           return (
-            <div key={style} className="flex flex-col items-center space-y-4">
-              <div className="relative border-2 border-gray-200 shadow-2xl w-full inline-block">
+            <div
+              key={style}
+              className="flex flex-col items-center space-y-4"
+            >
+              <div className="w-full flex items-center justify-between px-1">
+                <span className="text-sm font-semibold text-gray-800">{styleNames[style]}</span>
+                <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 border border-gray-200">
+                  Style {style}
+                </span>
+              </div>
+              <div className="relative rounded-2xl overflow-hidden border border-gray-200 shadow-xl w-full inline-block bg-white hover:shadow-2xl transition-shadow duration-300">
                 <img
                   src={posterUrl}
                   alt={`${program.name} Result Poster - ${styleNames[style]}`}
