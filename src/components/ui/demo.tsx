@@ -16,6 +16,7 @@ import {
   type LucideIcon,
   Users,
   Shuffle,
+  QrCode,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -41,6 +42,7 @@ const ICONS = {
   dashboard: LayoutDashboard,
   programs: Layers,
   students: GraduationCap,
+  attendance: QrCode,
   jury: Users,
   teams: Users,
   assignments: ClipboardCheck,

@@ -1,6 +1,7 @@
 import { getAdminDb } from "./firebase-admin";
 import type {
   AssignedProgram,
+  AttendanceRecord,
   Jury,
   LiveScore,
   Notification,
@@ -26,6 +27,7 @@ export const COLLECTIONS = {
   REGISTRATION_SCHEDULES: "registration_schedules",
   REPLACEMENT_REQUESTS: "replacement_requests",
   NOTIFICATIONS: "notifications",
+  ATTENDANCE: "attendance",
 } as const;
 
 export interface QueryPromise<T> extends Promise<T> {
@@ -442,3 +444,5 @@ export const RegistrationScheduleModel = new FirestoreModel<RegistrationSchedule
 );
 export const ReplacementRequestModel = new FirestoreModel<ReplacementRequest>(COLLECTIONS.REPLACEMENT_REQUESTS);
 export const NotificationModel = new FirestoreModel<Notification>(COLLECTIONS.NOTIFICATIONS);
+export const AttendanceModel = new FirestoreModel<AttendanceRecord>(COLLECTIONS.ATTENDANCE);
+

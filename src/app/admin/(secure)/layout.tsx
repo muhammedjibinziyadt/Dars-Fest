@@ -12,6 +12,7 @@ const adminNav: SidebarItem[] = [
   { href: "/admin/programs", label: "Programs", icon: "programs" },
   { href: "/admin/chest-lots", label: "Chest Lots", icon: "shuffle" },
   { href: "/admin/students", label: "Students", icon: "students" },
+  { href: "/admin/attendance", label: "Attendance", icon: "attendance" },
   { href: "/admin/jury", label: "Jury", icon: "jury" },
   { href: "/admin/assign", label: "Assignments", icon: "assignments" },
   { href: "/admin/add-result", label: "Add Result", icon: "addResult" },

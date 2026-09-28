@@ -150,3 +150,17 @@ export interface Notification {
   createdAt: string;
 }
 
+export interface AttendanceRecord {
+  id: string;
+  programId: string;
+  studentId: string;
+  studentChest: string;
+  studentName?: string;
+  teamId?: string;
+  teamName?: string;
+  status: "present" | "absent";
+  markedAt: string;
+  markedBy?: string;
+}
+
+
