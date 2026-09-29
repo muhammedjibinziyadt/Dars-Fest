@@ -26,8 +26,9 @@ interface ScannedCodeItem {
 interface EmbeddedQRScannerProps {
   onScan: (scannedText: string) => void;
   isScanning: boolean;
-  onToggleScanning: () => void;
+  onToggleScanning?: () => void;
   isProcessing?: boolean;
+  hideHeader?: boolean;
 }
 
 function useIsMounted() {
@@ -43,6 +44,7 @@ export function EmbeddedQRScanner({
   isScanning,
   onToggleScanning,
   isProcessing = false,
+  hideHeader = false,
 }: EmbeddedQRScannerProps) {
   const mounted = useIsMounted();
   const [cameraError, setCameraError] = useState<string | null>(null);
@@ -80,40 +82,44 @@ export function EmbeddedQRScanner({
   };
 
   return (
-    <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-slate-900/80 backdrop-blur-md shadow-2xl">
+    <div className={`relative overflow-hidden rounded-2xl ${hideHeader ? "bg-slate-950 border border-white/10" : "border border-white/10 bg-slate-900/80 backdrop-blur-md shadow-2xl"}`}>
       {/* Scanner Header */}
-      <div className="flex items-center justify-between border-b border-white/10 px-5 py-4 bg-white/[0.02]">
-        <div className="flex items-center gap-2.5">
-          <div className={`h-3 w-3 rounded-full ${isScanning ? "bg-emerald-400 animate-ping" : "bg-white/30"}`} />
-          <h3 className="font-bold text-sm text-white flex items-center gap-2">
-            <Camera className="h-4 w-4 text-cyan-400" />
-            Built-in QR Code Scanner
-          </h3>
-        </div>
-        <Button
-          type="button"
-          size="sm"
-          onClick={onToggleScanning}
-          variant={isScanning ? "destructive" : "default"}
-          className={`rounded-xl text-xs font-semibold gap-1.5 transition-all ${
-            isScanning
-              ? "bg-red-500/20 text-red-300 border border-red-500/30 hover:bg-red-500/30"
-              : "bg-cyan-500 text-slate-950 hover:bg-cyan-400 font-bold shadow-md shadow-cyan-500/20"
-          }`}
-        >
-          {isScanning ? (
-            <>
-              <CameraOff className="h-3.5 w-3.5" />
-              Stop Camera
-            </>
-          ) : (
-            <>
-              <Camera className="h-3.5 w-3.5" />
-              Start Scanner
-            </>
+      {!hideHeader && (
+        <div className="flex items-center justify-between border-b border-white/10 px-5 py-4 bg-white/[0.02]">
+          <div className="flex items-center gap-2.5">
+            <div className={`h-3 w-3 rounded-full ${isScanning ? "bg-emerald-400 animate-ping" : "bg-white/30"}`} />
+            <h3 className="font-bold text-sm text-white flex items-center gap-2">
+              <Camera className="h-4 w-4 text-cyan-400" />
+              Built-in QR Code Scanner
+            </h3>
+          </div>
+          {onToggleScanning && (
+            <Button
+              type="button"
+              size="sm"
+              onClick={onToggleScanning}
+              variant={isScanning ? "destructive" : "default"}
+              className={`rounded-xl text-xs font-semibold gap-1.5 transition-all ${
+                isScanning
+                  ? "bg-red-500/20 text-red-300 border border-red-500/30 hover:bg-red-500/30"
+                  : "bg-cyan-500 text-slate-950 hover:bg-cyan-400 font-bold shadow-md shadow-cyan-500/20"
+              }`}
+            >
+              {isScanning ? (
+                <>
+                  <CameraOff className="h-3.5 w-3.5" />
+                  Stop Camera
+                </>
+              ) : (
+                <>
+                  <Camera className="h-3.5 w-3.5" />
+                  Start Scanner
+                </>
+              )}
+            </Button>
           )}
-        </Button>
-      </div>
+        </div>
+      )}
 
       {/* Camera View Area */}
       <div className="relative aspect-[4/3] sm:aspect-[16/10] w-full bg-slate-950 flex items-center justify-center overflow-hidden">
@@ -128,7 +134,7 @@ export function EmbeddedQRScanner({
                 variant="outline"
                 onClick={() => {
                   setCameraError(null);
-                  onToggleScanning();
+                  onToggleScanning?.();
                 }}
                 className="text-xs border-red-500/30 text-white hover:bg-red-500/10"
               >

@@ -1,22 +1,20 @@
 "use client";
 
-import React, { useState, useMemo, useRef } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
   CheckCircle2,
   Clock,
   Search,
   Printer,
   Users,
-  UserCheck,
-  UserX,
-  AlertTriangle,
   RotateCcw,
   Check,
-  User,
-  ShieldCheck,
+  Camera,
+  AlertTriangle,
+  UserCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Modal } from "@/components/ui/modal";
 import { EmbeddedQRScanner } from "@/components/embedded-qr-scanner";
 import type {
   Program,
@@ -62,23 +60,24 @@ interface ScanNotification {
   timestamp: string;
 }
 
-// Web Audio API synthesiser for clean, zero-dependency sound effects
+// Web Audio API synthesiser for clean zero-dependency sound effects
 function playScanSound(type: "success" | "already" | "error" = "success") {
   try {
-    const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+    const AudioCtx =
+      window.AudioContext ||
+      (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
     if (!AudioCtx) return;
     const ctx = new AudioCtx();
 
     if (type === "success") {
-      // Pleasant high-pitch two-tone chime
       const osc1 = ctx.createOscillator();
       const osc2 = ctx.createOscillator();
       const gain = ctx.createGain();
 
       osc1.type = "sine";
       osc2.type = "sine";
-      osc1.frequency.setValueAtTime(880, ctx.currentTime); // A5
-      osc2.frequency.setValueAtTime(1320, ctx.currentTime + 0.1); // E6
+      osc1.frequency.setValueAtTime(880, ctx.currentTime);
+      osc2.frequency.setValueAtTime(1320, ctx.currentTime + 0.1);
 
       gain.gain.setValueAtTime(0.2, ctx.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.35);
@@ -92,11 +91,10 @@ function playScanSound(type: "success" | "already" | "error" = "success") {
       osc2.start(ctx.currentTime + 0.1);
       osc2.stop(ctx.currentTime + 0.35);
     } else if (type === "already") {
-      // Warm alert tone
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.type = "triangle";
-      osc.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
+      osc.frequency.setValueAtTime(587.33, ctx.currentTime);
       gain.gain.setValueAtTime(0.2, ctx.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.25);
       osc.connect(gain);
@@ -104,7 +102,6 @@ function playScanSound(type: "success" | "already" | "error" = "success") {
       osc.start(ctx.currentTime);
       osc.stop(ctx.currentTime + 0.25);
     } else {
-      // Low buzzer
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.type = "sawtooth";
@@ -118,7 +115,7 @@ function playScanSound(type: "success" | "already" | "error" = "success") {
       osc.stop(ctx.currentTime + 0.35);
     }
   } catch {
-    // Ignore audio policy errors
+    // Ignore audio policy issues
   }
 }
 
@@ -129,13 +126,12 @@ export function AdminAttendanceView({
   teams,
   initialAttendance,
 }: AdminAttendanceViewProps) {
-  // State for active program
   const [selectedProgramId, setSelectedProgramId] = useState<string>(
     programs.length > 0 ? programs[0].id : ""
   );
   const [sectionFilter, setSectionFilter] = useState<string>("all");
   const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>(initialAttendance);
-  const [isScanning, setIsScanning] = useState<boolean>(true);
+  const [isScannerOpen, setIsScannerOpen] = useState<boolean>(false);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [manualChestInput, setManualChestInput] = useState<string>("");
   const [searchQuery, setSearchQuery] = useState<string>("");
@@ -143,9 +139,16 @@ export function AdminAttendanceView({
   const [lastNotification, setLastNotification] = useState<ScanNotification | null>(null);
   const [highlightedStudentId, setHighlightedStudentId] = useState<string | null>(null);
 
-  const rosterContainerRef = useRef<HTMLDivElement>(null);
+  // Auto-dismiss notification banner after 4 seconds
+  useEffect(() => {
+    if (!lastNotification) return;
+    const timer = setTimeout(() => {
+      setLastNotification(null);
+    }, 4500);
+    return () => clearTimeout(timer);
+  }, [lastNotification]);
 
-  // Lookup maps for fast access
+  // Lookup maps
   const studentMap = useMemo(() => {
     return new Map<string, Student>(students.map((s) => [s.id, s]));
   }, [students]);
@@ -191,7 +194,6 @@ export function AdminAttendanceView({
 
       const team = student?.team_id ? teamMap.get(student.team_id) : undefined;
       const attRecord = programAttendanceMap.get(reg.studentId);
-
       const isPresent = attRecord?.status === "present";
 
       return {
@@ -200,7 +202,7 @@ export function AdminAttendanceView({
         studentName: reg.studentName || student?.name || "Participant",
         studentChest: chestNo.toUpperCase(),
         teamId: reg.teamId,
-        teamName: reg.teamName || team?.name || "Unknown Squad",
+        teamName: reg.teamName || team?.name || "Team",
         teamColor: team?.color || "#0ea5e9",
         avatar: student?.avatar,
         isPresent,
@@ -219,11 +221,9 @@ export function AdminAttendanceView({
   // Filtered displayed list based on search and tab
   const displayedParticipants = useMemo(() => {
     return participants.filter((p) => {
-      // Tab filter
       if (activeTab === "present" && !p.isPresent) return false;
       if (activeTab === "absent" && p.isPresent) return false;
 
-      // Search query filter
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase().trim();
         const nameMatch = p.studentName.toLowerCase().includes(q);
@@ -236,7 +236,7 @@ export function AdminAttendanceView({
     });
   }, [participants, activeTab, searchQuery]);
 
-  // Handle Scanning QR Code
+  // Handle Scanning QR Code or Chest Number
   const handleQRScan = async (scannedCode: string) => {
     if (!selectedProgramId || isProcessing) return;
 
@@ -258,10 +258,8 @@ export function AdminAttendanceView({
       if (response.ok && data.success) {
         const isAlready = data.alreadyMarked;
 
-        // Play appropriate chime
         playScanSound(isAlready ? "already" : "success");
 
-        // Optimistically update attendance state
         if (!isAlready && data.record) {
           setAttendanceRecords((prev) => {
             const filtered = prev.filter(
@@ -271,28 +269,26 @@ export function AdminAttendanceView({
           });
         }
 
-        // Highlight student card
         if (data.student?.id) {
           setHighlightedStudentId(data.student.id);
-          setTimeout(() => setHighlightedStudentId(null), 3500);
+          setTimeout(() => setHighlightedStudentId(null), 3000);
         }
 
         setLastNotification({
           type: isAlready ? "already" : "success",
-          title: isAlready ? "Already Marked Present" : "Verified & Marked Present!",
+          title: isAlready ? "Already Marked" : "Checked In!",
           message: data.message,
           student: data.student,
-          timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" }),
+          timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
         });
       } else {
-        // Error or Not Registered
         playScanSound("error");
         setLastNotification({
           type: data.reason === "not_registered" ? "not_registered" : "not_found",
-          title: data.reason === "not_registered" ? "Not Registered For This Program" : "Student Not Found",
-          message: data.message || "Scanned code could not be verified.",
+          title: data.reason === "not_registered" ? "Not Registered" : "Student Not Found",
+          message: data.message || "Code could not be verified.",
           student: data.student,
-          timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" }),
+          timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
         });
       }
     } catch (err: unknown) {
@@ -301,8 +297,8 @@ export function AdminAttendanceView({
       setLastNotification({
         type: "error",
         title: "Scan Error",
-        message: (err as Error)?.message || "Failed to communicate with attendance server.",
-        timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" }),
+        message: (err as Error)?.message || "Failed to communicate with server.",
+        timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
       });
     } finally {
       setIsProcessing(false);
@@ -365,11 +361,12 @@ export function AdminAttendanceView({
     }
   };
 
-  // Mark All Students
+  // Mark All Students Present
   const handleMarkAll = async (status: "present" | "absent") => {
-    const confirmMsg = status === "present"
-      ? `Are you sure you want to mark all ${participants.length} students as PRESENT for this program?`
-      : `Are you sure you want to mark all students as ABSENT?`;
+    const confirmMsg =
+      status === "present"
+        ? `Mark all ${participants.length} students as PRESENT for this program?`
+        : `Mark all students as ABSENT?`;
 
     if (!window.confirm(confirmMsg)) return;
 
@@ -406,7 +403,7 @@ export function AdminAttendanceView({
 
   // Reset Program Attendance
   const handleResetAttendance = async () => {
-    if (!window.confirm("Reset all attendance records for this program? This will clear all present check-ins.")) {
+    if (!window.confirm("Clear all attendance check-ins for this program?")) {
       return;
     }
 
@@ -444,24 +441,16 @@ export function AdminAttendanceView({
       .map(
         (p, idx) => `
         <tr>
-          <td style="text-align: center; font-weight: bold; font-size: 14px;">
-            #${idx + 1}
-          </td>
-          <td style="text-align: center; font-family: monospace; font-weight: bold; font-size: 15px;">
-            ${p.studentChest}
-          </td>
-          <td style="font-weight: 600; font-size: 14px;">
-            ${p.studentName}
-          </td>
-          <td style="font-size: 13px;">
-            ${p.teamName}
-          </td>
-          <td style="text-align: center; font-weight: bold; font-size: 13px; color: ${
+          <td style="text-align: center; font-weight: bold; font-size: 13px;">#${idx + 1}</td>
+          <td style="text-align: center; font-family: monospace; font-weight: bold; font-size: 14px;">${p.studentChest}</td>
+          <td style="font-weight: 600; font-size: 13px;">${p.studentName}</td>
+          <td style="font-size: 12px;">${p.teamName}</td>
+          <td style="text-align: center; font-weight: bold; font-size: 12px; color: ${
             p.isPresent ? "#059669" : "#dc2626"
           };">
             ${p.isPresent ? "✓ PRESENT" : "✗ ABSENT"}
           </td>
-          <td style="width: 140px; border-bottom: 1px dashed #94a3b8; text-align: center; font-size: 11px; color: #64748b;">
+          <td style="width: 130px; border-bottom: 1px dashed #94a3b8; text-align: center; font-size: 11px; color: #64748b;">
             ${p.markedAt ? new Date(p.markedAt).toLocaleTimeString() : ""}
           </td>
         </tr>
@@ -488,66 +477,29 @@ export function AdminAttendanceView({
               padding-bottom: 12px;
               margin-bottom: 16px;
             }
-            .title {
-              font-size: 24px;
-              font-weight: 900;
-              letter-spacing: 1px;
-              margin: 0;
-            }
-            .subtitle {
-              font-size: 13px;
-              color: #475569;
-              margin-top: 4px;
-              text-transform: uppercase;
-              letter-spacing: 0.5px;
-            }
+            .title { font-size: 22px; font-weight: 900; margin: 0; }
+            .subtitle { font-size: 12px; color: #475569; margin-top: 4px; text-transform: uppercase; }
             .prog-box {
               background-color: #f8fafc;
               border: 1px solid #cbd5e1;
               border-radius: 8px;
-              padding: 12px 16px;
-              margin-bottom: 16px;
+              padding: 10px 14px;
+              margin-bottom: 14px;
               display: flex;
               justify-content: space-between;
               align-items: center;
             }
-            .prog-name {
-              font-size: 18px;
-              font-weight: bold;
-            }
-            .prog-meta {
-              font-size: 12px;
-              color: #64748b;
-              margin-top: 2px;
-            }
-            .stats {
-              text-align: right;
-            }
-            .stat-badge {
-              font-size: 16px;
-              font-weight: bold;
-              color: #059669;
-            }
-            table {
-              width: 100%;
-              border-collapse: collapse;
-            }
-            th, td {
-              border: 1px solid #cbd5e1;
-              padding: 8px 12px;
-              font-size: 13px;
-            }
-            th {
-              background-color: #e2e8f0;
-              text-transform: uppercase;
-              font-size: 11px;
-              letter-spacing: 0.5px;
-            }
+            .prog-name { font-size: 16px; font-weight: bold; }
+            .prog-meta { font-size: 12px; color: #64748b; margin-top: 2px; }
+            .stats { text-align: right; font-size: 15px; font-weight: bold; color: #059669; }
+            table { width: 100%; border-collapse: collapse; }
+            th, td { border: 1px solid #cbd5e1; padding: 7px 10px; font-size: 12px; }
+            th { background-color: #f1f5f9; text-transform: uppercase; font-size: 11px; }
             .footer {
               margin-top: 30px;
               display: flex;
               justify-content: space-between;
-              font-size: 12px;
+              font-size: 11px;
               color: #64748b;
             }
           </style>
@@ -555,38 +507,30 @@ export function AdminAttendanceView({
         <body>
           <div class="header">
             <h1 class="title">MAERIKA 2K26</h1>
-            <div class="subtitle">OFFICIAL PARTICIPANT ATTENDANCE & VERIFICATION CALL SHEET</div>
+            <div class="subtitle">PARTICIPANT ATTENDANCE & VERIFICATION CALL SHEET</div>
           </div>
-
           <div class="prog-box">
             <div>
               <div class="prog-name">${currentProgram.name}</div>
-              <div class="prog-meta">
-                Section: ${currentProgram.section.toUpperCase()} • ${currentProgram.stage ? "ON STAGE" : "OFF STAGE"}
-              </div>
+              <div class="prog-meta">Section: ${currentProgram.section.toUpperCase()} • ${currentProgram.stage ? "ON STAGE" : "OFF STAGE"}</div>
             </div>
-            <div class="stats">
-              <div class="stat-badge">${presentCount} / ${totalCount} Present (${attendancePercentage}%)</div>
-              <div class="prog-meta">Verified via QR Scanner</div>
-            </div>
+            <div class="stats">${presentCount} / ${totalCount} Present (${attendancePercentage}%)</div>
           </div>
-
           <table>
             <thead>
               <tr>
-                <th style="width: 45px; text-align: center;">#</th>
-                <th style="width: 100px; text-align: center;">Chest No</th>
+                <th style="width: 40px; text-align: center;">#</th>
+                <th style="width: 90px; text-align: center;">Chest No</th>
                 <th>Student Name</th>
                 <th>Team</th>
-                <th style="width: 110px; text-align: center;">Status</th>
-                <th style="width: 140px; text-align: center;">Check-in Time / Sign</th>
+                <th style="width: 100px; text-align: center;">Status</th>
+                <th style="width: 130px; text-align: center;">Check-in / Signature</th>
               </tr>
             </thead>
             <tbody>
               ${rowsHtml}
             </tbody>
           </table>
-
           <div class="footer">
             <span>Printed on: ${new Date().toLocaleString()}</span>
             <span>Stage Official Signature: _______________________</span>
@@ -603,321 +547,180 @@ export function AdminAttendanceView({
   };
 
   return (
-    <div className="space-y-6">
-      {/* Top Hero Banner */}
-      <div className="relative overflow-hidden rounded-3xl border border-emerald-500/20 bg-gradient-to-br from-emerald-500/10 via-slate-900 to-slate-900 p-6 sm:p-8 backdrop-blur-sm shadow-xl">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
-          <div className="flex items-center gap-4">
-            <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-600 flex items-center justify-center shadow-xl shadow-emerald-500/20 shrink-0">
-              <UserCheck className="h-8 w-8 text-slate-950" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-bold uppercase tracking-wider text-emerald-400">
-                  Stage Verification · Live Gatekeeper
-                </span>
-                <Badge tone="emerald" className="text-xs px-2.5 py-0.5">
-                  Instant QR Scanner
-                </Badge>
-              </div>
-              <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight mt-1">
-                Program Attendance
-              </h1>
-              <p className="text-sm text-white/60 mt-0.5">
-                Select a program, inspect participating candidates, and scan their ID card QR codes to verify and mark attendance instantly.
-              </p>
-            </div>
-          </div>
-
-          {/* Quick Metrics Pods */}
-          <div className="flex items-center gap-3 shrink-0">
-            <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 px-5 py-3 text-center">
-              <span className="text-xs font-semibold text-emerald-200/80 uppercase">Present</span>
-              <p className="text-2xl sm:text-3xl font-black text-emerald-300 mt-0.5">
-                {presentCount}
-              </p>
-            </div>
-            <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 px-5 py-3 text-center">
-              <span className="text-xs font-semibold text-amber-200/80 uppercase">Absent / Pending</span>
-              <p className="text-2xl sm:text-3xl font-black text-amber-300 mt-0.5">
-                {absentCount}
-              </p>
-            </div>
-          </div>
+    <div className="space-y-4">
+      {/* Sleek Top Header Bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-1">
+        <div>
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-white flex items-center gap-2">
+            <UserCheck className="h-6 w-6 text-emerald-400" />
+            Program Attendance
+          </h1>
+          <p className="text-xs text-white/50 mt-0.5">
+            Select a program, mark check-ins, or scan participant QR badges.
+          </p>
         </div>
 
-        {/* Progress Bar */}
-        <div className="mt-6 pt-5 border-t border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="flex items-center gap-3 flex-1 max-w-lg">
-            <div className="flex-1 h-3 rounded-full bg-slate-950/60 overflow-hidden border border-white/10 p-0.5">
-              <div
-                className="h-full rounded-full bg-gradient-to-r from-emerald-500 via-teal-400 to-cyan-400 transition-all duration-500 shadow-md shadow-emerald-500/30"
-                style={{ width: `${attendancePercentage}%` }}
-              />
-            </div>
-            <span className="text-xs font-bold text-emerald-300 shrink-0 font-mono">
-              {attendancePercentage}% Checked In
+        {/* Quick Header Stats & Actions */}
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Compact Attendance Counter */}
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-white/10 bg-slate-900/80 text-xs font-semibold shadow-sm">
+            <span
+              className={`h-2 w-2 rounded-full ${
+                presentCount === totalCount && totalCount > 0
+                  ? "bg-emerald-400"
+                  : presentCount > 0
+                  ? "bg-amber-400"
+                  : "bg-white/30"
+              }`}
+            />
+            <span className="text-white">
+              <strong className="text-emerald-400 font-bold">{presentCount}</strong> / {totalCount} Present
             </span>
+            <span className="text-white/40 font-mono text-[11px]">({attendancePercentage}%)</span>
           </div>
 
-          <div className="text-xs text-white/50">
-            Total Candidates: <strong className="text-white font-bold">{totalCount}</strong>
-          </div>
+          {/* Scan QR Button */}
+          <Button
+            type="button"
+            onClick={() => setIsScannerOpen(true)}
+            className="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs gap-1.5 rounded-xl px-3.5 shadow-md shadow-emerald-500/20"
+          >
+            <Camera className="h-3.5 w-3.5" />
+            Scan QR
+          </Button>
+
+          {/* Mark All Present */}
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => handleMarkAll("present")}
+            disabled={totalCount === 0 || presentCount === totalCount}
+            className="border-white/15 text-white/80 hover:text-white hover:bg-white/10 text-xs gap-1.5 rounded-xl"
+          >
+            <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
+            Mark All
+          </Button>
+
+          {/* Reset */}
+          {presentCount > 0 && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={handleResetAttendance}
+              className="text-white/50 hover:text-white text-xs gap-1.5 rounded-xl"
+              title="Clear all check-ins for this program"
+            >
+              <RotateCcw className="h-3.5 w-3.5" />
+              Reset
+            </Button>
+          )}
+
+          {/* Print Sheet */}
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={handlePrint}
+            disabled={totalCount === 0}
+            className="border-white/15 text-white/80 hover:text-white hover:bg-white/10 text-xs gap-1.5 rounded-xl"
+            title="Print official call sheet"
+          >
+            <Printer className="h-3.5 w-3.5" />
+            Print
+          </Button>
         </div>
       </div>
 
-      {/* Program Selector & Section Filter */}
-      <div className="rounded-3xl border border-white/10 bg-slate-900/60 p-6 backdrop-blur-sm space-y-5">
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
-          {/* Section Filter Pills */}
-          <div className="md:col-span-4">
-            <label className="text-xs font-semibold text-white/70 uppercase tracking-wider block mb-2">
-              Filter by Section:
-            </label>
-            <div className="flex flex-wrap gap-1.5">
-              {[
-                { value: "all", label: "All" },
-                { value: "single", label: "Single" },
-                { value: "group", label: "Group" },
-                { value: "general", label: "General" },
-              ].map((opt) => (
-                <button
-                  key={opt.value}
-                  type="button"
-                  onClick={() => setSectionFilter(opt.value)}
-                  className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition-all ${
-                    sectionFilter === opt.value
-                      ? "bg-emerald-500 text-slate-950 font-bold shadow-md shadow-emerald-500/20"
-                      : "bg-white/5 text-white/70 hover:bg-white/10"
-                  }`}
-                >
-                  {opt.label}
-                </button>
-              ))}
-            </div>
+      {/* Program Selector & Quick Action Controls Card */}
+      <div className="rounded-2xl border border-white/10 bg-slate-900/70 p-3.5 sm:p-4 backdrop-blur-sm space-y-3 shadow-lg">
+        {/* Row 1: Section Filter Pills + Program Select Dropdown */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+          {/* Section Pills */}
+          <div className="flex bg-white/5 p-1 rounded-xl border border-white/10 shrink-0">
+            {[
+              { value: "all", label: "All" },
+              { value: "single", label: "Single" },
+              { value: "group", label: "Group" },
+              { value: "general", label: "General" },
+            ].map((opt) => (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => setSectionFilter(opt.value)}
+                className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
+                  sectionFilter === opt.value
+                    ? "bg-emerald-500 text-slate-950 font-bold shadow-sm"
+                    : "text-white/60 hover:text-white"
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
           </div>
 
           {/* Program Select Dropdown */}
-          <div className="md:col-span-8">
-            <label className="text-xs font-semibold text-white/70 uppercase tracking-wider block mb-2">
-              Select Program ({filteredPrograms.length} available):
-            </label>
-            <div className="relative">
-              <select
-                value={selectedProgramId}
-                onChange={(e) => {
-                  setSelectedProgramId(e.target.value);
-                  setSearchQuery("");
-                  setLastNotification(null);
-                }}
-                className="w-full appearance-none rounded-2xl border border-white/20 bg-slate-900/90 px-5 py-3 text-sm font-semibold text-white focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-400/30 cursor-pointer pr-10"
-              >
-                {filteredPrograms.map((p) => {
-                  const regCount = registrations.filter((r) => r.programId === p.id).length;
-                  return (
-                    <option key={p.id} value={p.id} className="bg-slate-900 text-white">
-                      {p.name} ({p.section.toUpperCase()} • {p.stage ? "On Stage" : "Off Stage"} • {regCount} candidates)
-                    </option>
-                  );
-                })}
-              </select>
-              <div className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-white/50 text-sm">
-                ▼
-              </div>
+          <div className="relative flex-1">
+            <select
+              value={selectedProgramId}
+              onChange={(e) => {
+                setSelectedProgramId(e.target.value);
+                setSearchQuery("");
+                setLastNotification(null);
+              }}
+              className="w-full appearance-none rounded-xl border border-white/15 bg-white/5 px-4 py-2 text-sm font-semibold text-white focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400 cursor-pointer pr-10"
+            >
+              {filteredPrograms.map((p) => {
+                const regCount = registrations.filter((r) => r.programId === p.id).length;
+                return (
+                  <option key={p.id} value={p.id} className="bg-slate-900 text-white">
+                    {p.name} ({p.section.toUpperCase()} • {p.stage ? "On Stage" : "Off Stage"} • {regCount} candidates)
+                  </option>
+                );
+              })}
+            </select>
+            <div className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-white/40 text-xs">
+              ▼
             </div>
           </div>
         </div>
 
-        {/* Selected Program Bar & Batch Buttons */}
-        {currentProgram && (
-          <div className="flex flex-wrap items-center justify-between gap-4 p-4 rounded-2xl border border-white/10 bg-white/[0.03]">
-            <div>
-              <p className="text-xs text-white/50 uppercase tracking-wider">Active Program</p>
-              <h2 className="text-xl font-bold text-white mt-0.5">{currentProgram.name}</h2>
-              <div className="flex items-center gap-2 mt-1 text-xs text-white/60">
-                <span className="capitalize font-semibold text-emerald-300">{currentProgram.section} Event</span>
-                <span>•</span>
-                <span>{currentProgram.stage ? "On Stage" : "Off Stage"}</span>
-                <span>•</span>
-                <span>{totalCount} participating candidate(s)</span>
-              </div>
-            </div>
-
-            {/* Quick Actions */}
-            <div className="flex flex-wrap items-center gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => handleMarkAll("present")}
-                disabled={totalCount === 0}
-                className="gap-1.5 border-emerald-500/30 text-emerald-300 hover:bg-emerald-500/10 hover:text-emerald-200"
-              >
-                <CheckCircle2 className="h-4 w-4" />
-                Mark All Present
-              </Button>
-
-              {presentCount > 0 && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={handleResetAttendance}
-                  className="gap-1.5 border-white/15 text-white/60 hover:text-white hover:bg-white/10"
-                  title="Clear all present check-ins for this program"
-                >
-                  <RotateCcw className="h-4 w-4" />
-                  Reset
-                </Button>
-              )}
-
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={handlePrint}
-                disabled={totalCount === 0}
-                className="gap-1.5 border-white/15 text-white hover:bg-white/10"
-              >
-                <Printer className="h-4 w-4" />
-                Print Call Sheet
-              </Button>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Main Grid: QR Scanner & Scan Results + Candidate Roster */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* Left Column: QR Scanner & Live Verification Card (4 cols on lg) */}
-        <div className="lg:col-span-5 space-y-6">
-          {/* Scanner Card */}
-          <EmbeddedQRScanner
-            onScan={handleQRScan}
-            isScanning={isScanning}
-            onToggleScanning={() => setIsScanning((prev) => !prev)}
-            isProcessing={isProcessing}
-          />
-
-          {/* Manual Chest Number Entry Bar */}
-          <div className="rounded-3xl border border-white/10 bg-slate-900/60 p-5 backdrop-blur-sm space-y-3">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-white/70 flex items-center gap-2">
-              <ShieldCheck className="h-4 w-4 text-cyan-400" />
-              Manual Chest Entry Backup
-            </h4>
-            <p className="text-xs text-white/50">
-              If camera is unavailable or ID badge is unreadable, type the chest number to verify and check in:
-            </p>
-            <form onSubmit={handleManualSubmit} className="flex gap-2">
+        {/* Row 2: Fast Chest Number Input + Filter Tabs + Search */}
+        <div className="pt-2 border-t border-white/10 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+          {/* Quick Chest Check-in Input */}
+          <form onSubmit={handleManualSubmit} className="flex items-center gap-2 max-w-sm w-full">
+            <div className="relative flex-1">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-mono font-bold text-white/40">
+                #
+              </span>
               <input
                 type="text"
                 value={manualChestInput}
                 onChange={(e) => setManualChestInput(e.target.value)}
-                placeholder="e.g. RA001"
-                className="flex-1 rounded-xl border border-white/15 bg-white/5 px-3.5 py-2 text-sm text-white placeholder-white/40 font-mono uppercase focus:border-cyan-400 focus:outline-none focus:ring-1 focus:ring-cyan-400"
+                placeholder="Type chest # (e.g. RA001) & press Enter..."
+                className="w-full rounded-xl border border-white/15 bg-white/5 pl-7 pr-3 py-1.5 text-xs text-white placeholder-white/40 font-mono uppercase focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400"
               />
-              <Button
-                type="submit"
-                disabled={!manualChestInput.trim() || isProcessing}
-                className="bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold rounded-xl px-4 text-xs shrink-0"
-              >
-                Check In
-              </Button>
-            </form>
-          </div>
-
-          {/* Last Scan Feedback Notification Alert */}
-          {lastNotification && (
-            <div
-              className={`rounded-3xl border p-5 backdrop-blur-sm shadow-xl transition-all animate-in fade-in slide-in-from-top-3 duration-300 ${
-                lastNotification.type === "success"
-                  ? "border-emerald-500/40 bg-gradient-to-br from-emerald-500/20 via-slate-900 to-slate-900 shadow-emerald-500/10"
-                  : lastNotification.type === "already"
-                  ? "border-amber-500/40 bg-gradient-to-br from-amber-500/20 via-slate-900 to-slate-900 shadow-amber-500/10"
-                  : "border-red-500/40 bg-gradient-to-br from-red-500/20 via-slate-900 to-slate-900 shadow-red-500/10"
-              }`}
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex items-center gap-2">
-                  {lastNotification.type === "success" && (
-                    <CheckCircle2 className="h-5 w-5 text-emerald-400 shrink-0" />
-                  )}
-                  {lastNotification.type === "already" && (
-                    <Clock className="h-5 w-5 text-amber-400 shrink-0" />
-                  )}
-                  {(lastNotification.type === "not_registered" ||
-                    lastNotification.type === "not_found" ||
-                    lastNotification.type === "error") && (
-                    <AlertTriangle className="h-5 w-5 text-red-400 shrink-0" />
-                  )}
-                  <h4
-                    className={`font-black text-sm tracking-tight ${
-                      lastNotification.type === "success"
-                        ? "text-emerald-300"
-                        : lastNotification.type === "already"
-                        ? "text-amber-300"
-                        : "text-red-300"
-                    }`}
-                  >
-                    {lastNotification.title}
-                  </h4>
-                </div>
-                <span className="text-[10px] text-white/40 font-mono">
-                  {lastNotification.timestamp}
-                </span>
-              </div>
-
-              {/* Student details if available */}
-              {lastNotification.student ? (
-                <div className="mt-3.5 flex items-center gap-3.5 p-3 rounded-2xl bg-black/30 border border-white/10">
-                  {lastNotification.student.avatar ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={lastNotification.student.avatar}
-                      alt={lastNotification.student.name}
-                      className="h-12 w-12 rounded-xl object-cover border border-white/20 shadow-md shrink-0"
-                    />
-                  ) : (
-                    <div className="h-12 w-12 rounded-xl bg-white/10 border border-white/15 flex items-center justify-center text-white shrink-0">
-                      <User className="h-6 w-6" />
-                    </div>
-                  )}
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-bold text-white truncate">
-                      {lastNotification.student.name}
-                    </p>
-                    <div className="flex flex-wrap items-center gap-2 mt-0.5 text-xs text-white/70">
-                      <span className="font-mono font-bold text-emerald-300 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
-                        #{lastNotification.student.chest_no}
-                      </span>
-                      {lastNotification.student.teamName && (
-                        <span>• {lastNotification.student.teamName}</span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ) : null}
-
-              <p className="mt-3 text-xs text-white/80 leading-relaxed">
-                {lastNotification.message}
-              </p>
             </div>
-          )}
-        </div>
+            <Button
+              type="submit"
+              size="sm"
+              disabled={!manualChestInput.trim() || isProcessing}
+              className="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs rounded-xl px-3 py-1.5 h-auto shrink-0 shadow-sm"
+            >
+              Check In
+            </Button>
+          </form>
 
-        {/* Right Column: Participating Students Roster (7 cols on lg) */}
-        <div className="lg:col-span-7 space-y-4" ref={rosterContainerRef}>
-          {/* Roster Controls: Tabs and Search */}
-          <div className="rounded-3xl border border-white/10 bg-slate-900/60 p-4 backdrop-blur-sm flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+          {/* Filter Tabs & Search */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
             {/* Tabs */}
-            <div className="flex bg-white/5 p-1 rounded-2xl border border-white/10">
+            <div className="flex bg-white/5 p-0.5 rounded-xl border border-white/10 shrink-0">
               <button
                 type="button"
                 onClick={() => setActiveTab("all")}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                  activeTab === "all"
-                    ? "bg-white/15 text-white shadow-sm"
-                    : "text-white/60 hover:text-white"
+                className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
+                  activeTab === "all" ? "bg-white/15 text-white shadow-sm" : "text-white/60 hover:text-white"
                 }`}
               >
                 All ({totalCount})
@@ -925,184 +728,286 @@ export function AdminAttendanceView({
               <button
                 type="button"
                 onClick={() => setActiveTab("present")}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
                   activeTab === "present"
-                    ? "bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20"
-                    : "text-emerald-400 hover:text-emerald-300"
+                    ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
+                    : "text-emerald-400/70 hover:text-emerald-300"
                 }`}
               >
-                <CheckCircle2 className="h-3.5 w-3.5" />
                 Present ({presentCount})
               </button>
               <button
                 type="button"
                 onClick={() => setActiveTab("absent")}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
                   activeTab === "absent"
-                    ? "bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20"
-                    : "text-amber-400 hover:text-amber-300"
+                    ? "bg-amber-500/20 text-amber-300 border border-amber-500/30"
+                    : "text-amber-400/70 hover:text-amber-300"
                 }`}
               >
-                <Clock className="h-3.5 w-3.5" />
                 Pending ({absentCount})
               </button>
             </div>
 
             {/* Candidate Search */}
-            <div className="relative flex-1 max-w-xs">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-white/40" />
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-white/40" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search name, chest #, team..."
-                className="w-full rounded-xl border border-white/15 bg-white/5 pl-9 pr-3.5 py-1.5 text-xs text-white placeholder-white/40 focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400"
+                placeholder="Filter by name or chest..."
+                className="w-full sm:w-44 rounded-xl border border-white/15 bg-white/5 pl-8 pr-3 py-1 text-xs text-white placeholder-white/40 focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400"
               />
             </div>
           </div>
+        </div>
+      </div>
 
-          {/* Students List */}
-          <div className="space-y-3">
-            {displayedParticipants.length > 0 ? (
-              <div className="grid grid-cols-1 gap-3">
-                {displayedParticipants.map((participant) => {
-                  const isHighlighted = highlightedStudentId === participant.studentId;
+      {/* Floating / Inline Quick Scan Toast Notification */}
+      {lastNotification && (
+        <div
+          className={`rounded-2xl border px-4 py-2.5 flex items-center justify-between gap-3 text-xs shadow-md transition-all animate-in fade-in duration-200 ${
+            lastNotification.type === "success"
+              ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-200"
+              : lastNotification.type === "already"
+              ? "border-amber-500/30 bg-amber-500/10 text-amber-200"
+              : "border-red-500/30 bg-red-500/10 text-red-200"
+          }`}
+        >
+          <div className="flex items-center gap-2.5 min-w-0">
+            {lastNotification.type === "success" && (
+              <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />
+            )}
+            {lastNotification.type === "already" && (
+              <Clock className="h-4 w-4 text-amber-400 shrink-0" />
+            )}
+            {lastNotification.type !== "success" && lastNotification.type !== "already" && (
+              <AlertTriangle className="h-4 w-4 text-red-400 shrink-0" />
+            )}
+            <span className="font-bold">{lastNotification.title}:</span>
+            <span className="truncate opacity-90">{lastNotification.message}</span>
+            {lastNotification.student && (
+              <span className="font-mono font-bold px-1.5 py-0.5 rounded bg-white/10 text-white shrink-0">
+                #{lastNotification.student.chest_no}
+              </span>
+            )}
+          </div>
+          <button
+            onClick={() => setLastNotification(null)}
+            className="p-1 text-white/50 hover:text-white rounded-md shrink-0"
+          >
+            ✕
+          </button>
+        </div>
+      )}
 
+      {/* Simplified Clean Roster Table */}
+      <div className="rounded-2xl border border-white/10 bg-slate-900/70 overflow-hidden backdrop-blur-sm shadow-xl">
+        {displayedParticipants.length > 0 ? (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="border-b border-white/10 bg-white/[0.02] text-[11px] font-bold uppercase tracking-wider text-white/50">
+                  <th className="py-3 px-4 w-12 text-center">#</th>
+                  <th className="py-3 px-4 w-32">Chest No</th>
+                  <th className="py-3 px-4">Student</th>
+                  <th className="py-3 px-4">Team</th>
+                  <th className="py-3 px-4 w-36">Check-in Time</th>
+                  <th className="py-3 px-4 w-28 text-center">Status</th>
+                  <th className="py-3 px-4 w-36 text-right">Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-white/5 text-xs">
+                {displayedParticipants.map((p, idx) => {
+                  const isHighlighted = highlightedStudentId === p.studentId;
                   return (
-                    <div
-                      key={participant.registrationId}
-                      className={`rounded-2xl border p-4 transition-all duration-300 flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${
+                    <tr
+                      key={p.registrationId}
+                      className={`transition-colors duration-200 ${
                         isHighlighted
-                          ? "ring-2 ring-emerald-400 bg-emerald-500/20 border-emerald-400 shadow-lg shadow-emerald-500/20 scale-[1.01]"
-                          : participant.isPresent
-                          ? "border-emerald-500/30 bg-gradient-to-r from-emerald-500/10 via-slate-900 to-slate-900 shadow-sm"
-                          : "border-white/10 bg-white/[0.03] hover:border-white/20"
+                          ? "bg-emerald-500/20 ring-1 ring-inset ring-emerald-400"
+                          : p.isPresent
+                          ? "bg-emerald-500/[0.04] hover:bg-emerald-500/[0.08]"
+                          : "hover:bg-white/[0.03]"
                       }`}
                     >
-                      {/* Left: Avatar + Details */}
-                      <div className="flex items-center gap-3.5 min-w-0">
-                        {/* Student Photo */}
-                        <div className="relative shrink-0">
-                          {participant.avatar ? (
+                      {/* Index */}
+                      <td className="py-3 px-4 text-center font-mono text-white/40">
+                        {idx + 1}
+                      </td>
+
+                      {/* Chest No */}
+                      <td className="py-3 px-4">
+                        <span className="font-mono font-bold text-xs px-2.5 py-1 rounded-lg bg-cyan-500/10 text-cyan-300 border border-cyan-500/20">
+                          #{p.studentChest}
+                        </span>
+                      </td>
+
+                      {/* Student Details */}
+                      <td className="py-3 px-4">
+                        <div className="flex items-center gap-3">
+                          {p.avatar ? (
                             // eslint-disable-next-line @next/next/no-img-element
                             <img
-                              src={participant.avatar}
-                              alt={participant.studentName}
-                              className="h-14 w-14 rounded-2xl object-cover border-2 shadow-md"
-                              style={{ borderColor: participant.teamColor }}
+                              src={p.avatar}
+                              alt={p.studentName}
+                              className="h-8 w-8 rounded-full object-cover border border-white/20 shrink-0 shadow-sm"
                             />
                           ) : (
                             <div
-                              className="h-14 w-14 rounded-2xl bg-white/10 border-2 flex items-center justify-center text-white/80 font-bold text-lg"
-                              style={{ borderColor: participant.teamColor }}
-                            >
-                              {participant.studentName.charAt(0).toUpperCase()}
-                            </div>
-                          )}
-
-                          {/* Present Checkmark Mini Badge */}
-                          {participant.isPresent && (
-                            <div className="absolute -top-1.5 -right-1.5 h-5 w-5 rounded-full bg-emerald-500 text-slate-950 flex items-center justify-center shadow-md">
-                              <Check className="h-3.5 w-3.5 stroke-[3]" />
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Name & Metadata */}
-                        <div className="min-w-0">
-                          <h3 className="text-base font-bold text-white truncate">
-                            {participant.studentName}
-                          </h3>
-
-                          <div className="flex flex-wrap items-center gap-2 mt-1">
-                            {/* Chest Badge */}
-                            <span className="font-mono font-bold text-xs text-cyan-300 bg-cyan-500/10 px-2 py-0.5 rounded-md border border-cyan-500/20">
-                              Chest #{participant.studentChest}
-                            </span>
-
-                            {/* Team Badge */}
-                            <span
-                              className="text-xs px-2 py-0.5 rounded-md font-medium border text-white/90 truncate max-w-[140px]"
+                              className="h-8 w-8 rounded-full border flex items-center justify-center font-bold text-xs text-white shrink-0 shadow-sm"
                               style={{
-                                backgroundColor: `${participant.teamColor}22`,
-                                borderColor: `${participant.teamColor}55`,
+                                backgroundColor: `${p.teamColor}33`,
+                                borderColor: `${p.teamColor}66`,
                               }}
                             >
-                              {participant.teamName}
-                            </span>
-                          </div>
-
-                          {/* Check-in Timestamp */}
-                          {participant.isPresent && participant.markedAt && (
-                            <p className="text-[11px] text-emerald-400/80 mt-1 flex items-center gap-1">
-                              <Clock className="h-3 w-3" />
-                              Checked in at {new Date(participant.markedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                              {participant.markedBy && ` · ${participant.markedBy}`}
-                            </p>
+                              {p.studentName.charAt(0).toUpperCase()}
+                            </div>
                           )}
+                          <span className="font-semibold text-white truncate max-w-xs">
+                            {p.studentName}
+                          </span>
                         </div>
-                      </div>
+                      </td>
 
-                      {/* Right: Status Pill & Toggle Action Button */}
-                      <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-white/5">
-                        {/* Status Indicator */}
-                        {participant.isPresent ? (
-                          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 font-bold text-xs">
-                            <CheckCircle2 className="h-4 w-4" />
-                            <span>Present</span>
-                          </div>
+                      {/* Team */}
+                      <td className="py-3 px-4">
+                        <span
+                          className="inline-block px-2.5 py-0.5 rounded-md text-[11px] font-medium border text-white/90 truncate max-w-[150px]"
+                          style={{
+                            backgroundColor: `${p.teamColor}22`,
+                            borderColor: `${p.teamColor}55`,
+                          }}
+                        >
+                          {p.teamName}
+                        </span>
+                      </td>
+
+                      {/* Check-in Time */}
+                      <td className="py-3 px-4 text-white/60 font-mono text-[11px]">
+                        {p.isPresent && p.markedAt ? (
+                          <span className="text-emerald-400/90 flex items-center gap-1">
+                            <Clock className="h-3 w-3" />
+                            {new Date(p.markedAt).toLocaleTimeString([], {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                          </span>
                         ) : (
-                          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 border border-white/10 text-white/50 font-medium text-xs">
-                            <Clock className="h-3.5 w-3.5 text-amber-400" />
-                            <span>Awaiting Scan</span>
-                          </div>
+                          "—"
                         )}
+                      </td>
 
-                        {/* Toggle Button */}
+                      {/* Status Badge */}
+                      <td className="py-3 px-4 text-center">
+                        {p.isPresent ? (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                            <Check className="h-3 w-3 stroke-[3]" />
+                            Present
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-white/5 text-white/40 border border-white/10">
+                            Pending
+                          </span>
+                        )}
+                      </td>
+
+                      {/* Single Action Toggle Button */}
+                      <td className="py-3 px-4 text-right">
                         <Button
                           type="button"
                           size="sm"
-                          variant="ghost"
-                          onClick={() => handleToggleAttendance(participant)}
-                          className={`rounded-xl text-xs font-semibold px-3 py-1.5 h-auto transition-all ${
-                            participant.isPresent
+                          variant={p.isPresent ? "ghost" : "default"}
+                          onClick={() => handleToggleAttendance(p)}
+                          className={`rounded-xl text-xs font-semibold px-3 py-1 h-auto transition-all ${
+                            p.isPresent
                               ? "text-red-400 hover:text-red-300 hover:bg-red-500/10 border border-red-500/20"
-                              : "bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold shadow-md shadow-emerald-500/20"
+                              : "bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold shadow-sm shadow-emerald-500/20"
                           }`}
                         >
-                          {participant.isPresent ? (
-                            <>
-                              <UserX className="h-3.5 w-3.5 mr-1" />
-                              Mark Absent
-                            </>
-                          ) : (
-                            <>
-                              <UserCheck className="h-3.5 w-3.5 mr-1" />
-                              Mark Present
-                            </>
-                          )}
+                          {p.isPresent ? "Mark Absent" : "Mark Present"}
                         </Button>
-                      </div>
-                    </div>
+                      </td>
+                    </tr>
                   );
                 })}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="text-center py-16">
+            <Users className="mx-auto h-10 w-10 text-white/20 mb-2" />
+            <h4 className="text-sm font-bold text-white">No Students Found</h4>
+            <p className="text-xs text-white/50 max-w-sm mx-auto mt-1">
+              {searchQuery
+                ? `No candidates matching "${searchQuery}".`
+                : activeTab !== "all"
+                ? `No ${activeTab} candidates for this program.`
+                : "No students registered for this program."}
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* QR Code Scanner Dedicated Modal */}
+      <Modal
+        open={isScannerOpen}
+        title="Scan Participant QR Code"
+        onClose={() => setIsScannerOpen(false)}
+        size="md"
+      >
+        <div className="space-y-4">
+          <p className="text-xs text-white/60">
+            Align candidate ID card QR code in front of camera to automatically verify and check in.
+          </p>
+
+          <EmbeddedQRScanner
+            onScan={handleQRScan}
+            isScanning={isScannerOpen}
+            isProcessing={isProcessing}
+            hideHeader
+          />
+
+          {/* Live scan feedback inside modal */}
+          {lastNotification && (
+            <div
+              className={`rounded-xl p-3 text-xs border flex items-center gap-2.5 transition-all ${
+                lastNotification.type === "success"
+                  ? "border-emerald-500/40 bg-emerald-500/20 text-emerald-200"
+                  : lastNotification.type === "already"
+                  ? "border-amber-500/40 bg-amber-500/20 text-amber-200"
+                  : "border-red-500/40 bg-red-500/20 text-red-200"
+              }`}
+            >
+              {lastNotification.type === "success" && (
+                <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />
+              )}
+              {lastNotification.type === "already" && (
+                <Clock className="h-4 w-4 text-amber-400 shrink-0" />
+              )}
+              {lastNotification.type !== "success" && lastNotification.type !== "already" && (
+                <AlertTriangle className="h-4 w-4 text-red-400 shrink-0" />
+              )}
+              <div className="min-w-0 flex-1">
+                <p className="font-bold">{lastNotification.title}</p>
+                <p className="opacity-80 text-[11px] truncate">{lastNotification.message}</p>
               </div>
-            ) : (
-              <div className="text-center py-16 rounded-3xl border border-white/10 bg-slate-900/40">
-                <Users className="mx-auto h-12 w-12 text-white/20 mb-3" />
-                <h4 className="text-base font-bold text-white">No Students Found</h4>
-                <p className="text-xs text-white/50 max-w-sm mx-auto mt-1">
-                  {searchQuery
-                    ? `No candidates matching "${searchQuery}".`
-                    : activeTab !== "all"
-                    ? `No ${activeTab} students for this program.`
-                    : "No students registered for this program yet."}
-                </p>
-              </div>
-            )}
+            </div>
+          )}
+
+          <div className="flex justify-end pt-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsScannerOpen(false)}
+              className="rounded-xl border-white/20 text-white text-xs px-4 hover:bg-white/10"
+            >
+              Done Scanning
+            </Button>
           </div>
         </div>
-      </div>
+      </Modal>
     </div>
   );
 }
