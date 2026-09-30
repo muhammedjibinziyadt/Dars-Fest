@@ -65,6 +65,13 @@ export function ScheduleView({ programs }: ScheduleViewProps) {
   // Filtered programs
   const filteredPrograms = useMemo(() => {
     return programs.filter((program) => {
+      // Only include programs with date/time updated or live
+      const hasDate = Boolean(program.scheduledDate && program.scheduledDate.trim() && program.scheduledDate.toUpperCase() !== "TBA");
+      const hasTime = Boolean(program.scheduledTime && program.scheduledTime.trim() && program.scheduledTime.toUpperCase() !== "TBA");
+      if (!hasDate && !hasTime && program.scheduleStatus !== "live") {
+        return false;
+      }
+
       // 1. Search by program name
       if (searchQuery.trim()) {
         const query = searchQuery.toLowerCase().trim();
@@ -217,15 +224,17 @@ export function ScheduleView({ programs }: ScheduleViewProps) {
         </div>
       </div>
 
-      {/* Program Grid (Matching Image 2 Card Style) */}
+      {/* Program Grid */}
       {filteredPrograms.length === 0 ? (
-        <div className="bg-white rounded-3xl border border-gray-200 p-12 text-center space-y-3">
-          <Calendar className="w-12 h-12 text-gray-300 mx-auto" />
-          <h3 className="text-lg font-semibold text-gray-800">
-            No matching programs found
+        <div className="bg-white rounded-xl sm:rounded-3xl border border-gray-200 p-8 sm:p-12 text-center space-y-3">
+          <Calendar className="w-10 h-10 sm:w-12 sm:h-12 text-gray-300 mx-auto" />
+          <h3 className="text-base sm:text-lg font-semibold text-gray-800">
+            {programs.length === 0 ? "No programs scheduled yet" : "No matching programs found"}
           </h3>
-          <p className="text-sm text-gray-500 max-w-md mx-auto">
-            Try adjusting your search query or switching date/status filters.
+          <p className="text-xs sm:text-sm text-gray-500 max-w-md mx-auto">
+            {programs.length === 0
+              ? "Program dates and timings will appear here once announced by organizers."
+              : "Try adjusting your search query or switching date/status filters."}
           </p>
           {(searchQuery || selectedDate !== "all" || statusFilter !== "all") && (
             <button
@@ -234,7 +243,7 @@ export function ScheduleView({ programs }: ScheduleViewProps) {
                 setSelectedDate("all");
                 setStatusFilter("all");
               }}
-              className="text-sm text-[#8B4513] font-medium hover:underline pt-2 inline-block"
+              className="text-xs sm:text-sm text-[#8B4513] font-medium hover:underline pt-2 inline-block"
             >
               Clear all filters
             </button>

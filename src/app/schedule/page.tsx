@@ -10,10 +10,17 @@ export const metadata: Metadata = {
 export const revalidate = 30;
 
 export default async function SchedulePage() {
-  const programs = await getPrograms();
+  const allPrograms = await getPrograms();
+
+  // Only show programs with scheduled date/time updated or live status
+  const scheduledPrograms = allPrograms.filter((p) => {
+    const hasDate = Boolean(p.scheduledDate && p.scheduledDate.trim() && p.scheduledDate.toUpperCase() !== "TBA");
+    const hasTime = Boolean(p.scheduledTime && p.scheduledTime.trim() && p.scheduledTime.toUpperCase() !== "TBA");
+    return hasDate || hasTime || p.scheduleStatus === "live";
+  });
 
   // Sort: live first, then upcoming (by date/time), then ended
-  const sortedPrograms = [...programs].sort((a, b) => {
+  const sortedPrograms = [...scheduledPrograms].sort((a, b) => {
     const statusWeight = (status?: string) => {
       if (status === "live") return 0;
       if (status === "ended") return 2;
