@@ -34,7 +34,7 @@ export default async function SchedulePage() {
   });
 
   return (
-    <main className="min-h-screen bg-[#fffcf5] py-8 sm:py-12 px-4 sm:px-6 md:px-8">
+    <main className="min-h-screen bg-[#fffcf5] py-5 sm:py-12 px-3 sm:px-6 md:px-8 pb-28 sm:pb-12">
       <div className="container mx-auto max-w-6xl">
         <ScheduleView programs={sortedPrograms} />
       </div>
