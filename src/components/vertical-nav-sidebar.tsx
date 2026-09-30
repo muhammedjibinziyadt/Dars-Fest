@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation";
 import Link from "next/link";
 import {
   Home,
+  Calendar,
   Trophy,
   BarChart3,
   Award,
@@ -13,6 +14,7 @@ import { cn } from "@/lib/utils";
 
 const navItems = [
   { href: "/", label: "Home", icon: Home },
+  { href: "/schedule", label: "Schedule", icon: Calendar },
   { href: "/results", label: "Results", icon: Trophy },
   { href: "/scoreboard", label: "Scoreboard", icon: BarChart3 },
   { href: "/top-scorers", label: "Top Scorers", icon: Award },

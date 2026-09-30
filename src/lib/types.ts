@@ -31,6 +31,9 @@ export interface Program {
   section: SectionType;
   stage: boolean;
   candidateLimit?: number;
+  scheduledDate?: string;
+  scheduledTime?: string;
+  scheduleStatus?: "upcoming" | "live" | "ended";
 }
 
 export interface Jury {

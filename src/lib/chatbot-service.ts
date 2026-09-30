@@ -6,7 +6,16 @@ import {
 } from "@/lib/models";
 import { connectDB } from "@/lib/db";
 
+let cachedFestData = "";
+let lastFestDataFetch = 0;
+const FEST_CACHE_TTL_MS = 120_000; // 2 minutes cache
+
 export async function getFestDataForAI() {
+  const now = Date.now();
+  if (cachedFestData && now - lastFestDataFetch < FEST_CACHE_TTL_MS) {
+    return cachedFestData;
+  }
+
   await connectDB();
 
   // Fetch data in parallel
@@ -65,5 +74,7 @@ export async function getFestDataForAI() {
     context += `- ${s.name} (Chest: ${s.chest_no}, Team: ${tName})\n`;
   });
 
+  cachedFestData = context;
+  lastFestDataFetch = Date.now();
   return context;
 }

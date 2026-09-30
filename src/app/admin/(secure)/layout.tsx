@@ -10,6 +10,7 @@ import { isAdminAuthenticated } from "@/lib/auth";
 const adminNav: SidebarItem[] = [
   { href: "/admin/dashboard", label: "Dashboard", icon: "dashboard" },
   { href: "/admin/programs", label: "Programs", icon: "programs" },
+  { href: "/admin/schedule", label: "Schedule", icon: "calendar" },
   { href: "/admin/chest-lots", label: "Chest Lots", icon: "shuffle" },
   { href: "/admin/students", label: "Students", icon: "students" },
   { href: "/admin/attendance", label: "Attendance", icon: "attendance" },

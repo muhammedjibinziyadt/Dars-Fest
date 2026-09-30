@@ -17,6 +17,7 @@ import {
   Users,
   Shuffle,
   QrCode,
+  Calendar,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -50,6 +51,7 @@ const ICONS = {
   pending: Hourglass,
   approved: BadgeCheck,
   shuffle: Shuffle,
+  calendar: Calendar,
 } satisfies Record<string, LucideIcon>;
 
 type IconName = keyof typeof ICONS;
