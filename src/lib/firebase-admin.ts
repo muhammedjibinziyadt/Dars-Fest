@@ -53,7 +53,11 @@ export function getFirebaseAdminApp(): App {
 export function getAdminDb(): Firestore {
   if (!globalForFirebase.firestoreInstance) {
     const adminApp = getFirebaseAdminApp();
-    globalForFirebase.firestoreInstance = getFirestore(adminApp);
+    const db = getFirestore(adminApp);
+    try {
+      db.settings({ preferRest: true });
+    } catch {}
+    globalForFirebase.firestoreInstance = db;
   }
   return globalForFirebase.firestoreInstance;
 }

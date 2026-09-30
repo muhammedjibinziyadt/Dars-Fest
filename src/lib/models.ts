@@ -123,6 +123,26 @@ export class FirestoreModel<T extends Record<string, any>> {
 
       if (cached && now - cached.timestamp < CACHE_TTL_MS) {
         allDocs = cached.data;
+      } else if (cached && cached.data.length > 0) {
+        // Stale-while-revalidate: return immediately in 0ms, refresh in background
+        allDocs = cached.data;
+        if (!inFlightRequests.has(this.collectionName)) {
+          const bgRefresh = (async () => {
+            const snapshot = await this.col.get();
+            const fresh: T[] = [];
+            snapshot.forEach((doc) => {
+              fresh.push(doc.data() as T);
+            });
+            cache[this.collectionName] = {
+              data: fresh,
+              timestamp: Date.now(),
+            };
+            return fresh;
+          })().finally(() => {
+            inFlightRequests.delete(this.collectionName);
+          });
+          inFlightRequests.set(this.collectionName, bgRefresh);
+        }
       } else {
         let pending = inFlightRequests.get(this.collectionName);
         if (!pending) {

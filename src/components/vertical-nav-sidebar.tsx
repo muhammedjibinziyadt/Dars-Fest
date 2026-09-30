@@ -8,7 +8,6 @@ import {
   BarChart3,
   Award,
   Search,
-  Bot
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -18,7 +17,6 @@ const navItems = [
   { href: "/scoreboard", label: "Scoreboard", icon: BarChart3 },
   { href: "/top-scorers", label: "Top Scorers", icon: Award },
   { href: "/participant", label: "Find Participant", icon: Search },
-  { href: "/chatbot", label: "AI Assistant", icon: Bot },
 ];
 
 export function VerticalNavSidebar() {

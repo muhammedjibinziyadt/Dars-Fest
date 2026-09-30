@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation";
 import { ReactNode } from "react";
 import { VerticalNavSidebar } from "./vertical-nav-sidebar";
 import { NotificationProvider } from "./notification-provider";
+import { FloatingAiAssistant } from "./floating-ai-assistant";
 
 interface PublicPageWrapperProps {
   children: ReactNode;
@@ -25,6 +26,7 @@ export function PublicPageWrapper({ children }: PublicPageWrapperProps) {
           <NotificationProvider />
         </div>
         {children}
+        <FloatingAiAssistant />
       </div>
     );
   }
