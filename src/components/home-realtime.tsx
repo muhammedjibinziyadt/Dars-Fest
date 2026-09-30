@@ -1,5 +1,6 @@
 "use client";
 
+import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
@@ -13,6 +14,46 @@ import { useRouter } from "next/navigation";
 import { LiveScorePulse } from "@/components/live-score-pulse";
 import { useScoreboardUpdates } from "@/hooks/use-realtime";
 import type { Team } from "@/lib/types";
+import { ChevronLeft, ChevronRight, X, ZoomIn } from "lucide-react";
+
+interface GalleryPhoto {
+  src: string;
+  title: string;
+  caption: string;
+}
+
+const galleryPhotos: GalleryPhoto[] = [
+  {
+    src: "/img/gallery/gallery-1.jpg",
+    title: "Stage Blessing & Address",
+    caption: "Honoring scholars and inspiring addresses at the grand cultural stage",
+  },
+  {
+    src: "/img/gallery/gallery-2.jpg",
+    title: "Official Publication Release",
+    caption: "Unveiling festival souvenirs and academic works on stage",
+  },
+  {
+    src: "/img/gallery/gallery-3.jpg",
+    title: "Cultural Symposium & Dialogue",
+    caption: "Thought-provoking panel discussions on art, ethics, and youth",
+  },
+  {
+    src: "/img/gallery/gallery-4.jpg",
+    title: "Youth Voice & Oratory",
+    caption: "Young talents delivering passionate speeches to the gathered audience",
+  },
+  {
+    src: "/img/gallery/gallery-5.jpg",
+    title: "Ceremonial Flag Hoisting",
+    caption: "Commencing the festival with community leadership and students",
+  },
+  {
+    src: "/img/gallery/gallery-6.jpg",
+    title: "Grand Inaugural Ribbon Cutting",
+    caption: "Dignitaries opening the doors to Maerika 2k26 fest pavilion",
+  },
+];
 
 interface HomeRealtimeProps {
   teams: Team[];
@@ -24,6 +65,39 @@ export function HomeRealtime({
   liveScores: initialLiveScores,
 }: HomeRealtimeProps) {
   const router = useRouter();
+  const [selectedPhoto, setSelectedPhoto] = useState<GalleryPhoto | null>(null);
+
+  const currentPhotoIndex = selectedPhoto
+    ? galleryPhotos.findIndex((p) => p.src === selectedPhoto.src)
+    : -1;
+
+  const handleNextPhoto = useCallback(() => {
+    if (!selectedPhoto) return;
+    const idx = galleryPhotos.findIndex((p) => p.src === selectedPhoto.src);
+    const nextIdx = (idx + 1) % galleryPhotos.length;
+    setSelectedPhoto(galleryPhotos[nextIdx]);
+  }, [selectedPhoto]);
+
+  const handlePrevPhoto = useCallback(() => {
+    if (!selectedPhoto) return;
+    const idx = galleryPhotos.findIndex((p) => p.src === selectedPhoto.src);
+    const prevIdx = (idx - 1 + galleryPhotos.length) % galleryPhotos.length;
+    setSelectedPhoto(galleryPhotos[prevIdx]);
+  }, [selectedPhoto]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setSelectedPhoto(null);
+      } else if (e.key === "ArrowRight") {
+        handleNextPhoto();
+      } else if (e.key === "ArrowLeft") {
+        handlePrevPhoto();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [handleNextPhoto, handlePrevPhoto]);
 
   useScoreboardUpdates(() => {
     router.refresh();
@@ -208,6 +282,61 @@ export function HomeRealtime({
         </div>
       </section>
 
+      {/* 6-Photo Festival Highlights Gallery Section */}
+      <section className="bg-[#fffcf5] py-6 sm:py-10 md:py-14">
+        <div className="container mx-auto max-w-7xl px-4 sm:px-5 md:px-8">
+          <div className="text-center max-w-3xl mx-auto mb-8 sm:mb-12 px-4">
+            <Badge className="bg-amber-100 text-amber-800 border-amber-200 mb-3 text-xs sm:text-sm font-semibold">
+              Festival Highlights · ഓർമ്മച്ചിത്രങ്ങൾ
+            </Badge>
+            <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-serif text-[#8B4513] mb-3">
+              Glimpses of Maerika
+            </h2>
+            <p className="text-gray-700 text-sm sm:text-base md:text-lg leading-relaxed max-w-2xl mx-auto">
+              Capturing the vibrant moments, scholarly blessings, and artistic spirit of our cultural fest
+            </p>
+          </div>
+
+          {/* 6-Photo Grid (2 rows x 3 columns) */}
+          <div className="max-w-5xl mx-auto">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3.5 sm:gap-4 md:gap-5">
+              {galleryPhotos.map((photo, idx) => (
+                <div
+                  key={idx}
+                  onClick={() => setSelectedPhoto(photo)}
+                  className="group relative aspect-[16/10] rounded-xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1 cursor-pointer bg-amber-50/30"
+                >
+                  <Image
+                    src={photo.src}
+                    alt={photo.title}
+                    fill
+                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                    className="object-cover transition-transform duration-500 group-hover:scale-105"
+                  />
+
+                  {/* Quick zoom badge */}
+                  <div className="absolute top-2.5 right-2.5 z-10 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-black/60 backdrop-blur-sm text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <ZoomIn className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-300" />
+                  </div>
+
+                  {/* Elegant overlay on hover */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-3.5 sm:p-4 text-white">
+                    <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-amber-300">
+                      Maerika Moment #{idx + 1}
+                    </span>
+                    <h4 className="font-bold text-sm sm:text-base tracking-tight mt-0.5">
+                      {photo.title}
+                    </h4>
+                    <p className="text-xs text-white/80 line-clamp-2 mt-1">
+                      {photo.caption}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* About Maerika Logo Section */}
       <section className="bg-[#fffcf5] py-12 sm:py-16 md:py-20">
@@ -338,6 +467,86 @@ export function HomeRealtime({
           </div>
         </div>
       </section>
+
+      {/* Photo Lightbox Preview Modal */}
+      {selectedPhoto && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md p-3 sm:p-6"
+          onClick={() => setSelectedPhoto(null)}
+        >
+          <div
+            className="relative max-w-5xl w-full bg-slate-950 rounded-2xl sm:rounded-3xl overflow-hidden border border-amber-500/20 shadow-2xl flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Top controls: Counter and Close */}
+            <div className="absolute top-3 right-3 sm:top-4 sm:right-4 z-20 flex items-center gap-2">
+              {currentPhotoIndex !== -1 && (
+                <span className="px-3 py-1 text-xs font-semibold rounded-full bg-black/60 text-amber-300 border border-amber-400/30 backdrop-blur-sm">
+                  {currentPhotoIndex + 1} / {galleryPhotos.length}
+                </span>
+              )}
+              <button
+                onClick={() => setSelectedPhoto(null)}
+                className="h-9 w-9 sm:h-10 sm:w-10 rounded-full bg-black/60 text-white flex items-center justify-center hover:bg-black/90 transition-colors border border-white/20"
+                aria-label="Close"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Photo with Prev / Next Navigation */}
+            <div className="relative aspect-[16/10] sm:aspect-[16/9] w-full bg-black flex items-center justify-center select-none">
+              <Image
+                src={selectedPhoto.src}
+                alt={selectedPhoto.title}
+                fill
+                className="object-contain"
+                sizes="(max-width: 1280px) 100vw, 1200px"
+                priority
+              />
+
+              {/* Prev Button */}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handlePrevPhoto();
+                }}
+                className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 z-20 h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-black/60 hover:bg-black/85 text-white flex items-center justify-center transition-all border border-white/20 hover:scale-105"
+                aria-label="Previous photo"
+              >
+                <ChevronLeft className="w-6 h-6" />
+              </button>
+
+              {/* Next Button */}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleNextPhoto();
+                }}
+                className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 z-20 h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-black/60 hover:bg-black/85 text-white flex items-center justify-center transition-all border border-white/20 hover:scale-105"
+                aria-label="Next photo"
+              >
+                <ChevronRight className="w-6 h-6" />
+              </button>
+            </div>
+
+            {/* Bottom Info Bar */}
+            <div className="p-4 sm:p-6 bg-slate-950 text-white flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-t border-white/10">
+              <div>
+                <h3 className="text-base sm:text-xl font-bold text-amber-300">
+                  {selectedPhoto.title}
+                </h3>
+                <p className="text-xs sm:text-sm text-gray-300 mt-1">
+                  {selectedPhoto.caption}
+                </p>
+              </div>
+              <div className="text-xs text-gray-400 hidden sm:block shrink-0">
+                Use <kbd className="px-1.5 py-0.5 rounded bg-white/10 text-white text-[10px] font-mono">←</kbd> <kbd className="px-1.5 py-0.5 rounded bg-white/10 text-white text-[10px] font-mono">→</kbd> keys to navigate
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
