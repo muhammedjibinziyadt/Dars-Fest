@@ -53,70 +53,13 @@ function ProgramRegistrationCard({
   const [selectedStudentId, setSelectedStudentId] = useState<string>("");
 
   // Client-side participation limit check
-  const checkStudentLimit = (studentId: string): {
+  const checkStudentLimit = (_studentId: string): {
     allowed: boolean;
     reason?: string;
     currentCount?: number;
     maxCount?: number;
   } => {
-    // General events have no limit
-    if (program.section === "general") {
-      return { allowed: true };
-    }
-
-    // Get all registrations for this student
-    const studentRegistrations = registrations.filter((reg) => reg.studentId === studentId);
-    const programMap = new Map(allPrograms.map((p) => [p.id, p]));
-
-    if (program.section === "single") {
-      // Individual events: check based on stage (on-stage vs off-stage)
-      const sameStageRegistrations = studentRegistrations.filter((reg) => {
-        const regProgram = programMap.get(reg.programId);
-        return (
-          regProgram?.section === "single" &&
-          regProgram?.stage === program.stage &&
-          reg.programId !== program.id // Exclude current program if already registered
-        );
-      });
-
-      const maxCount = 3;
-      const currentCount = sameStageRegistrations.length;
-
-      if (currentCount >= maxCount) {
-        const stageType = program.stage ? "on-stage" : "off-stage";
-        return {
-          allowed: false,
-          reason: `Maximum limit of ${maxCount} individual ${stageType} events reached.`,
-          currentCount,
-          maxCount,
-        };
-      }
-
-      return { allowed: true, currentCount, maxCount };
-    }
-
-    if (program.section === "group") {
-      // Group events: maximum 3
-      const groupRegistrations = studentRegistrations.filter((reg) => {
-        const regProgram = programMap.get(reg.programId);
-        return regProgram?.section === "group" && reg.programId !== program.id;
-      });
-
-      const maxCount = 3;
-      const currentCount = groupRegistrations.length;
-
-      if (currentCount >= maxCount) {
-        return {
-          allowed: false,
-          reason: `Maximum limit of ${maxCount} group events reached.`,
-          currentCount,
-          maxCount,
-        };
-      }
-
-      return { allowed: true, currentCount, maxCount };
-    }
-
+    // Students can participate in unlimited individual and group programs
     return { allowed: true };
   };
 
@@ -375,59 +318,10 @@ function ProgramRegistrationCard({
                 }}
                 defaultValue=""
                 placeholder="Select a student"
-                options={availableStudents.map((student) => {
-                  // Check participation limit for single programs
-                  const limitCheck = (() => {
-                    if (program.section === "general") return { allowed: true };
-                    const studentRegistrations = registrations.filter((reg) => reg.studentId === student.id);
-                    const programMap = new Map(allPrograms.map((p) => [p.id, p]));
-                    
-                    if (program.section === "single") {
-                      const sameStageRegistrations = studentRegistrations.filter((reg) => {
-                        const regProgram = programMap.get(reg.programId);
-                        return (
-                          regProgram?.section === "single" &&
-                          regProgram?.stage === program.stage &&
-                          reg.programId !== program.id
-                        );
-                      });
-                      const maxCount = 3;
-                      return {
-                        allowed: sameStageRegistrations.length < maxCount,
-                        currentCount: sameStageRegistrations.length,
-                        maxCount,
-                      };
-                    }
-                    
-                    if (program.section === "group") {
-                      const groupRegistrations = studentRegistrations.filter((reg) => {
-                        const regProgram = programMap.get(reg.programId);
-                        return regProgram?.section === "group" && reg.programId !== program.id;
-                      });
-                      const maxCount = 3;
-                      return {
-                        allowed: groupRegistrations.length < maxCount,
-                        currentCount: groupRegistrations.length,
-                        maxCount,
-                      };
-                    }
-                    
-                    return { allowed: true };
-                  })();
-                  
-                  const stageType = program.section === "single" ? (program.stage ? "on-stage" : "off-stage") : program.section;
-                  const limitText = limitCheck.allowed && limitCheck.currentCount !== undefined
-                    ? ` (${limitCheck.currentCount}/3 ${stageType})`
-                    : !limitCheck.allowed
-                      ? ` - LIMIT REACHED`
-                      : "";
-                  
-                  return {
-                    value: student.id,
-                    label: `${student.name} · ${student.chestNumber} · ${student.teamName}${limitText}`,
-                    meta: !limitCheck.allowed ? "Limit reached" : undefined,
-                  };
-                })}
+                options={availableStudents.map((student) => ({
+                  value: student.id,
+                  label: `${student.name} · ${student.chestNumber} · ${student.teamName}`,
+                }))}
               />
               <Button type="submit" disabled={availableStudents.length === 0}>
                 Register

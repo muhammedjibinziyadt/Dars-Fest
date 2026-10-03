@@ -283,78 +283,15 @@ export async function isRegistrationOpen(now: Date = new Date()): Promise<boolea
 
 /**
  * Check participation limits with full program context
- * Limits:
- * - Maximum 3 individual on-stage events (section: "single", stage: true)
- * - Maximum 3 individual off-stage events (section: "single", stage: false)
- * - Maximum 3 group events (section: "group")
- * - No limit on general events (section: "general")
+ * Students can participate in unlimited individual and group programs.
  */
 export function validateParticipationLimit(
-  studentId: string,
-  program: Program,
-  allPrograms: Program[],
-  registrations: ProgramRegistration[],
+  _studentId: string,
+  _program: Program,
+  _allPrograms: Program[],
+  _registrations: ProgramRegistration[],
 ): { allowed: boolean; reason?: string; currentCount?: number; maxCount?: number } {
-  // General events have no limit
-  if (program.section === "general") {
-    return { allowed: true };
-  }
-
-  // Get all registrations for this student
-  const studentRegistrations = registrations.filter((reg) => reg.studentId === studentId);
-
-  // Create a map of programId -> Program for quick lookup
-  const programMap = new Map(allPrograms.map((p) => [p.id, p]));
-
-  if (program.section === "single") {
-    // Individual events: check based on stage (on-stage vs off-stage)
-    const sameStageRegistrations = studentRegistrations.filter((reg) => {
-      const regProgram = programMap.get(reg.programId);
-      return (
-        regProgram?.section === "single" &&
-        regProgram?.stage === program.stage &&
-        reg.programId !== program.id // Exclude current program if already registered
-      );
-    });
-
-    const maxCount = 3;
-    const currentCount = sameStageRegistrations.length;
-
-    if (currentCount >= maxCount) {
-      const stageType = program.stage ? "on-stage" : "off-stage";
-      return {
-        allowed: false,
-        reason: `Maximum limit of ${maxCount} individual ${stageType} events reached.`,
-        currentCount,
-        maxCount,
-      };
-    }
-
-    return { allowed: true, currentCount, maxCount };
-  }
-
-  if (program.section === "group") {
-    // Group events: maximum 3
-    const groupRegistrations = studentRegistrations.filter((reg) => {
-      const regProgram = programMap.get(reg.programId);
-      return regProgram?.section === "group" && reg.programId !== program.id;
-    });
-
-    const maxCount = 3;
-    const currentCount = groupRegistrations.length;
-
-    if (currentCount >= maxCount) {
-      return {
-        allowed: false,
-        reason: `Maximum limit of ${maxCount} group events reached.`,
-        currentCount,
-        maxCount,
-      };
-    }
-
-    return { allowed: true, currentCount, maxCount };
-  }
-
+  // Students can participate in unlimited individual and group programs
   return { allowed: true };
 }
 
