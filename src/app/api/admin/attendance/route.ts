@@ -27,6 +27,19 @@ function extractChestNumber(raw: string): string {
   return cleaned.trim().toUpperCase();
 }
 
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Requested-With",
+};
+
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 200,
+    headers: corsHeaders,
+  });
+}
+
 /**
  * GET /api/admin/attendance?programId=xxx
  */
