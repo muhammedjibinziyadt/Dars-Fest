@@ -17,6 +17,7 @@ import {
   Loader2
 } from "lucide-react";
 import { StudentAvatarPicker } from "@/components/student-avatar-picker";
+import { compareChestNumbers } from "@/lib/utils";
 import type { PortalStudent } from "@/lib/types";
 
 interface Props {
@@ -35,19 +36,21 @@ export function TeamStudentList({ students, updateAction, deleteAction, isRegist
   const [isSaving, setIsSaving] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Filter students based on search query
+  // Filter students based on search query and sort by chest number
   const filteredStudents = useMemo(() => {
-    if (!searchQuery.trim()) {
-      return students;
+    let list = students;
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase().trim();
+      list = students.filter((student) => {
+        const nameMatch = student.name.toLowerCase().includes(query);
+        const chestMatch = student.chestNumber.toLowerCase().includes(query);
+        const teamMatch = student.teamName.toLowerCase().includes(query);
+        return nameMatch || chestMatch || teamMatch;
+      });
     }
-    
-    const query = searchQuery.toLowerCase().trim();
-    return students.filter((student) => {
-      const nameMatch = student.name.toLowerCase().includes(query);
-      const chestMatch = student.chestNumber.toLowerCase().includes(query);
-      const teamMatch = student.teamName.toLowerCase().includes(query);
-      return nameMatch || chestMatch || teamMatch;
-    });
+    return [...list].sort(
+      (a, b) => compareChestNumbers(a.chestNumber, b.chestNumber) || a.name.localeCompare(b.name),
+    );
   }, [students, searchQuery]);
 
   const handleEdit = (student: PortalStudent) => {

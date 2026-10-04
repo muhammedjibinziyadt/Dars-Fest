@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { compareChestNumbers } from "@/lib/utils";
 import type { Program, ProgramRegistration, Student } from "@/lib/types";
 
 interface AdminChestLotsViewProps {
@@ -84,7 +85,7 @@ export function AdminChestLotsView({
 
     const programRegs = registrations.filter((r) => r.programId === selectedProgramId);
 
-    return programRegs.map((reg, idx) => {
+    const mapped = programRegs.map((reg, idx) => {
       const student = studentMap.get(reg.studentId);
       const chestNo =
         reg.studentChest?.trim() ||
@@ -103,6 +104,9 @@ export function AdminChestLotsView({
         originalIndex: idx + 1,
       };
     });
+
+    mapped.sort((a, b) => compareChestNumbers(a.studentChest, b.studentChest));
+    return mapped.map((p, idx) => ({ ...p, originalIndex: idx + 1 }));
   }, [selectedProgramId, registrations, studentMap]);
 
   // Load existing shuffled lot for current program from localStorage if available

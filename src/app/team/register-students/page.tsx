@@ -22,8 +22,8 @@ function redirectWithMessage(message: string, type: "error" | "success" = "error
 function generateNextChestNumber(teamName: string, existingStudents: Array<{ chestNumber: string }>): string {
   const prefix = teamName.slice(0, 2).toUpperCase();
   const teamStudents = existingStudents.filter((student) => {
-    const chest = student.chestNumber.toUpperCase();
-    return chest.startsWith(prefix) && /^\d{3}$/.test(chest.slice(2));
+    const raw = (student.chestNumber || "").toUpperCase().trim().replace(/[\s_-]/g, "");
+    return raw.startsWith(prefix) && /^\d+$/.test(raw.slice(prefix.length));
   });
 
   if (teamStudents.length === 0) {
@@ -32,7 +32,8 @@ function generateNextChestNumber(teamName: string, existingStudents: Array<{ che
 
   const numbers = teamStudents
     .map((student) => {
-      const numStr = student.chestNumber.toUpperCase().slice(2);
+      const raw = (student.chestNumber || "").toUpperCase().trim().replace(/[\s_-]/g, "");
+      const numStr = raw.slice(prefix.length);
       const num = parseInt(numStr, 10);
       return isNaN(num) ? 0 : num;
     })

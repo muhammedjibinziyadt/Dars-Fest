@@ -21,6 +21,7 @@ import {
   deleteFirebaseUser,
   getTeamFirebaseEmail,
 } from "./firebase-auth";
+import { compareChestNumbers } from "./utils";
 
 function sanitizeColor(color?: string) {
   if (!color) return "#0ea5e9";
@@ -100,7 +101,7 @@ export async function getPortalStudents(): Promise<PortalStudent[]> {
     TeamModel.find().lean(),
   ]);
   const teamMap = new Map(teams.map((team) => [team.id, team.name]));
-  return students.map((student) => ({
+  const mapped = students.map((student) => ({
     id: student.id,
     name: student.name,
     chestNumber: student.chest_no,
@@ -111,6 +112,9 @@ export async function getPortalStudents(): Promise<PortalStudent[]> {
     groupScore: student.group_points ?? 0,
     avatar: student.avatar,
   }));
+  return mapped.sort(
+    (a, b) => compareChestNumbers(a.chestNumber, b.chestNumber) || a.name.localeCompare(b.name),
+  );
 }
 
 export async function upsertPortalStudent(input: {

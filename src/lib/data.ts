@@ -26,6 +26,7 @@ import {
   deleteFirebaseUser,
   getJuryFirebaseEmail,
 } from "./firebase-auth";
+import { compareChestNumbers } from "./utils";
 
 export function normalize<T>(docs: T[]): T[] {
   if (!docs || !Array.isArray(docs)) return [];
@@ -47,7 +48,10 @@ export async function getLiveScores(): Promise<LiveScore[]> {
 export async function getStudents(): Promise<Student[]> {
   await connectDB();
   const students = await StudentModel.find().lean<Student[]>();
-  return normalize(students);
+  const normalized = normalize(students);
+  return normalized.sort(
+    (a, b) => compareChestNumbers(a.chest_no, b.chest_no) || a.name.localeCompare(b.name),
+  );
 }
 
 export async function getPrograms(): Promise<Program[]> {

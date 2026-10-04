@@ -20,8 +20,8 @@ import { StudentAvatarPicker } from "@/components/student-avatar-picker";
 function generateNextChestNumber(teamName: string, existingStudents: Array<{ chest_no: string }>): string {
   const prefix = teamName.slice(0, 2).toUpperCase();
   const teamStudents = existingStudents.filter((student) => {
-    const chest = student.chest_no.toUpperCase();
-    return chest.startsWith(prefix) && /^\d{3}$/.test(chest.slice(2));
+    const raw = (student.chest_no || "").toUpperCase().trim().replace(/[\s_-]/g, "");
+    return raw.startsWith(prefix) && /^\d+$/.test(raw.slice(prefix.length));
   });
 
   if (teamStudents.length === 0) {
@@ -30,7 +30,8 @@ function generateNextChestNumber(teamName: string, existingStudents: Array<{ che
 
   const numbers = teamStudents
     .map((student) => {
-      const numStr = student.chest_no.toUpperCase().slice(2);
+      const raw = (student.chest_no || "").toUpperCase().trim().replace(/[\s_-]/g, "");
+      const numStr = raw.slice(prefix.length);
       const num = parseInt(numStr, 10);
       return isNaN(num) ? 0 : num;
     })

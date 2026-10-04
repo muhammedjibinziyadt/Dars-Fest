@@ -9,6 +9,7 @@ import { Modal } from "@/components/ui/modal";
 import { SearchSelect } from "@/components/ui/search-select";
 import { useDebounce } from "@/hooks/use-debounce";
 import { StudentAvatarPicker } from "@/components/student-avatar-picker";
+import { compareChestNumbers } from "@/lib/utils";
 import type { Student, Team, Program, ProgramRegistration } from "@/lib/types";
 
 interface StudentManagerProps {
@@ -21,7 +22,7 @@ interface StudentManagerProps {
   bulkDeleteAction: (formData: FormData) => Promise<void>;
 }
 
-type SortOption = "latest" | "az" | "chest";
+type SortOption = "chest" | "az" | "latest";
 
 const pageSizeOptions = [
   { label: "8 / page", value: "8" },
@@ -72,7 +73,7 @@ export const StudentManager = React.memo(function StudentManager({
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
   const [teamFilter, setTeamFilter] = useState("");
   const [programFilter, setProgramFilter] = useState("");
-  const [sort, setSort] = useState<SortOption>("latest");
+  const [sort, setSort] = useState<SortOption>("chest");
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [editingId, setEditingId] = useState<string | null>(null);
   const [viewStudentId, setViewStudentId] = useState<string | null>(null);
@@ -102,10 +103,11 @@ export const StudentManager = React.memo(function StudentManager({
     const list = [...filteredStudents];
     if (sort === "az") {
       list.sort((a, b) => a.name.localeCompare(b.name));
-    } else if (sort === "chest") {
-      list.sort((a, b) => a.chest_no.localeCompare(b.chest_no));
-    } else {
+    } else if (sort === "latest") {
       list.sort((a, b) => b.id.localeCompare(a.id));
+    } else {
+      // Default: sort by Chest No. in natural numeric order (1, 2, 3, 4, 5, 6, 7, 8...)
+      list.sort((a, b) => compareChestNumbers(a.chest_no, b.chest_no) || a.name.localeCompare(b.name));
     }
     return list;
   }, [filteredStudents, sort]);
@@ -365,9 +367,9 @@ export const StudentManager = React.memo(function StudentManager({
         <span className="text-xs uppercase tracking-widest text-white/50">Quick sort</span>
         <div className="flex flex-wrap gap-2">
           {[
-            { label: "Latest", value: "latest" },
-            { label: "A-Z Name", value: "az" },
             { label: "Chest No.", value: "chest" },
+            { label: "A-Z Name", value: "az" },
+            { label: "Latest", value: "latest" },
           ].map((option) => (
             <button
               key={option.value}
