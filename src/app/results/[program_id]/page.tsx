@@ -19,6 +19,8 @@ interface ProgramDetailPageProps {
   params: Promise<{ program_id: string }>;
 }
 
+export const revalidate = 30;
+
 export async function generateMetadata({ params }: ProgramDetailPageProps): Promise<Metadata> {
   const { program_id } = await params;
   const programs = await getPrograms();

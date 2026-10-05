@@ -3,7 +3,7 @@
 import { useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { getClientDb } from "@/lib/firebase-client";
-import { collection, onSnapshot, query } from "firebase/firestore";
+import { doc, onSnapshot } from "firebase/firestore";
 import { CHANNELS, EVENTS } from "@/lib/pusher-client";
 
 type EventCallback = (data: any) => void;
@@ -12,16 +12,6 @@ type EventCallback = (data: any) => void;
 let isRefreshing = false;
 let refreshTimeout: NodeJS.Timeout | null = null;
 let pendingRefresh = false;
-
-// Map logical channels to Firestore collections
-const CHANNEL_COLLECTION_MAP: Record<string, string> = {
-  results: "results_approved",
-  scoreboard: "live_scores",
-  assignments: "assigned_programs",
-  registrations: "program_registrations",
-  students: "students",
-  notifications: "notifications",
-};
 
 export function useRealtimeSubscription(
   channelName: string,
@@ -38,13 +28,14 @@ export function useRealtimeSubscription(
 
   useEffect(() => {
     const db = getClientDb();
-    const collectionName = CHANNEL_COLLECTION_MAP[channelName] || channelName;
-    const colRef = collection(db, collectionName);
+    // Listen to a single lightweight document instead of entire collection!
+    // This reduces Firestore reads from N documents (e.g. 500 students) to EXACTLY 1 document!
+    const docRef = doc(db, "system_meta", channelName);
 
     let isFirstSnapshot = true;
 
     const unsubscribe = onSnapshot(
-      colRef,
+      docRef,
       (snapshot) => {
         // Skip first snapshot on mount to avoid unnecessary initial reload
         if (isFirstSnapshot) {
@@ -52,10 +43,10 @@ export function useRealtimeSubscription(
           return;
         }
 
-        const changes = snapshot.docChanges();
-        if (changes.length === 0) return;
+        if (!snapshot.exists()) return;
+        const data = snapshot.data();
 
-        callbackRef.current(changes.map((c) => ({ type: c.type, doc: c.doc.data() })));
+        callbackRef.current(data);
 
         if (!isRefreshing) {
           isRefreshing = true;
@@ -82,9 +73,8 @@ export function useRealtimeSubscription(
       (error) => {
         // Silently ignore transient WebChannel connection drops which auto-retry
         if (process.env.NODE_ENV === "development") {
-          // only log non-transient errors
           if (!error.message?.includes("transport errored")) {
-            console.warn(`[Firestore Realtime] ${collectionName}:`, error.message);
+            console.warn(`[Firestore Realtime] ${channelName}:`, error.message);
           }
         }
       }

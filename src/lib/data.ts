@@ -462,6 +462,10 @@ export async function updateLiveScore(teamId: string, delta: number) {
     { upsert: true },
   );
   await updateTeamTotals(teamId, delta);
+  try {
+    const { emitScoreboardUpdated } = await import("./pusher");
+    await emitScoreboardUpdated();
+  } catch {}
 }
 
 export async function updateStudentScore(
@@ -498,4 +502,8 @@ export async function resetLiveScores() {
       { $set: { total_points: 0, individual_points: 0, group_points: 0 } },
     ),
   ]);
+  try {
+    const { emitScoreboardUpdated } = await import("./pusher");
+    await emitScoreboardUpdated();
+  } catch {}
 }

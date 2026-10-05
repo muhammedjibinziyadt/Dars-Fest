@@ -73,8 +73,6 @@ export const viewport: Viewport = {
 import { Suspense } from "react";
 import { NavigationProgress } from "@/components/navigation-progress";
 
-export const dynamic = "force-dynamic";
-
 export default function RootLayout({
   children,
 }: Readonly<{

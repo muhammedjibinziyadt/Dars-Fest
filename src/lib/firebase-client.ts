@@ -1,5 +1,11 @@
 import { initializeApp, getApps, getApp, type FirebaseApp } from "firebase/app";
-import { getFirestore, type Firestore } from "firebase/firestore";
+import {
+  initializeFirestore,
+  getFirestore,
+  persistentLocalCache,
+  persistentMultipleTabManager,
+  type Firestore,
+} from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -23,7 +29,19 @@ export function getClientFirebaseApp(): FirebaseApp {
 export function getClientDb(): Firestore {
   if (!clientDb) {
     const app = getClientFirebaseApp();
-    clientDb = getFirestore(app);
+    if (typeof window !== "undefined") {
+      try {
+        clientDb = initializeFirestore(app, {
+          localCache: persistentLocalCache({
+            tabManager: persistentMultipleTabManager(),
+          }),
+        });
+      } catch {
+        clientDb = getFirestore(app);
+      }
+    } else {
+      clientDb = getFirestore(app);
+    }
   }
   return clientDb;
 }

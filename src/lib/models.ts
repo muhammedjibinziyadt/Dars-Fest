@@ -1,4 +1,5 @@
 import { getAdminDb } from "./firebase-admin";
+import { FieldValue } from "firebase-admin/firestore";
 import type {
   AssignedProgram,
   AttendanceRecord,
@@ -56,9 +57,54 @@ if (!globalForCache.__firestoreCache) {
 }
 
 const cache = globalForCache.__firestoreCache;
-const CACHE_TTL_MS = 60_000; // 60 seconds in-memory cache
+const CACHE_TTL_MS = 120_000; // 2 minutes in-memory cache
 
 const inFlightRequests = new Map<string, Promise<any[]>>();
+
+function updateItemInCache(collectionName: string, id: string, updater: (item: any) => any) {
+  const cached = cache[collectionName];
+  if (!cached || !cached.data) return;
+  const idx = cached.data.findIndex(
+    (item: any) =>
+      String(item.id) === String(id) ||
+      String(item._id) === String(id) ||
+      String(item.team_id) === String(id) ||
+      String(item.key) === String(id)
+  );
+  if (idx !== -1) {
+    cached.data[idx] = updater(cached.data[idx]);
+  }
+}
+
+function addItemToCache(collectionName: string, item: any) {
+  const cached = cache[collectionName];
+  if (!cached || !cached.data) return;
+  const id = item.id || item._id || item.team_id || item.key;
+  const idx = cached.data.findIndex(
+    (i: any) =>
+      String(i.id) === String(id) ||
+      String(i._id) === String(id) ||
+      String(i.team_id) === String(id) ||
+      String(i.key) === String(id)
+  );
+  if (idx !== -1) {
+    cached.data[idx] = { ...cached.data[idx], ...item };
+  } else {
+    cached.data.push(item);
+  }
+}
+
+function removeItemFromCache(collectionName: string, id: string) {
+  const cached = cache[collectionName];
+  if (!cached || !cached.data) return;
+  cached.data = cached.data.filter(
+    (item: any) =>
+      String(item.id) !== String(id) &&
+      String(item._id) !== String(id) &&
+      String(item.team_id) !== String(id) &&
+      String(item.key) !== String(id)
+  );
+}
 
 export function invalidateCache(collectionName?: string) {
   if (collectionName) {
@@ -99,11 +145,14 @@ export class FirestoreModel<T extends Record<string, any>> {
   }
 
   async countDocuments(filter?: Partial<T> | Record<string, any>): Promise<number> {
-    if (!filter || Object.keys(filter).length === 0) {
-      const cached = cache[this.collectionName];
-      if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
+    const cached = cache[this.collectionName];
+    if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
+      if (!filter || Object.keys(filter).length === 0) {
         return cached.data.length;
       }
+      return cached.data.filter((item) => this.matchesFilter(item, filter)).length;
+    }
+    if (!filter || Object.keys(filter).length === 0) {
       const snap = await this.col.count().get();
       return snap.data().count;
     }
@@ -221,6 +270,33 @@ export class FirestoreModel<T extends Record<string, any>> {
 
   findOne<R = T | null>(filter?: Partial<T> | Record<string, any>, _projection?: any): QuerySinglePromise<R> {
     const execute = async (): Promise<T | null> => {
+      // Direct ID lookup fast-path: avoids loading entire collection
+      if (filter && typeof filter === "object") {
+        const filterKeys = Object.keys(filter);
+        const directId = (filter as any).id || (filter as any)._id || (filter as any).key;
+        if (typeof directId === "string" && filterKeys.length === 1) {
+          const cached = cache[this.collectionName];
+          if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
+            const found = cached.data.find(
+              (item: any) =>
+                String(item.id) === String(directId) ||
+                String(item._id) === String(directId) ||
+                String(item.key) === String(directId)
+            );
+            if (found) return found as T;
+          }
+          try {
+            const docSnap = await this.col.doc(String(directId)).get();
+            if (docSnap.exists) {
+              const data = docSnap.data() as T;
+              addItemToCache(this.collectionName, data);
+              return data;
+            }
+            return null;
+          } catch {}
+        }
+      }
+
       const results = await this.find(filter);
       return results[0] ?? null;
     };
@@ -243,28 +319,39 @@ export class FirestoreModel<T extends Record<string, any>> {
     const cached = cache[this.collectionName];
     if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
       const found = cached.data.find(
-        (item: any) => String(item.id) === String(id) || String(item._id) === String(id)
+        (item: any) => String(item.id) === String(id) || String(item._id) === String(id) || String(item.key) === String(id)
       );
       if (found) return found as T;
     }
     const doc = await this.col.doc(String(id)).get();
     if (doc.exists) {
-      return doc.data() as T;
+      const data = doc.data() as T;
+      addItemToCache(this.collectionName, data);
+      return data;
     }
     return this.findOne({ id } as any);
   }
 
   async create(data: T): Promise<T> {
-    invalidateCache(this.collectionName);
     const docId = data.id || data.team_id || data.key || this.col.doc().id;
     const docData = { ...data, id: data.id || docId };
     await this.col.doc(String(docId)).set(docData);
+    addItemToCache(this.collectionName, docData);
+
+    if (
+      ["students", "teams", "programs", "results_approved", "program_registrations", "live_scores"].includes(
+        this.collectionName
+      )
+    ) {
+      const g = globalThis as any;
+      if (g.__topScorersCache) delete g.__topScorersCache;
+    }
+
     return docData as T;
   }
 
   async insertMany(items: T[]): Promise<T[]> {
     if (!items || items.length === 0) return [];
-    invalidateCache(this.collectionName);
     const db = getAdminDb();
     const batches: Promise<any>[] = [];
     let currentBatch = db.batch();
@@ -273,7 +360,9 @@ export class FirestoreModel<T extends Record<string, any>> {
     for (const item of items) {
       const docId = item.id || item.team_id || item.key || this.col.doc().id;
       const docRef = this.col.doc(String(docId));
-      currentBatch.set(docRef, { ...item, id: item.id || docId });
+      const fullItem = { ...item, id: item.id || docId };
+      currentBatch.set(docRef, fullItem);
+      addItemToCache(this.collectionName, fullItem);
       count++;
       if (count === 400) {
         batches.push(currentBatch.commit());
@@ -293,25 +382,81 @@ export class FirestoreModel<T extends Record<string, any>> {
     update: any,
     options?: { upsert?: boolean }
   ): Promise<{ modifiedCount: number }> {
-    invalidateCache(this.collectionName);
-    const existing = await this.findOne(filter);
     const updateData = update || {};
     const setFields = updateData.$set || (updateData.$inc || updateData.$setOnInsert ? {} : updateData);
 
-    if (existing) {
-      const docId = existing.id || existing.team_id || existing.key;
-      if (docId) {
-        const merged: any = { ...setFields };
+    // Fast-path: Check if docId is known directly from filter
+    let docId =
+      (typeof filter?.id === "string" ? filter.id : undefined) ||
+      (typeof filter?._id === "string" ? filter._id : undefined) ||
+      (typeof filter?.team_id === "string" ? filter.team_id : undefined) ||
+      (typeof filter?.key === "string" ? filter.key : undefined);
 
-        // Handle MongoDB $inc operator in Firestore
-        if (updateData.$inc) {
-          for (const [incKey, incVal] of Object.entries(updateData.$inc)) {
-            const current = (existing as any)?.[incKey] ?? 0;
-            merged[incKey] = Number(current) + Number(incVal);
-          }
+    // If docId is not in filter, try finding it in memory cache without reading Firestore
+    if (!docId) {
+      const cached = cache[this.collectionName];
+      if (cached?.data) {
+        const found = cached.data.find((item: any) => this.matchesFilter(item, filter));
+        if (found) {
+          docId = found.id || found._id || found.team_id || found.key;
         }
+      }
+    }
 
+    // Build the merged update object
+    const merged: Record<string, any> = { ...setFields };
+
+    // Use atomic FieldValue.increment to avoid reading documents before writing!
+    if (updateData.$inc) {
+      for (const [incKey, incVal] of Object.entries(updateData.$inc)) {
+        merged[incKey] = FieldValue.increment(Number(incVal));
+      }
+    }
+
+    if (docId) {
+      if (options?.upsert && updateData.$setOnInsert) {
+        const upsertDoc = { ...filter, ...setFields, ...updateData.$setOnInsert };
+        await this.col.doc(String(docId)).set(upsertDoc, { merge: true });
+        addItemToCache(this.collectionName, { ...upsertDoc, id: docId });
+      } else {
         await this.col.doc(String(docId)).set(merged, { merge: true });
+        // Update in-memory cache directly without invalidating
+        updateItemInCache(this.collectionName, String(docId), (item) => {
+          const updated = { ...item, ...setFields };
+          if (updateData.$inc) {
+            for (const [incKey, incVal] of Object.entries(updateData.$inc)) {
+              updated[incKey] = (Number(updated[incKey]) || 0) + Number(incVal);
+            }
+          }
+          return updated;
+        });
+      }
+
+      if (
+        ["students", "teams", "programs", "results_approved", "live_scores"].includes(this.collectionName)
+      ) {
+        const g = globalThis as any;
+        if (g.__topScorersCache) delete g.__topScorersCache;
+      }
+
+      return { modifiedCount: 1 };
+    }
+
+    // Fallback if docId still cannot be found: find existing document
+    const existing = await this.findOne(filter);
+    if (existing) {
+      const foundDocId = existing.id || existing.team_id || existing.key;
+      if (foundDocId) {
+        await this.col.doc(String(foundDocId)).set(merged, { merge: true });
+        updateItemInCache(this.collectionName, String(foundDocId), (item) => {
+          const updated = { ...item, ...setFields };
+          if (updateData.$inc) {
+            for (const [incKey, incVal] of Object.entries(updateData.$inc)) {
+              updated[incKey] = (Number(updated[incKey]) || 0) + Number(incVal);
+            }
+          }
+          return updated;
+        });
         return { modifiedCount: 1 };
       }
     } else if (options?.upsert) {
@@ -327,6 +472,7 @@ export class FirestoreModel<T extends Record<string, any>> {
       await this.create(newDoc as T);
       return { modifiedCount: 1 };
     }
+
     return { modifiedCount: 0 };
   }
 
@@ -335,7 +481,6 @@ export class FirestoreModel<T extends Record<string, any>> {
     update: any,
     options?: { upsert?: boolean; new?: boolean }
   ): Promise<T | null> {
-    invalidateCache(this.collectionName);
     await this.updateOne(filter, update, options);
     return this.findOne(filter);
   }
@@ -344,7 +489,6 @@ export class FirestoreModel<T extends Record<string, any>> {
     filter: Partial<T> | Record<string, any>,
     update: any
   ): Promise<{ modifiedCount: number }> {
-    invalidateCache(this.collectionName);
     const items = await this.find(filter);
     if (items.length === 0) return { modifiedCount: 0 };
     const db = getAdminDb();
@@ -356,6 +500,7 @@ export class FirestoreModel<T extends Record<string, any>> {
       const docId = item.id || item.team_id || item.key;
       if (docId) {
         batch.set(this.col.doc(String(docId)), setFields, { merge: true });
+        updateItemInCache(this.collectionName, String(docId), (old) => ({ ...old, ...setFields }));
       }
     }
     await batch.commit();
@@ -363,20 +508,34 @@ export class FirestoreModel<T extends Record<string, any>> {
   }
 
   async deleteOne(filter: Partial<T> | Record<string, any>): Promise<{ deletedCount: number }> {
-    invalidateCache(this.collectionName);
-    const existing = await this.findOne(filter);
-    if (existing) {
-      const docId = existing.id || existing.team_id || existing.key;
-      if (docId) {
-        await this.col.doc(String(docId)).delete();
-        return { deletedCount: 1 };
+    let docId =
+      (typeof filter?.id === "string" ? filter.id : undefined) ||
+      (typeof filter?._id === "string" ? filter._id : undefined) ||
+      (typeof filter?.team_id === "string" ? filter.team_id : undefined) ||
+      (typeof filter?.key === "string" ? filter.key : undefined);
+
+    if (!docId) {
+      const existing = await this.findOne(filter);
+      if (existing) {
+        docId = existing.id || existing.team_id || existing.key;
       }
+    }
+
+    if (docId) {
+      await this.col.doc(String(docId)).delete();
+      removeItemFromCache(this.collectionName, String(docId));
+      if (
+        ["students", "teams", "programs", "results_approved", "live_scores"].includes(this.collectionName)
+      ) {
+        const g = globalThis as any;
+        if (g.__topScorersCache) delete g.__topScorersCache;
+      }
+      return { deletedCount: 1 };
     }
     return { deletedCount: 0 };
   }
 
   async deleteMany(filter: Partial<T> | Record<string, any>): Promise<{ deletedCount: number }> {
-    invalidateCache(this.collectionName);
     const items = await this.find(filter);
     if (items.length === 0) return { deletedCount: 0 };
     const db = getAdminDb();
@@ -385,9 +544,11 @@ export class FirestoreModel<T extends Record<string, any>> {
       const docId = item.id || item.team_id || item.key;
       if (docId) {
         batch.delete(this.col.doc(String(docId)));
+        removeItemFromCache(this.collectionName, String(docId));
       }
     }
     await batch.commit();
+    invalidateCache(this.collectionName);
     return { deletedCount: items.length };
   }
 

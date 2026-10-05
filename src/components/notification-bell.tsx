@@ -5,7 +5,7 @@ import { Bell, X, ExternalLink, CheckCheck } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { getClientDb } from "@/lib/firebase-client";
-import { collection, onSnapshot, query, orderBy, limit } from "firebase/firestore";
+import { doc, onSnapshot } from "firebase/firestore";
 import type { Notification } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -24,39 +24,54 @@ export function NotificationBell({
   const router = useRouter();
   const bellRef = useRef<HTMLButtonElement>(null);
 
-  // Listen for new notifications via Firestore realtime
+  // Sync state if props change
+  useEffect(() => {
+    if (initialNotifications.length > 0) {
+      setNotifications(initialNotifications);
+      setUnreadCount(initialUnreadCount);
+    }
+  }, [initialNotifications, initialUnreadCount]);
+
+  // Listen for new notifications via lightweight metadata pulse (1 read instead of 20 reads)
   useEffect(() => {
     const db = getClientDb();
-    const q = query(collection(db, "notifications"), orderBy("createdAt", "desc"), limit(20));
+    const docRef = doc(db, "system_meta", "notifications");
 
     let isInitial = true;
     const unsubscribe = onSnapshot(
-      q,
-      (snapshot) => {
-        const notifs: Notification[] = [];
-        snapshot.forEach((doc) => {
-          notifs.push(doc.data() as Notification);
-        });
-        setNotifications(notifs);
-        setUnreadCount(notifs.filter((n) => !n.read).length);
+      docRef,
+      async (snapshot) => {
+        if (isInitial) {
+          isInitial = false;
+          return;
+        }
 
-        if (!isInitial) {
-          snapshot.docChanges().forEach((change) => {
-            if (change.type === "added") {
-              const newNotif = change.doc.data() as Notification;
-              if ("Notification" in window && Notification.permission === "granted") {
-                new Notification(newNotif.title, {
-                  body: newNotif.message,
-                  icon: "/icon-192x192.png",
-                  badge: "/icon-96x96.png",
-                });
-              }
-            }
+        if (!snapshot.exists()) return;
+        const data = snapshot.data();
+
+        // Refresh notifications list from API
+        try {
+          const res = await fetch("/api/notifications");
+          if (res.ok) {
+            const json = await res.json();
+            setNotifications(json.notifications || []);
+            setUnreadCount(json.unreadCount || 0);
+          }
+        } catch {}
+
+        if (data?.title && "Notification" in window && Notification.permission === "granted") {
+          new Notification(data.title, {
+            body: data.message || "A new festival update is available",
+            icon: "/icon-192x192.png",
+            badge: "/icon-96x96.png",
           });
         }
-        isInitial = false;
       },
-      (err) => console.warn("Firestore notification error:", err.message)
+      (err) => {
+        if (process.env.NODE_ENV === "development") {
+          console.warn("Firestore notification pulse:", err.message);
+        }
+      }
     );
 
     return () => {
