@@ -1,7 +1,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { Card } from "@/components/ui/card";
-import { TeamProgramRegister } from "@/components/team-program-register";
+import { TeamProgramRegister, ActionResponse } from "@/components/team-program-register";
 import { getCurrentTeam } from "@/lib/auth";
 import {
   getPortalStudents,
@@ -9,27 +9,23 @@ import {
   getProgramsWithLimits,
   isRegistrationOpen,
   registerCandidate,
+  registerMultipleCandidates,
   removeProgramRegistration,
   validateParticipationLimit,
 } from "@/lib/team-data";
 
-function redirectWithMessage(message: string, type: "error" | "success" = "error") {
-  const params = new URLSearchParams({ 
-    message: encodeURIComponent(message),
-    toastType: type 
-  });
-  redirect(`/team/program-register?${params.toString()}`);
-}
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
-async function registerProgramAction(formData: FormData) {
+async function registerProgramAction(formData: FormData): Promise<ActionResponse> {
   "use server";
   const [team, open] = await Promise.all([getCurrentTeam(), isRegistrationOpen()]);
-  if (!team) redirect("/team/login");
-  if (!open) redirectWithMessage("Registration window is closed.");
+  if (!team) return { success: false, error: "Please log in to register programs." };
+  if (!open) return { success: false, error: "Registration window is closed." };
 
   const programId = String(formData.get("programId") ?? "");
   const studentId = String(formData.get("studentId") ?? "");
-  if (!programId || !studentId) redirectWithMessage("Program and student are required.");
+  if (!programId || !studentId) return { success: false, error: "Program and student are required." };
 
   const [programs, students, registrations] = await Promise.all([
     getProgramsWithLimits(),
@@ -38,20 +34,18 @@ async function registerProgramAction(formData: FormData) {
   ]);
   const program = programs.find((item) => item.id === programId);
   if (!program) {
-    redirectWithMessage("Program not found.");
-    return;
+    return { success: false, error: "Program not found." };
   }
   const candidateLimit = program.candidateLimit ?? 1;
   const student = students.find((item) => item.id === studentId);
   if (!student || student.teamId !== team.id) {
-    redirectWithMessage("You can only register your team members.");
-    return;
+    return { success: false, error: "You can only register your team members." };
   }
   const teamEntries = registrations.filter(
     (registration) => registration.programId === programId && registration.teamId === team.id,
   );
   if (teamEntries.length >= candidateLimit) {
-    redirectWithMessage("Candidate limit reached for this program.");
+    return { success: false, error: "Candidate limit reached for this program." };
   }
   if (
     registrations.some(
@@ -59,17 +53,17 @@ async function registerProgramAction(formData: FormData) {
         registration.programId === programId && registration.studentId === studentId,
     )
   ) {
-    redirectWithMessage("Student already registered for this program.");
+    return { success: false, error: "Student already registered for this program." };
   }
 
   // Check participation limits
   const limitCheck = validateParticipationLimit(studentId, program, programs, registrations);
   if (!limitCheck.allowed) {
-    redirectWithMessage(limitCheck.reason || "Participation limit reached for this program type.");
+    return { success: false, error: limitCheck.reason || "Participation limit reached for this program type." };
   }
 
   try {
-    await registerCandidate({
+    const record = await registerCandidate({
       programId: program.id,
       programName: program.name,
       studentId: student.id,
@@ -80,40 +74,43 @@ async function registerProgramAction(formData: FormData) {
     });
 
     if (team.leaderEmail) {
-      const { sendRegistrationSuccessEmail } = await import("@/lib/email-service");
-      sendRegistrationSuccessEmail({
-        to: team.leaderEmail,
-        leaderName: team.leaderName,
-        teamName: team.teamName,
-        programName: program.name,
-        section: program.section,
-        candidates: [{ name: student.name, chestNumber: student.chestNumber }],
-      }).catch((e) => console.warn("Failed to dispatch registration email:", e));
+      import("@/lib/email-service")
+        .then(({ sendRegistrationSuccessEmail }) => {
+          sendRegistrationSuccessEmail({
+            to: team.leaderEmail!,
+            leaderName: team.leaderName,
+            teamName: team.teamName,
+            programName: program.name,
+            section: program.section,
+            candidates: [{ name: student.name, chestNumber: student.chestNumber }],
+          }).catch((e) => console.warn("Failed to dispatch registration email:", e));
+        })
+        .catch((e) => console.warn("Email service import failed:", e));
     }
+
+    revalidatePath("/team/program-register");
+    return {
+      success: true,
+      message: `Successfully registered ${student.name} for ${program.name}!`,
+      registration: record,
+    };
   } catch (error: any) {
-    // Handle duplicate registration error (race condition protection)
-    if (error.message.includes("already registered")) {
-      redirectWithMessage(error.message);
-    }
-    redirectWithMessage(`Registration failed: ${error.message}`);
+    return { success: false, error: error.message || "Registration failed" };
   }
-  
-  revalidatePath("/team/program-register");
-  redirectWithMessage("Registration submitted and confirmation sent to team leader.", "success");
 }
 
-async function registerMultipleStudentsAction(formData: FormData) {
+async function registerMultipleStudentsAction(formData: FormData): Promise<ActionResponse> {
   "use server";
   const [team, open] = await Promise.all([getCurrentTeam(), isRegistrationOpen()]);
-  if (!team) redirect("/team/login");
-  if (!open) redirectWithMessage("Registration window is closed.");
+  if (!team) return { success: false, error: "Please log in to register programs." };
+  if (!open) return { success: false, error: "Registration window is closed." };
 
   const programId = String(formData.get("programId") ?? "");
   const studentIdsStr = String(formData.get("studentIds") ?? "");
-  if (!programId || !studentIdsStr) redirectWithMessage("Program and students are required.");
+  if (!programId || !studentIdsStr) return { success: false, error: "Program and students are required." };
 
   const studentIds = studentIdsStr.split(",").filter(Boolean);
-  if (studentIds.length === 0) redirectWithMessage("At least one student must be selected.");
+  if (studentIds.length === 0) return { success: false, error: "At least one student must be selected." };
 
   const [programs, students, registrations] = await Promise.all([
     getProgramsWithLimits(),
@@ -122,8 +119,7 @@ async function registerMultipleStudentsAction(formData: FormData) {
   ]);
   const program = programs.find((item) => item.id === programId);
   if (!program) {
-    redirectWithMessage("Program not found.");
-    return;
+    return { success: false, error: "Program not found." };
   }
   const candidateLimit = program.candidateLimit ?? 1;
 
@@ -131,8 +127,7 @@ async function registerMultipleStudentsAction(formData: FormData) {
   const teamStudents = students.filter((s) => s.teamId === team.id);
   const selectedStudents = teamStudents.filter((s) => studentIds.includes(s.id));
   if (selectedStudents.length !== studentIds.length) {
-    redirectWithMessage("You can only register your team members.");
-    return;
+    return { success: false, error: "You can only register your team members." };
   }
 
   // Check candidate limit
@@ -140,9 +135,10 @@ async function registerMultipleStudentsAction(formData: FormData) {
     (registration) => registration.programId === programId && registration.teamId === team.id,
   );
   if (teamEntries.length + selectedStudents.length > candidateLimit) {
-    redirectWithMessage(
-      `Cannot register ${selectedStudents.length} students. Only ${candidateLimit - teamEntries.length} slots remaining.`,
-    );
+    return {
+      success: false,
+      error: `Cannot register ${selectedStudents.length} students. Only ${candidateLimit - teamEntries.length} slots remaining.`,
+    };
   }
 
   // Check for duplicates
@@ -153,7 +149,7 @@ async function registerMultipleStudentsAction(formData: FormData) {
     ),
   );
   if (alreadyRegistered) {
-    redirectWithMessage("One or more students are already registered for this program.");
+    return { success: false, error: "One or more students are already registered for this program." };
   }
 
   // Check participation limits for each student
@@ -165,83 +161,68 @@ async function registerMultipleStudentsAction(formData: FormData) {
     }
   }
   if (limitViolations.length > 0) {
-    redirectWithMessage(limitViolations.join("; "));
+    return { success: false, error: limitViolations.join("; ") };
   }
 
-  // Register all students with error handling
-  const registrationErrors: string[] = [];
-  let successCount = 0;
-  
-  for (const student of selectedStudents) {
-    try {
-      await registerCandidate({
-        programId: program.id,
-        programName: program.name,
-        studentId: student.id,
-        studentName: student.name,
-        studentChest: student.chestNumber,
-        teamId: team.id,
-        teamName: team.teamName,
-      });
-      successCount++;
-    } catch (error: any) {
-      // Handle duplicate registration error
-      if (error.message.includes("already registered")) {
-        registrationErrors.push(`${student.name}: ${error.message}`);
-      } else {
-        registrationErrors.push(`${student.name}: Registration failed - ${error.message}`);
-      }
+  try {
+    const entries = selectedStudents.map((student) => ({
+      programId: program.id,
+      programName: program.name,
+      studentId: student.id,
+      studentName: student.name,
+      studentChest: student.chestNumber,
+      teamId: team.id,
+      teamName: team.teamName,
+    }));
+
+    const records = await registerMultipleCandidates(entries);
+
+    if (team.leaderEmail && records.length > 0) {
+      import("@/lib/email-service")
+        .then(({ sendRegistrationSuccessEmail }) => {
+          sendRegistrationSuccessEmail({
+            to: team.leaderEmail!,
+            leaderName: team.leaderName,
+            teamName: team.teamName,
+            programName: program.name,
+            section: program.section,
+            candidates: selectedStudents.map((s) => ({ name: s.name, chestNumber: s.chestNumber })),
+          }).catch((e) => console.warn("Failed to dispatch group registration email:", e));
+        })
+        .catch((e) => console.warn("Email service import error:", e));
     }
-  }
 
-  if (team.leaderEmail && successCount > 0) {
-    const registeredList = selectedStudents
-      .filter((s) => !registrationErrors.some((e) => e.startsWith(`${s.name}:`)))
-      .map((s) => ({ name: s.name, chestNumber: s.chestNumber }));
-
-    try {
-      const { sendRegistrationSuccessEmail } = await import("@/lib/email-service");
-      sendRegistrationSuccessEmail({
-        to: team.leaderEmail,
-        leaderName: team.leaderName,
-        teamName: team.teamName,
-        programName: program.name,
-        section: program.section,
-        candidates: registeredList,
-      }).catch((e) => console.warn("Failed to dispatch group registration email:", e));
-    } catch (e) {
-      console.warn("Email service import error:", e);
-    }
+    revalidatePath("/team/program-register");
+    return {
+      success: true,
+      message: `Successfully registered ${records.length} student${records.length !== 1 ? "s" : ""}!`,
+      registrations: records,
+    };
+  } catch (error: any) {
+    return { success: false, error: error.message || "Registration failed" };
   }
-
-  revalidatePath("/team/program-register");
-  
-  if (registrationErrors.length > 0) {
-    const errorMessage = registrationErrors.length === selectedStudents.length
-      ? `Registration failed: ${registrationErrors.join("; ")}`
-      : `Partially completed: ${successCount} registered, ${registrationErrors.length} failed. ${registrationErrors.join("; ")}`;
-    redirectWithMessage(errorMessage);
-  }
-  
-  redirectWithMessage(
-    `Successfully registered ${successCount} student${successCount !== 1 ? "s" : ""} and notified team leader.`,
-    "success",
-  );
 }
 
-async function removeRegistrationAction(formData: FormData) {
+async function removeRegistrationAction(formData: FormData): Promise<ActionResponse> {
   "use server";
   const team = await getCurrentTeam();
-  if (!team) redirect("/team/login");
+  if (!team) return { success: false, error: "Please log in." };
   const registrationId = String(formData.get("registrationId") ?? "");
+  if (!registrationId) return { success: false, error: "Registration ID is required." };
+
   const registrations = await getProgramRegistrations();
   const record = registrations.find((registration) => registration.id === registrationId);
   if (!record || record.teamId !== team.id) {
-    redirectWithMessage("Cannot remove registrations from other teams.");
+    return { success: false, error: "Cannot remove registrations from other teams." };
   }
-  await removeProgramRegistration(registrationId);
-  revalidatePath("/team/program-register");
-  redirectWithMessage("Registration removed.", "success");
+
+  try {
+    await removeProgramRegistration(registrationId);
+    revalidatePath("/team/program-register");
+    return { success: true, message: "Registration removed.", registrationId };
+  } catch (error: any) {
+    return { success: false, error: error.message || "Failed to remove registration" };
+  }
 }
 
 export default async function ProgramRegisterPage({
@@ -288,8 +269,8 @@ export default async function ProgramRegisterPage({
       )}
 
       <TeamProgramRegister
-        programs={programs.map(p => ({ ...p, candidateLimit: p.candidateLimit ?? 1 }))}
-        allPrograms={programs.map(p => ({ ...p, candidateLimit: p.candidateLimit ?? 1 }))}
+        programs={programs.map((p) => ({ ...p, candidateLimit: p.candidateLimit ?? 1 }))}
+        allPrograms={programs.map((p) => ({ ...p, candidateLimit: p.candidateLimit ?? 1 }))}
         teamRegistrations={teamRegistrations}
         teamStudents={teamStudents}
         isOpen={open}
@@ -300,4 +281,3 @@ export default async function ProgramRegisterPage({
     </div>
   );
 }
-

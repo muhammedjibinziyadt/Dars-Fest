@@ -57,7 +57,7 @@ if (!globalForCache.__firestoreCache) {
 }
 
 const cache = globalForCache.__firestoreCache;
-const CACHE_TTL_MS = 120_000; // 2 minutes in-memory cache
+const CACHE_TTL_MS = 60_000; // 1 minute in-memory cache
 
 const inFlightRequests = new Map<string, Promise<any[]>>();
 
@@ -172,26 +172,6 @@ export class FirestoreModel<T extends Record<string, any>> {
 
       if (cached && now - cached.timestamp < CACHE_TTL_MS) {
         allDocs = cached.data;
-      } else if (cached && cached.data.length > 0) {
-        // Stale-while-revalidate: return immediately in 0ms, refresh in background
-        allDocs = cached.data;
-        if (!inFlightRequests.has(this.collectionName)) {
-          const bgRefresh = (async () => {
-            const snapshot = await this.col.get();
-            const fresh: T[] = [];
-            snapshot.forEach((doc) => {
-              fresh.push(doc.data() as T);
-            });
-            cache[this.collectionName] = {
-              data: fresh,
-              timestamp: Date.now(),
-            };
-            return fresh;
-          })().finally(() => {
-            inFlightRequests.delete(this.collectionName);
-          });
-          inFlightRequests.set(this.collectionName, bgRefresh);
-        }
       } else {
         let pending = inFlightRequests.get(this.collectionName);
         if (!pending) {
@@ -336,7 +316,7 @@ export class FirestoreModel<T extends Record<string, any>> {
     const docId = data.id || data.team_id || data.key || this.col.doc().id;
     const docData = { ...data, id: data.id || docId };
     await this.col.doc(String(docId)).set(docData);
-    addItemToCache(this.collectionName, docData);
+    invalidateCache(this.collectionName);
 
     if (
       ["students", "teams", "programs", "results_approved", "program_registrations", "live_scores"].includes(
@@ -374,6 +354,7 @@ export class FirestoreModel<T extends Record<string, any>> {
       batches.push(currentBatch.commit());
     }
     await Promise.all(batches);
+    invalidateCache(this.collectionName);
     return items;
   }
 
@@ -523,9 +504,11 @@ export class FirestoreModel<T extends Record<string, any>> {
 
     if (docId) {
       await this.col.doc(String(docId)).delete();
-      removeItemFromCache(this.collectionName, String(docId));
+      invalidateCache(this.collectionName);
       if (
-        ["students", "teams", "programs", "results_approved", "live_scores"].includes(this.collectionName)
+        ["students", "teams", "programs", "results_approved", "program_registrations", "live_scores"].includes(
+          this.collectionName
+        )
       ) {
         const g = globalThis as any;
         if (g.__topScorersCache) delete g.__topScorersCache;

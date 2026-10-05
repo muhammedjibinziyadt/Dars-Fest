@@ -8,6 +8,8 @@ import {
   ReplacementRequest,
 } from "@/lib/types";
 import {
+  COLLECTIONS,
+  invalidateCache,
   ProgramModel,
   ProgramRegistrationModel,
   RegistrationScheduleModel,
@@ -230,12 +232,50 @@ export async function registerCandidate(entry: {
   
   try {
     await ProgramRegistrationModel.create(record);
+    invalidateCache(COLLECTIONS.PROGRAM_REGISTRATIONS);
+
+    // Emit real-time pulse event
+    const { emitRegistrationCreated } = await import("./pusher");
+    await emitRegistrationCreated(record.id, record.programId, record.teamId);
+
     return record;
   } catch (error: any) {
-    // Handle MongoDB duplicate key error (code 11000) for programId + studentId unique index
+    // Handle duplicate key error for programId + studentId
     if (error.code === 11000 && error.keyPattern?.programId && error.keyPattern?.studentId) {
       throw new Error(`Student "${entry.studentName}" is already registered for program "${entry.programName}".`);
     }
+    throw error;
+  }
+}
+
+export async function registerMultipleCandidates(entries: Array<{
+  programId: string;
+  programName: string;
+  studentId: string;
+  studentName: string;
+  studentChest: string;
+  teamId: string;
+  teamName: string;
+}>) {
+  await connectDB();
+  const records: ProgramRegistration[] = entries.map((entry) => ({
+    id: randomUUID(),
+    ...entry,
+    timestamp: new Date().toISOString(),
+  }));
+
+  if (records.length === 0) return [];
+
+  try {
+    await ProgramRegistrationModel.insertMany(records);
+    invalidateCache(COLLECTIONS.PROGRAM_REGISTRATIONS);
+
+    // Emit real-time pulse event once for the batch
+    const { emitRegistrationCreated } = await import("./pusher");
+    await emitRegistrationCreated(records[0].id, records[0].programId, records[0].teamId);
+
+    return records;
+  } catch (error: any) {
     throw error;
   }
 }
@@ -244,6 +284,7 @@ export async function removeProgramRegistration(registrationId: string) {
   await connectDB();
   const registration = await ProgramRegistrationModel.findOne({ id: registrationId }).lean();
   await ProgramRegistrationModel.deleteOne({ id: registrationId });
+  invalidateCache(COLLECTIONS.PROGRAM_REGISTRATIONS);
   
   // Emit real-time event
   if (registration) {
@@ -255,6 +296,7 @@ export async function removeProgramRegistration(registrationId: string) {
 export async function removeRegistrationsByProgram(programId: string) {
   await connectDB();
   await ProgramRegistrationModel.deleteMany({ programId });
+  invalidateCache(COLLECTIONS.PROGRAM_REGISTRATIONS);
 }
 
 export async function getRegistrationSchedule(): Promise<RegistrationSchedule> {

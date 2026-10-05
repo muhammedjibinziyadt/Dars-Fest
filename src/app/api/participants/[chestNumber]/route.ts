@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getParticipantProfile } from "@/lib/participant-service";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET, OPTIONS",
