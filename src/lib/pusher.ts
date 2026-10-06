@@ -1,4 +1,4 @@
-import { getAdminDb } from "./firebase-admin";
+import { SystemMetaModel } from "./models";
 
 // Channel names (kept for backward compatibility)
 export const CHANNELS = {
@@ -28,21 +28,20 @@ export const EVENTS = {
 } as const;
 
 /**
- * Emits a lightweight pulse to a single document in Firestore.
- * Clients listen to this 1 document instead of scanning entire collections (saving 99% reads).
+ * Emits a lightweight pulse to MongoDB SystemMeta collection.
+ * Clients poll this lightweight endpoint instead of hammering database.
  */
 export async function emitRealtimePulse(channel: string, event: string, payload: Record<string, any> = {}) {
   try {
-    const db = getAdminDb();
     const data = {
       channel,
       event,
       timestamp: Date.now(),
-      ...payload,
+      data: payload,
     };
     await Promise.all([
-      db.collection("system_meta").doc("pulse").set(data, { merge: true }),
-      db.collection("system_meta").doc(channel).set(data, { merge: true }),
+      SystemMetaModel.updateOne({ key: "pulse" }, { $set: { key: "pulse", ...data } }, { upsert: true }),
+      SystemMetaModel.updateOne({ key: channel }, { $set: { key: channel, ...data } }, { upsert: true }),
     ]);
   } catch (err: any) {
     console.warn(`[RealtimePulse] Failed to emit pulse for ${channel}:${event}:`, err?.message || err);

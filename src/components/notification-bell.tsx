@@ -4,8 +4,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { Bell, X, ExternalLink, CheckCheck } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { getClientDb } from "@/lib/firebase-client";
-import { doc, onSnapshot } from "firebase/firestore";
+
 import type { Notification } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -32,50 +31,47 @@ export function NotificationBell({
     }
   }, [initialNotifications, initialUnreadCount]);
 
-  // Listen for new notifications via lightweight metadata pulse (1 read instead of 20 reads)
+  // Listen for new notifications via lightweight pulse API
   useEffect(() => {
-    const db = getClientDb();
-    const docRef = doc(db, "system_meta", "notifications");
+    let isMounted = true;
+    let lastTimestamp = Date.now();
 
-    let isInitial = true;
-    const unsubscribe = onSnapshot(
-      docRef,
-      async (snapshot) => {
-        if (isInitial) {
-          isInitial = false;
-          return;
-        }
+    async function checkNotificationsPulse() {
+      if (!isMounted || typeof document === "undefined" || document.hidden) return;
 
-        if (!snapshot.exists()) return;
-        const data = snapshot.data();
+      try {
+        const pulseRes = await fetch("/api/realtime/pulse?channel=notifications", { cache: "no-store" });
+        if (!pulseRes.ok) return;
+        const pulseData = await pulseRes.json();
 
-        // Refresh notifications list from API
-        try {
+        if (pulseData.timestamp && pulseData.timestamp > lastTimestamp) {
+          lastTimestamp = pulseData.timestamp;
+
           const res = await fetch("/api/notifications");
           if (res.ok) {
             const json = await res.json();
             setNotifications(json.notifications || []);
             setUnreadCount(json.unreadCount || 0);
           }
-        } catch {}
 
-        if (data?.title && "Notification" in window && Notification.permission === "granted") {
-          new Notification(data.title, {
-            body: data.message || "A new festival update is available",
-            icon: "/icon-192x192.png",
-            badge: "/icon-96x96.png",
-          });
+          if (pulseData?.data?.title && "Notification" in window && Notification.permission === "granted") {
+            new Notification(pulseData.data.title, {
+              body: pulseData.data.message || "A new festival update is available",
+              icon: "/icon-192x192.png",
+              badge: "/icon-96x96.png",
+            });
+          }
         }
-      },
-      (err) => {
-        if (process.env.NODE_ENV === "development") {
-          console.warn("Firestore notification pulse:", err.message);
-        }
-      }
-    );
+      } catch {}
+    }
+
+    const interval = setInterval(checkNotificationsPulse, 6000);
+    window.addEventListener("focus", checkNotificationsPulse);
 
     return () => {
-      unsubscribe();
+      isMounted = false;
+      clearInterval(interval);
+      window.removeEventListener("focus", checkNotificationsPulse);
     };
   }, []);
 

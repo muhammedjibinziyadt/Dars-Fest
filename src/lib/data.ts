@@ -30,7 +30,29 @@ import { compareChestNumbers } from "./utils";
 
 export function normalize<T>(docs: T[]): T[] {
   if (!docs || !Array.isArray(docs)) return [];
-  return docs.map((doc) => JSON.parse(JSON.stringify(doc)));
+  return docs.map((doc: any) => {
+    if (!doc || typeof doc !== "object") return doc;
+    const clean: any = {};
+    for (const [k, v] of Object.entries(doc)) {
+      if (k === "_id") {
+        clean._id = String(v);
+      } else if (v && typeof v === "object" && !Array.isArray(v)) {
+        if (typeof (v as any).toHexString === "function" || (v as any)._bsontype === "ObjectId") {
+          clean[k] = String(v);
+        } else if (Buffer.isBuffer(v)) {
+          clean[k] = v.toString();
+        } else {
+          clean[k] = JSON.parse(JSON.stringify(v));
+        }
+      } else {
+        clean[k] = v;
+      }
+    }
+    if (!clean.id && clean._id) {
+      clean.id = clean._id;
+    }
+    return clean as T;
+  });
 }
 
 export async function getTeams(): Promise<Team[]> {
@@ -115,7 +137,7 @@ export async function getPendingResultById(
 ): Promise<ResultRecord | null> {
   await connectDB();
   const result = await PendingResultModel.findOne({ id }).lean<ResultRecord | null>();
-  return result ? JSON.parse(JSON.stringify(result)) : null;
+  return result ? (normalize([result])[0] ?? null) : null;
 }
 
 export async function getApprovedResultById(
@@ -123,7 +145,7 @@ export async function getApprovedResultById(
 ): Promise<ResultRecord | null> {
   await connectDB();
   const result = await ApprovedResultModel.findOne({ id }).lean<ResultRecord | null>();
-  return result ? JSON.parse(JSON.stringify(result)) : null;
+  return result ? (normalize([result])[0] ?? null) : null;
 }
 
 export async function createProgram(input: Omit<Program, "id">): Promise<Program> {

@@ -8,7 +8,9 @@
     "start": "next start",
     "lint": "eslint",
     "generate-icons": "node scripts/generate-icons.js",
-    "clear-mock-data": "node scripts/clear-mock-data.js"
+    "clear-mock-data": "node scripts/clear-mock-data.js",
+    "migrate:mongo": "node scripts/migrate-to-mongo.js",
+    "verify:mongo": "node scripts/verify-mongo.js"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",

@@ -1,11 +1,4 @@
 import { initializeApp, getApps, getApp, type FirebaseApp } from "firebase/app";
-import {
-  initializeFirestore,
-  getFirestore,
-  persistentLocalCache,
-  persistentMultipleTabManager,
-  type Firestore,
-} from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -17,31 +10,14 @@ const firebaseConfig = {
 };
 
 let clientApp: FirebaseApp | null = null;
-let clientDb: Firestore | null = null;
 
+/**
+ * Returns Firebase Client App instance for Firebase services (e.g. Firebase Auth).
+ * Firestore has been migrated to MongoDB.
+ */
 export function getClientFirebaseApp(): FirebaseApp {
   if (!clientApp) {
     clientApp = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
   }
   return clientApp;
-}
-
-export function getClientDb(): Firestore {
-  if (!clientDb) {
-    const app = getClientFirebaseApp();
-    if (typeof window !== "undefined") {
-      try {
-        clientDb = initializeFirestore(app, {
-          localCache: persistentLocalCache({
-            tabManager: persistentMultipleTabManager(),
-          }),
-        });
-      } catch {
-        clientDb = getFirestore(app);
-      }
-    } else {
-      clientDb = getFirestore(app);
-    }
-  }
-  return clientDb;
 }

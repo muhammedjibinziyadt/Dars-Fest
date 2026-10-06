@@ -314,13 +314,12 @@ function ProgramRegistrationCard({
                       return (
                         <label
                           key={student.id}
-                          className={`flex items-center gap-3 rounded-xl border px-3 py-2 transition-colors ${
-                            isSelected
+                          className={`flex items-center gap-3 rounded-xl border px-3 py-2 transition-colors ${isSelected
                               ? "border-fuchsia-400 bg-fuchsia-400/10 cursor-pointer"
                               : canSelect
                                 ? "border-white/10 bg-white/5 hover:bg-white/10 cursor-pointer"
                                 : "border-white/5 bg-white/5 opacity-50 cursor-not-allowed"
-                          }`}
+                            }`}
                         >
                           <input
                             type="checkbox"

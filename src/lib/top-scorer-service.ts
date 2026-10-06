@@ -1,5 +1,4 @@
 import { connectDB } from "./db";
-import { getAdminDb } from "./firebase-admin";
 import { emitScoreboardUpdated } from "./pusher";
 import {
   ApprovedResultModel,
@@ -446,55 +445,33 @@ export async function recalculateAndSyncAllScores(): Promise<{
     }
   }
 
-  // 3. Persist to Firestore via Atomic Batches (0 reads, batched writes)
-  const db = getAdminDb();
-  const batches: Promise<any>[] = [];
-  let currentBatch = db.batch();
-  let opCount = 0;
+  // 3. Persist to MongoDB
+  const teamUpdates = Array.from(teamScoreMap.entries()).map(([teamId, totalPoints]) =>
+    TeamModel.updateOne({ id: teamId }, { $set: { total_points: totalPoints } })
+  );
 
-  // Persist Teams & Live Scores
-  const teamsCol = db.collection("teams");
-  const liveScoresCol = db.collection("live_scores");
-  for (const [teamId, totalPoints] of teamScoreMap.entries()) {
-    currentBatch.set(teamsCol.doc(String(teamId)), { total_points: totalPoints }, { merge: true });
-    currentBatch.set(
-      liveScoresCol.doc(String(teamId)),
-      { team_id: teamId, total_points: totalPoints },
-      { merge: true }
-    );
-    opCount += 2;
-    if (opCount >= 400) {
-      batches.push(currentBatch.commit());
-      currentBatch = db.batch();
-      opCount = 0;
-    }
-  }
+  const liveScoreUpdates = Array.from(teamScoreMap.entries()).map(([teamId, totalPoints]) =>
+    LiveScoreModel.updateOne(
+      { team_id: teamId },
+      { $set: { team_id: teamId, id: teamId, total_points: totalPoints } },
+      { upsert: true }
+    )
+  );
 
-  // Persist Students
-  const studentsCol = db.collection("students");
-  for (const [studentId, scores] of studentScoreMap.entries()) {
-    currentBatch.set(
-      studentsCol.doc(String(studentId)),
+  const studentUpdates = Array.from(studentScoreMap.entries()).map(([studentId, scores]) =>
+    StudentModel.updateOne(
+      { id: studentId },
       {
-        total_points: scores.total,
-        individual_points: scores.individual,
-        group_points: scores.group,
-      },
-      { merge: true }
-    );
-    opCount++;
-    if (opCount >= 400) {
-      batches.push(currentBatch.commit());
-      currentBatch = db.batch();
-      opCount = 0;
-    }
-  }
+        $set: {
+          total_points: scores.total,
+          individual_points: scores.individual,
+          group_points: scores.group,
+        },
+      }
+    )
+  );
 
-  if (opCount > 0) {
-    batches.push(currentBatch.commit());
-  }
-
-  await Promise.all(batches);
+  await Promise.all([...teamUpdates, ...liveScoreUpdates, ...studentUpdates]);
 
   invalidateAllCaches();
 

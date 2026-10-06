@@ -2,8 +2,6 @@
 
 import { useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { getClientDb } from "@/lib/firebase-client";
-import { doc, onSnapshot } from "firebase/firestore";
 import { CHANNELS, EVENTS } from "@/lib/pusher-client";
 
 type EventCallback = (data: any) => void;
@@ -21,67 +19,71 @@ export function useRealtimeSubscription(
 ) {
   const callbackRef = useRef(callback);
   const router = useRouter();
+  const lastTimestampRef = useRef<number>(Date.now());
 
   useEffect(() => {
     callbackRef.current = callback;
   }, [callback, ...deps]);
 
   useEffect(() => {
-    const db = getClientDb();
-    // Listen to a single lightweight document instead of entire collection!
-    // This reduces Firestore reads from N documents (e.g. 500 students) to EXACTLY 1 document!
-    const docRef = doc(db, "system_meta", channelName);
+    let isMounted = true;
 
-    let isFirstSnapshot = true;
+    async function checkPulse() {
+      if (!isMounted || typeof document === "undefined" || document.hidden) return;
 
-    const unsubscribe = onSnapshot(
-      docRef,
-      (snapshot) => {
-        // Skip first snapshot on mount to avoid unnecessary initial reload
-        if (isFirstSnapshot) {
-          isFirstSnapshot = false;
-          return;
-        }
+      try {
+        const res = await fetch(`/api/realtime/pulse?channel=${encodeURIComponent(channelName)}`, {
+          cache: "no-store",
+        });
+        if (!res.ok) return;
+        const data = await res.json();
 
-        if (!snapshot.exists()) return;
-        const data = snapshot.data();
+        if (data.timestamp && data.timestamp > lastTimestampRef.current) {
+          lastTimestampRef.current = data.timestamp;
+          callbackRef.current(data);
 
-        callbackRef.current(data);
+          if (!isRefreshing) {
+            isRefreshing = true;
+            pendingRefresh = false;
 
-        if (!isRefreshing) {
-          isRefreshing = true;
-          pendingRefresh = false;
+            if (refreshTimeout) {
+              clearTimeout(refreshTimeout);
+            }
 
-          if (refreshTimeout) {
-            clearTimeout(refreshTimeout);
-          }
-
-          refreshTimeout = setTimeout(() => {
-            router.refresh();
-            setTimeout(() => {
-              isRefreshing = false;
-              if (pendingRefresh) {
-                pendingRefresh = false;
-                router.refresh();
-              }
-            }, 500);
-          }, 400);
-        } else {
-          pendingRefresh = true;
-        }
-      },
-      (error) => {
-        // Silently ignore transient WebChannel connection drops which auto-retry
-        if (process.env.NODE_ENV === "development") {
-          if (!error.message?.includes("transport errored")) {
-            console.warn(`[Firestore Realtime] ${channelName}:`, error.message);
+            refreshTimeout = setTimeout(() => {
+              router.refresh();
+              setTimeout(() => {
+                isRefreshing = false;
+                if (pendingRefresh) {
+                  pendingRefresh = false;
+                  router.refresh();
+                }
+              }, 500);
+            }, 400);
+          } else {
+            pendingRefresh = true;
           }
         }
+      } catch {
+        // Silently ignore transient network fetch failures
       }
-    );
+    }
+
+    // Check pulse every 4 seconds
+    const interval = setInterval(checkPulse, 4000);
+
+    // Also check immediately when window gains focus
+    const onFocus = () => {
+      checkPulse();
+    };
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onFocus);
 
     return () => {
-      unsubscribe();
+      isMounted = false;
+      clearInterval(interval);
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onFocus);
       if (refreshTimeout) {
         clearTimeout(refreshTimeout);
         refreshTimeout = null;

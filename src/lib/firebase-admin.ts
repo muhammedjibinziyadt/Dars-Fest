@@ -1,18 +1,19 @@
 import dns from "node:dns";
 import { getApps, initializeApp, cert, type App } from "firebase-admin/app";
-import { getFirestore, type Firestore } from "firebase-admin/firestore";
 
 // Force IPv4 first to prevent EHOSTUNREACH on Windows/Node.js networks
 try {
   dns.setDefaultResultOrder("ipv4first");
 } catch {}
-process.env.GRPC_DNS_RESOLVER = "native";
 
 const globalForFirebase = globalThis as unknown as {
   firebaseAdminApp?: App;
-  firestoreInstance?: Firestore;
 };
 
+/**
+ * Returns the Firebase Admin App instance used for Firebase Authentication.
+ * Firestore has been migrated to MongoDB.
+ */
 export function getFirebaseAdminApp(): App {
   if (globalForFirebase.firebaseAdminApp) {
     return globalForFirebase.firebaseAdminApp;
@@ -35,7 +36,7 @@ export function getFirebaseAdminApp(): App {
   }
 
   if (!projectId || !clientEmail || !privateKey) {
-    throw new Error("Missing Firebase Admin SDK environment variables in .env.local");
+    throw new Error("Missing Firebase Admin SDK environment variables");
   }
 
   const app = initializeApp({
@@ -48,16 +49,4 @@ export function getFirebaseAdminApp(): App {
 
   globalForFirebase.firebaseAdminApp = app;
   return app;
-}
-
-export function getAdminDb(): Firestore {
-  if (!globalForFirebase.firestoreInstance) {
-    const adminApp = getFirebaseAdminApp();
-    const db = getFirestore(adminApp);
-    try {
-      db.settings({ preferRest: true });
-    } catch {}
-    globalForFirebase.firestoreInstance = db;
-  }
-  return globalForFirebase.firestoreInstance;
 }
