@@ -33,7 +33,7 @@ export async function connectDB(): Promise<typeof mongoose> {
   if (!cached.promise) {
     const opts = {
       bufferCommands: false,
-      dbName: "dars-fest",
+      dbName: process.env.MONGODB_DB || "dars-fest",
     };
 
     cached.promise = mongoose.connect(MONGODB_URI, opts).then((m) => m);
