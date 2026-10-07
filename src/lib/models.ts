@@ -122,9 +122,9 @@ class MongoModelWrapper<T extends Record<string, any>> {
     return this.model.countDocuments(filter || {});
   }
 
-  find(filter?: any, projection?: any) {
+  find(filter?: any, projection?: any): any {
     ensureDb().catch(() => {});
-    const query = this.model.find(filter || {}, projection).lean();
+    const query = (this.model.find(filter || {}, projection) as any).lean();
     const originalThen = query.then.bind(query);
     query.then = function (onfulfilled?: any, onrejected?: any) {
       return originalThen((docs: any) => {
@@ -135,9 +135,9 @@ class MongoModelWrapper<T extends Record<string, any>> {
     return query;
   }
 
-  findOne(filter?: any, projection?: any) {
+  findOne(filter?: any, projection?: any): any {
     ensureDb().catch(() => {});
-    const query = this.model.findOne(filter || {}, projection).lean();
+    const query = (this.model.findOne(filter || {}, projection) as any).lean();
     const originalThen = query.then.bind(query);
     query.then = function (onfulfilled?: any, onrejected?: any) {
       return originalThen((doc: any) => {
