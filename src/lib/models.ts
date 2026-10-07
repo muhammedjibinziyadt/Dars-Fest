@@ -96,24 +96,48 @@ async function ensureDb() {
 }
 
 // Helper to define or get a Mongoose model safely in Next.js
-function getOrCreateModel<T>(name: string, schema: Schema, collectionName: string): Model<T> {
+function getOrCreateModel(name: string, schema: Schema, collectionName: string): any {
   if (mongoose.models[name]) {
-    return mongoose.models[name] as Model<T>;
+    return mongoose.models[name];
   }
-  return mongoose.model<T>(name, schema, collectionName);
+  return mongoose.model(name, schema, collectionName);
+}
+
+export interface MongoFindQuery<T> extends PromiseLike<T[]> {
+  sort(arg: any): MongoFindQuery<T>;
+  limit(n: number): MongoFindQuery<T>;
+  skip(n: number): MongoFindQuery<T>;
+  select(fields: any): MongoFindQuery<T>;
+  lean<R = T[]>(): MongoFindQuery<R extends (infer U)[] ? U : R>;
+  exec(): Promise<T[]>;
+  then<TResult1 = T[], TResult2 = never>(
+    onfulfilled?: ((value: T[]) => TResult1 | PromiseLike<TResult1>) | undefined | null,
+    onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null
+  ): Promise<TResult1 | TResult2>;
+}
+
+export interface MongoFindOneQuery<T> extends PromiseLike<T | null> {
+  sort(arg: any): MongoFindOneQuery<T>;
+  select(fields: any): MongoFindOneQuery<T>;
+  lean<R = T>(): MongoFindOneQuery<R>;
+  exec(): Promise<T | null>;
+  then<TResult1 = T | null, TResult2 = never>(
+    onfulfilled?: ((value: T | null) => TResult1 | PromiseLike<TResult1>) | undefined | null,
+    onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null
+  ): Promise<TResult1 | TResult2>;
 }
 
 // Wrapper around Mongoose Model to ensure ID handling, plain objects, and connection
 class MongoModelWrapper<T extends Record<string, any>> {
-  private model: Model<T>;
+  private model: any;
   readonly collectionName: string;
 
-  constructor(model: Model<T>, collectionName: string) {
+  constructor(model: any, collectionName: string) {
     this.model = model;
     this.collectionName = collectionName;
   }
 
-  get mongooseModel() {
+  get mongooseModel(): any {
     return this.model;
   }
 
@@ -122,9 +146,9 @@ class MongoModelWrapper<T extends Record<string, any>> {
     return this.model.countDocuments(filter || {});
   }
 
-  find(filter?: any, projection?: any): any {
+  find(filter?: any, projection?: any): MongoFindQuery<T> {
     ensureDb().catch(() => {});
-    const query = (this.model.find(filter || {}, projection) as any).lean();
+    const query = this.model.find(filter || {}, projection).lean();
     const originalThen = query.then.bind(query);
     query.then = function (onfulfilled?: any, onrejected?: any) {
       return originalThen((docs: any) => {
@@ -132,12 +156,12 @@ class MongoModelWrapper<T extends Record<string, any>> {
         return onfulfilled ? onfulfilled(cleaned) : cleaned;
       }, onrejected);
     };
-    return query;
+    return query as unknown as MongoFindQuery<T>;
   }
 
-  findOne(filter?: any, projection?: any): any {
+  findOne(filter?: any, projection?: any): MongoFindOneQuery<T> {
     ensureDb().catch(() => {});
-    const query = (this.model.findOne(filter || {}, projection) as any).lean();
+    const query = this.model.findOne(filter || {}, projection).lean();
     const originalThen = query.then.bind(query);
     query.then = function (onfulfilled?: any, onrejected?: any) {
       return originalThen((doc: any) => {
@@ -145,7 +169,7 @@ class MongoModelWrapper<T extends Record<string, any>> {
         return onfulfilled ? onfulfilled(cleaned) : cleaned;
       }, onrejected);
     };
-    return query;
+    return query as unknown as MongoFindOneQuery<T>;
   }
 
   async findById(id: string): Promise<T | null> {
@@ -217,7 +241,7 @@ class MongoModelWrapper<T extends Record<string, any>> {
 }
 
 // 1. Teams
-const teamSchema = new Schema<Team>(
+const teamSchema = new Schema(
   {
     id: { type: String, required: true, unique: true, index: true },
     name: { type: String, required: true },
@@ -234,7 +258,7 @@ const teamSchema = new Schema<Team>(
 );
 
 // 2. Students
-const studentSchema = new Schema<Student>(
+const studentSchema = new Schema(
   {
     id: { type: String, required: true, unique: true, index: true },
     name: { type: String, required: true },
@@ -249,7 +273,7 @@ const studentSchema = new Schema<Student>(
 );
 
 // 3. Programs
-const programSchema = new Schema<Program>(
+const programSchema = new Schema(
   {
     id: { type: String, required: true, unique: true, index: true },
     name: { type: String, required: true },
@@ -264,7 +288,7 @@ const programSchema = new Schema<Program>(
 );
 
 // 4. Juries
-const jurySchema = new Schema<Jury>(
+const jurySchema = new Schema(
   {
     id: { type: String, required: true, unique: true, index: true },
     name: { type: String, required: true },
@@ -275,7 +299,7 @@ const jurySchema = new Schema<Jury>(
 );
 
 // 5. Assigned Programs
-const assignedProgramSchema = new Schema<AssignedProgram>(
+const assignedProgramSchema = new Schema(
   {
     program_id: { type: String, required: true, index: true },
     jury_id: { type: String, required: true, index: true },
@@ -288,23 +312,23 @@ const assignedProgramSchema = new Schema<AssignedProgram>(
 assignedProgramSchema.index({ program_id: 1, jury_id: 1 }, { unique: true });
 
 // 6. Results (Pending & Approved)
-const resultRecordSchema = new Schema<ResultRecord>(
+const resultRecordSchema = new Schema(
   {
     id: { type: String, required: true, unique: true, index: true },
     program_id: { type: String, required: true, index: true },
     jury_id: { type: String, required: true },
     submitted_by: { type: String, default: "" },
     submitted_at: { type: String, default: () => new Date().toISOString() },
-    entries: { type: Array, default: [] },
+    entries: { type: [Schema.Types.Mixed], default: [] },
     status: { type: String, enum: ["pending", "approved"], default: "pending" },
     notes: { type: String, default: "" },
-    penalties: { type: Array, default: [] },
+    penalties: { type: [Schema.Types.Mixed], default: [] },
   },
   { strict: false, versionKey: false }
 );
 
 // 7. Live Scores
-const liveScoreSchema = new Schema<LiveScore>(
+const liveScoreSchema = new Schema(
   {
     id: { type: String, index: true },
     team_id: { type: String, required: true, unique: true, index: true },
@@ -314,7 +338,7 @@ const liveScoreSchema = new Schema<LiveScore>(
 );
 
 // 8. Program Registrations
-const programRegistrationSchema = new Schema<ProgramRegistration>(
+const programRegistrationSchema = new Schema(
   {
     id: { type: String, required: true, unique: true, index: true },
     programId: { type: String, required: true, index: true },
@@ -330,7 +354,7 @@ const programRegistrationSchema = new Schema<ProgramRegistration>(
 );
 
 // 9. Registration Schedule
-const registrationScheduleSchema = new Schema<RegistrationSchedule & { key: string }>(
+const registrationScheduleSchema = new Schema(
   {
     key: { type: String, required: true, unique: true, default: "default", index: true },
     startDateTime: { type: String, default: "" },
@@ -340,7 +364,7 @@ const registrationScheduleSchema = new Schema<RegistrationSchedule & { key: stri
 );
 
 // 10. Replacement Requests
-const replacementRequestSchema = new Schema<ReplacementRequest>(
+const replacementRequestSchema = new Schema(
   {
     id: { type: String, required: true, unique: true, index: true },
     programId: { type: String, required: true, index: true },
@@ -363,7 +387,7 @@ const replacementRequestSchema = new Schema<ReplacementRequest>(
 );
 
 // 11. Notifications
-const notificationSchema = new Schema<Notification>(
+const notificationSchema = new Schema(
   {
     id: { type: String, required: true, unique: true, index: true },
     type: { type: String, default: "announcement" },
@@ -380,7 +404,7 @@ const notificationSchema = new Schema<Notification>(
 );
 
 // 12. Attendance
-const attendanceSchema = new Schema<AttendanceRecord>(
+const attendanceSchema = new Schema(
   {
     id: { type: String, required: true, unique: true, index: true },
     programId: { type: String, required: true, index: true },
@@ -410,52 +434,52 @@ const systemMetaSchema = new Schema(
 
 // Export instances wrapped with MongoModelWrapper
 export const TeamModel = new MongoModelWrapper<Team>(
-  getOrCreateModel<Team>("Team", teamSchema, COLLECTIONS.TEAMS),
+  getOrCreateModel("Team", teamSchema, COLLECTIONS.TEAMS),
   COLLECTIONS.TEAMS
 );
 
 export const StudentModel = new MongoModelWrapper<Student>(
-  getOrCreateModel<Student>("Student", studentSchema, COLLECTIONS.STUDENTS),
+  getOrCreateModel("Student", studentSchema, COLLECTIONS.STUDENTS),
   COLLECTIONS.STUDENTS
 );
 
 export const ProgramModel = new MongoModelWrapper<Program>(
-  getOrCreateModel<Program>("Program", programSchema, COLLECTIONS.PROGRAMS),
+  getOrCreateModel("Program", programSchema, COLLECTIONS.PROGRAMS),
   COLLECTIONS.PROGRAMS
 );
 
 export const JuryModel = new MongoModelWrapper<Jury>(
-  getOrCreateModel<Jury>("Jury", jurySchema, COLLECTIONS.JURIES),
+  getOrCreateModel("Jury", jurySchema, COLLECTIONS.JURIES),
   COLLECTIONS.JURIES
 );
 
 export const AssignedProgramModel = new MongoModelWrapper<AssignedProgram>(
-  getOrCreateModel<AssignedProgram>("AssignedProgram", assignedProgramSchema, COLLECTIONS.ASSIGNED_PROGRAMS),
+  getOrCreateModel("AssignedProgram", assignedProgramSchema, COLLECTIONS.ASSIGNED_PROGRAMS),
   COLLECTIONS.ASSIGNED_PROGRAMS
 );
 
 export const PendingResultModel = new MongoModelWrapper<ResultRecord>(
-  getOrCreateModel<ResultRecord>("PendingResult", resultRecordSchema, COLLECTIONS.RESULTS_PENDING),
+  getOrCreateModel("PendingResult", resultRecordSchema, COLLECTIONS.RESULTS_PENDING),
   COLLECTIONS.RESULTS_PENDING
 );
 
 export const ApprovedResultModel = new MongoModelWrapper<ResultRecord>(
-  getOrCreateModel<ResultRecord>("ApprovedResult", resultRecordSchema, COLLECTIONS.RESULTS_APPROVED),
+  getOrCreateModel("ApprovedResult", resultRecordSchema, COLLECTIONS.RESULTS_APPROVED),
   COLLECTIONS.RESULTS_APPROVED
 );
 
 export const LiveScoreModel = new MongoModelWrapper<LiveScore>(
-  getOrCreateModel<LiveScore>("LiveScore", liveScoreSchema, COLLECTIONS.LIVE_SCORES),
+  getOrCreateModel("LiveScore", liveScoreSchema, COLLECTIONS.LIVE_SCORES),
   COLLECTIONS.LIVE_SCORES
 );
 
 export const ProgramRegistrationModel = new MongoModelWrapper<ProgramRegistration>(
-  getOrCreateModel<ProgramRegistration>("ProgramRegistration", programRegistrationSchema, COLLECTIONS.PROGRAM_REGISTRATIONS),
+  getOrCreateModel("ProgramRegistration", programRegistrationSchema, COLLECTIONS.PROGRAM_REGISTRATIONS),
   COLLECTIONS.PROGRAM_REGISTRATIONS
 );
 
 export const RegistrationScheduleModel = new MongoModelWrapper<RegistrationSchedule & { key: string }>(
-  getOrCreateModel<RegistrationSchedule & { key: string }>(
+  getOrCreateModel(
     "RegistrationSchedule",
     registrationScheduleSchema,
     COLLECTIONS.REGISTRATION_SCHEDULES
@@ -464,21 +488,21 @@ export const RegistrationScheduleModel = new MongoModelWrapper<RegistrationSched
 );
 
 export const ReplacementRequestModel = new MongoModelWrapper<ReplacementRequest>(
-  getOrCreateModel<ReplacementRequest>("ReplacementRequest", replacementRequestSchema, COLLECTIONS.REPLACEMENT_REQUESTS),
+  getOrCreateModel("ReplacementRequest", replacementRequestSchema, COLLECTIONS.REPLACEMENT_REQUESTS),
   COLLECTIONS.REPLACEMENT_REQUESTS
 );
 
 export const NotificationModel = new MongoModelWrapper<Notification>(
-  getOrCreateModel<Notification>("Notification", notificationSchema, COLLECTIONS.NOTIFICATIONS),
+  getOrCreateModel("Notification", notificationSchema, COLLECTIONS.NOTIFICATIONS),
   COLLECTIONS.NOTIFICATIONS
 );
 
 export const AttendanceModel = new MongoModelWrapper<AttendanceRecord>(
-  getOrCreateModel<AttendanceRecord>("AttendanceRecord", attendanceSchema, COLLECTIONS.ATTENDANCE),
+  getOrCreateModel("AttendanceRecord", attendanceSchema, COLLECTIONS.ATTENDANCE),
   COLLECTIONS.ATTENDANCE
 );
 
 export const SystemMetaModel = new MongoModelWrapper<any>(
-  getOrCreateModel<any>("SystemMeta", systemMetaSchema, COLLECTIONS.SYSTEM_META),
+  getOrCreateModel("SystemMeta", systemMetaSchema, COLLECTIONS.SYSTEM_META),
   COLLECTIONS.SYSTEM_META
 );
