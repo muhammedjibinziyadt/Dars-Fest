@@ -49,6 +49,20 @@ export async function generateMetadata({ params }: ProgramDetailPageProps): Prom
       siteName: "Maerika 2k26",
       locale: "ml_IN",
       type: "article",
+      images: [
+        {
+          url: "/og-image.png",
+          width: 723,
+          height: 1024,
+          alt: title,
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: ["/og-image.png"],
     },
   };
 }

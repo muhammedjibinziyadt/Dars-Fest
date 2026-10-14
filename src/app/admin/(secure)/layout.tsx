@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import Sidenavbar, {
   type SidebarItem,
-} from "@/components/ui/demo";
+} from "@/components/admin-sidebar";
 import { ADMIN_COOKIE } from "@/lib/config";
 import { isAdminAuthenticated } from "@/lib/auth";
 

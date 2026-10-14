@@ -43,6 +43,21 @@ export const metadata: Metadata = {
     siteName: "Maerika 2k26",
     locale: "ml_IN",
     type: "website",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 723,
+        height: 1024,
+        alt: "Maerika 2k26 - കലായുഗ ഭാവുകം",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Maerika 2k26 - കലായുഗ ഭാവുകം",
+    description:
+      "ലഹരിയുടെ കാർമേഘങ്ങൾ നാടിനെ മൂടുന്ന വർത്തമാനകാലത്ത്, സർഗാത്മകതയുടെ വെളിച്ചം കൊണ്ട് പ്രതിരോധം തീർക്കുകയാണ് ഞങ്ങളുടെ ദർസ് ഫെസ്റ്റ്.",
+    images: ["/og-image.png"],
   },
   manifest: "/manifest.json",
   appleWebApp: {

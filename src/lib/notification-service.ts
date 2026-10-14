@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { connectDB } from "./db";
-import { NotificationModel, ProgramModel, TeamModel, StudentModel } from "./models";
+import { NotificationModel, ProgramModel } from "./models";
 import type { Notification } from "./types";
 import { emitNotificationCreated } from "./pusher";
 

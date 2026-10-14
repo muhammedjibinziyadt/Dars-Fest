@@ -1,4 +1,4 @@
-import mongoose, { Schema, type Model } from "mongoose";
+import mongoose, { Schema } from "mongoose";
 import { randomUUID } from "node:crypto";
 import { connectDB } from "./db";
 import type {
