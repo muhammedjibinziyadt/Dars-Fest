@@ -24,34 +24,64 @@ interface GalleryPhoto {
 
 const galleryPhotos: GalleryPhoto[] = [
   {
-    src: "/img/gallery/gallery-1.jpg",
-    title: "Stage Blessing & Address",
-    caption: "Honoring scholars and inspiring addresses at the grand cultural stage",
+    src: "/img/gallery/gallery-1.webp",
+    title: "Arts Fest Nonstage · 21 Mon",
+    caption: "Official announcement for Maerika 2k26 Arts Fest Nonstage competitions",
   },
   {
-    src: "/img/gallery/gallery-2.jpg",
-    title: "Official Publication Release",
-    caption: "Unveiling festival souvenirs and academic works on stage",
+    src: "/img/gallery/gallery-2.webp",
+    title: "ലഹരിക്കെതിരെ സർഗാത്മക പോരാട്ടം",
+    caption: "കല വിനോദമല്ല, മാറ്റത്തിന്റെ വഴി - കലായുഗ ഭാവുകം പോസ്റ്റർ ക്യാമ്പയിൻ",
   },
   {
-    src: "/img/gallery/gallery-3.jpg",
-    title: "Cultural Symposium & Dialogue",
-    caption: "Thought-provoking panel discussions on art, ethics, and youth",
+    src: "/img/gallery/gallery-3.webp",
+    title: "Story Talk · Unfiltered Conversations",
+    caption: "A podcast platform bringing unheard stories and overlooked realities into the spotlight",
   },
   {
-    src: "/img/gallery/gallery-4.jpg",
-    title: "Youth Voice & Oratory",
-    caption: "Young talents delivering passionate speeches to the gathered audience",
+    src: "/img/gallery/gallery-4.webp",
+    title: "The Race Begins · Azman vs Sahwan",
+    caption: "The ultimate clash for the Maerika 2k26 championship glory",
   },
   {
-    src: "/img/gallery/gallery-5.jpg",
-    title: "Ceremonial Flag Hoisting",
-    caption: "Commencing the festival with community leadership and students",
+    src: "/img/gallery/gallery-5.webp",
+    title: "ഇവിടെ കലയാണ് ലഹരി",
+    caption: "കലായുഗ ഭാവുകം 2k26 - ലഹരി വിരുദ്ധ സർഗ്ഗാത്മക മുന്നേറ്റം",
   },
   {
-    src: "/img/gallery/gallery-6.jpg",
-    title: "Grand Inaugural Ribbon Cutting",
-    caption: "Dignitaries opening the doors to Maerika 2k26 fest pavilion",
+    src: "/img/gallery/gallery-6.webp",
+    title: "പോരാട്ടം തുടങ്ങട്ടെ... ഇനി കലയുടെ കാലം",
+    caption: "വളമംഗലം മഹല്ല് ജുമാ മസ്ജിദ് & ദർസ് വിദ്യാർത്ഥി പ്രതിഭകളുടെ മഹാസംഗമം",
+  },
+  {
+    src: "/img/gallery/gallery-7.webp",
+    title: "ലോഗോ പ്രകാശനവും ടീം പ്രഖ്യാപനവും",
+    caption: "Official fest logo launch and team declaration ceremony",
+  },
+  {
+    src: "/img/gallery/gallery-8.webp",
+    title: "ഒരുക്കങ്ങൾ തുടങ്ങാം... Tick-Tock",
+    caption: "ഒരു മാസം... ഒരു സ്നേഹം... ഒരു മാതൃക - വിശേഷ പരിപാടികൾ ഉടൻ",
+  },
+  {
+    src: "/img/gallery/gallery-9.webp",
+    title: "കലകൾ ഏറ്റുമുട്ടുന്നു · The Fest Era",
+    caption: "The days of FEST: creativity comes alive and unforgettable moments begin",
+  },
+  {
+    src: "/img/gallery/gallery-10.webp",
+    title: "Logo Concept · അർത്ഥതലങ്ങൾ",
+    caption: "The Dome Masjid, the Arabic Letter Meem (Maerika), and the Sword of righteousness",
+  },
+  {
+    src: "/img/gallery/gallery-11.webp",
+    title: "കലായുഗ ഭാവുകം · Fest Theme Poster",
+    caption: "Official fest emblem by Jawharathul Uloom Suffa Dars Students Association",
+  },
+  {
+    src: "/img/gallery/gallery-12.webp",
+    title: "Nonstage Session · 18 Friday",
+    caption: "Maerika 2k26 Arts Fest Nonstage inaugural session and competitions",
   },
 ];
 
@@ -66,6 +96,7 @@ export function HomeRealtime({
 }: HomeRealtimeProps) {
   const router = useRouter();
   const [selectedPhoto, setSelectedPhoto] = useState<GalleryPhoto | null>(null);
+  const [showAllPhotos, setShowAllPhotos] = useState(false);
 
   const currentPhotoIndex = selectedPhoto
     ? galleryPhotos.findIndex((p) => p.src === selectedPhoto.src)
@@ -297,34 +328,36 @@ export function HomeRealtime({
             </p>
           </div>
 
-          {/* 6-Photo Grid (2 rows x 3 columns) */}
-          <div className="max-w-5xl mx-auto">
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3.5 sm:gap-4 md:gap-5">
-              {galleryPhotos.map((photo, idx) => (
+          {/* Festival Highlights Gallery Section */}
+          <div className="max-w-6xl mx-auto">
+            {/* Responsive Grid for Festival Posters (3:4 portrait aspect) */}
+            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-3.5 sm:gap-5 md:gap-6">
+              {(showAllPhotos ? galleryPhotos : galleryPhotos.slice(0, 6)).map((photo, idx) => (
                 <div
                   key={idx}
                   onClick={() => setSelectedPhoto(photo)}
-                  className="group relative aspect-[16/10] rounded-xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1 cursor-pointer bg-amber-50/30"
+                  className="group relative aspect-[3/4] rounded-xl sm:rounded-2xl overflow-hidden shadow-md hover:shadow-2xl transition-all duration-300 hover:-translate-y-1.5 cursor-pointer bg-amber-950/5 border border-amber-900/10"
                 >
                   <Image
                     src={photo.src}
                     alt={photo.title}
                     fill
-                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                    sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 30vw"
                     className="object-cover transition-transform duration-500 group-hover:scale-105"
+                    unoptimized
                   />
 
                   {/* Quick zoom badge */}
-                  <div className="absolute top-2.5 right-2.5 z-10 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-black/60 backdrop-blur-sm text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                  <div className="absolute top-2.5 right-2.5 z-10 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-black/60 backdrop-blur-sm text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 shadow-md">
                     <ZoomIn className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-300" />
                   </div>
 
                   {/* Elegant overlay on hover */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-3.5 sm:p-4 text-white">
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-3 sm:p-4 text-white">
                     <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-amber-300">
                       Maerika Moment #{idx + 1}
                     </span>
-                    <h4 className="font-bold text-sm sm:text-base tracking-tight mt-0.5">
+                    <h4 className="font-bold text-sm sm:text-base tracking-tight mt-0.5 text-white">
                       {photo.title}
                     </h4>
                     <p className="text-xs text-white/80 line-clamp-2 mt-1">
@@ -334,6 +367,21 @@ export function HomeRealtime({
                 </div>
               ))}
             </div>
+
+            {/* View All / Show Less Button */}
+            {galleryPhotos.length > 6 && (
+              <div className="text-center mt-8 sm:mt-10">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowAllPhotos(!showAllPhotos)}
+                  className="border-amber-400/50 hover:bg-amber-100 text-[#8B4513] font-semibold px-6 sm:px-8 py-2.5 rounded-full shadow-sm hover:shadow transition-all text-sm sm:text-base"
+                >
+                  {showAllPhotos
+                    ? "Show Less · കുറച്ചു കാണിക്കുക"
+                    : `View All Posters (${galleryPhotos.length}) · കൂടുതൽ കാണുക`}
+                </Button>
+              </div>
+            )}
           </div>
         </div>
       </section>
@@ -475,7 +523,7 @@ export function HomeRealtime({
           onClick={() => setSelectedPhoto(null)}
         >
           <div
-            className="relative max-w-5xl w-full bg-slate-950 rounded-2xl sm:rounded-3xl overflow-hidden border border-amber-500/20 shadow-2xl flex flex-col"
+            className="relative max-w-2xl sm:max-w-3xl md:max-w-4xl w-full bg-slate-950 rounded-2xl sm:rounded-3xl overflow-hidden border border-amber-500/20 shadow-2xl flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Top controls: Counter and Close */}
@@ -495,14 +543,15 @@ export function HomeRealtime({
             </div>
 
             {/* Photo with Prev / Next Navigation */}
-            <div className="relative aspect-[16/10] sm:aspect-[16/9] w-full bg-black flex items-center justify-center select-none">
+            <div className="relative h-[65vh] sm:h-[75vh] max-h-[820px] w-full bg-black/95 flex items-center justify-center select-none">
               <Image
                 src={selectedPhoto.src}
                 alt={selectedPhoto.title}
                 fill
-                className="object-contain"
+                className="object-contain p-2 sm:p-4"
                 sizes="(max-width: 1280px) 100vw, 1200px"
                 priority
+                unoptimized
               />
 
               {/* Prev Button */}

@@ -86,7 +86,7 @@ export async function getJuries(): Promise<Jury[]> {
   await connectDB();
   const juries = await JuryModel.find().lean<Jury[]>();
   const normalized = normalize(juries);
-  
+
   // Ensure all juries have an avatar - assign and persist if missing (only once)
   // Once set, avatar is never changed
   const juriesWithAvatars = await Promise.all(
@@ -99,7 +99,7 @@ export async function getJuries(): Promise<Jury[]> {
       return jury;
     })
   );
-  
+
   return juriesWithAvatars;
 }
 
@@ -169,19 +169,19 @@ export async function deleteProgramById(id: string) {
 
 export async function createStudent(input: Omit<Student, "id" | "total_points">) {
   await connectDB();
-  
+
   // Normalize chest number to uppercase for consistent comparison
   const normalizedChestNo = input.chest_no.trim().toUpperCase();
-  
+
   // Check for duplicate chest number
-  const existing = await StudentModel.findOne({ 
-    chest_no: normalizedChestNo 
+  const existing = await StudentModel.findOne({
+    chest_no: normalizedChestNo
   }).lean();
-  
+
   if (existing) {
     throw new Error(`Chest number "${input.chest_no}" is already registered to student "${existing.name}".`);
   }
-  
+
   try {
     const studentId = randomUUID();
     await StudentModel.create({
@@ -190,7 +190,7 @@ export async function createStudent(input: Omit<Student, "id" | "total_points">)
       id: studentId,
       total_points: 0,
     });
-    
+
     // Emit real-time event
     const { emitStudentCreated } = await import("./pusher");
     await emitStudentCreated(studentId, input.team_id);
@@ -208,32 +208,32 @@ export async function updateStudentById(
   data: Partial<Omit<Student, "id">>,
 ) {
   await connectDB();
-  
+
   // If chest_no is being updated, check for duplicates
   if (data.chest_no) {
     const normalizedChestNo = data.chest_no.trim().toUpperCase();
-    
+
     // Check for duplicate chest number (excluding current student)
-    const existing = await StudentModel.findOne({ 
+    const existing = await StudentModel.findOne({
       chest_no: normalizedChestNo,
       id: { $ne: id }
     }).lean();
-    
+
     if (existing) {
       throw new Error(`Chest number "${data.chest_no}" is already registered to student "${existing.name}".`);
     }
-    
+
     // Normalize the chest number in the update data
     data.chest_no = normalizedChestNo;
   }
-  
+
   try {
     // Get team_id before update
     const student = await StudentModel.findOne({ id }).lean();
     const teamId = student?.team_id || data.team_id || "";
-    
+
     await StudentModel.updateOne({ id }, data);
-    
+
     // Emit real-time event
     if (teamId) {
       const { emitStudentUpdated } = await import("./pusher");
@@ -252,7 +252,7 @@ export async function deleteStudentById(id: string) {
   await connectDB();
   const student = await StudentModel.findOne({ id }).lean();
   await StudentModel.deleteOne({ id });
-  
+
   // Emit real-time event
   if (student?.team_id) {
     const { emitStudentDeleted } = await import("./pusher");
@@ -278,8 +278,8 @@ export async function createJury(input: Omit<Jury, "id">) {
   const juryId = `jury-${randomUUID().slice(0, 8)}`;
   // Assign random avatar if not provided - once set, it never changes
   const avatar = input.avatar || getRandomJuryAvatar();
-  await JuryModel.create({ 
-    ...input, 
+  await JuryModel.create({
+    ...input,
     id: juryId,
     avatar, // Avatar is set once at creation and never changes
   });
@@ -354,19 +354,19 @@ export async function getOrCreateAdminJury(): Promise<Jury> {
 
 export async function assignProgramToJury(programId: string, juryId: string) {
   await connectDB();
-  
+
   // Check if program is already approved/published
   const approvedResult = await ApprovedResultModel.findOne({ program_id: programId }).lean();
   if (approvedResult) {
     throw new Error("This program is already published. Cannot assign published programs to juries.");
   }
-  
+
   // Check if assignment already exists
   const existing = await AssignedProgramModel.findOne({
     program_id: programId,
     jury_id: juryId,
   }).lean();
-  
+
   if (existing) {
     // Assignment already exists - update status to pending if needed
     if (existing.status !== "pending") {
@@ -378,14 +378,14 @@ export async function assignProgramToJury(programId: string, juryId: string) {
     // Silently succeed if already assigned (idempotent operation)
     return;
   }
-  
+
   try {
     await AssignedProgramModel.updateOne(
       { program_id: programId, jury_id: juryId },
       { program_id: programId, jury_id: juryId, status: "pending" },
       { upsert: true },
     );
-    
+
     // Emit real-time event only if assignment was newly created
     if (!existing) {
       const { emitAssignmentCreated } = await import("./pusher");
@@ -437,7 +437,7 @@ export async function updateAssignmentNotes(
 export async function deleteAssignment(programId: string, juryId: string) {
   await connectDB();
   await AssignedProgramModel.deleteOne({ program_id: programId, jury_id: juryId });
-  
+
   // Emit real-time event
   const { emitAssignmentDeleted } = await import("./pusher");
   await emitAssignmentDeleted(programId, juryId);
@@ -445,8 +445,8 @@ export async function deleteAssignment(programId: string, juryId: string) {
 
 const SINGLE_SCORES: Record<number, number> = {
   1: 10,
-  2: 7,
-  3: 5,
+  2: 8,
+  3: 6,
 };
 
 const GROUP_SCORES: Record<number, number> = {
@@ -487,7 +487,7 @@ export async function updateLiveScore(teamId: string, delta: number) {
   try {
     const { emitScoreboardUpdated } = await import("./pusher");
     await emitScoreboardUpdated();
-  } catch {}
+  } catch { }
 }
 
 export async function updateStudentScore(
@@ -527,5 +527,5 @@ export async function resetLiveScores() {
   try {
     const { emitScoreboardUpdated } = await import("./pusher");
     await emitScoreboardUpdated();
-  } catch {}
+  } catch { }
 }
