@@ -27,6 +27,23 @@ import {
   getJuryFirebaseEmail,
 } from "./firebase-auth";
 import { compareChestNumbers } from "./utils";
+import {
+  calculateEntryScore,
+  DEFAULT_SCORING_RULES,
+  getGlobalScoringRules,
+  resetProgramScoringConfig,
+  saveGlobalScoringRules,
+  saveProgramScoringConfig,
+} from "./scoring-rules";
+import type { ProgramScoringConfig, ScoringRules } from "./types";
+
+export {
+  getGlobalScoringRules,
+  saveGlobalScoringRules,
+  saveProgramScoringConfig,
+  resetProgramScoringConfig,
+  DEFAULT_SCORING_RULES,
+};
 
 export function normalize<T>(docs: T[]): T[] {
   if (!docs || !Array.isArray(docs)) return [];
@@ -443,37 +460,14 @@ export async function deleteAssignment(programId: string, juryId: string) {
   await emitAssignmentDeleted(programId, juryId);
 }
 
-const SINGLE_SCORES: Record<number, number> = {
-  1: 10,
-  2: 8,
-  3: 6,
-};
-
-const GROUP_SCORES: Record<number, number> = {
-  1: 20,
-  2: 10,
-};
-
-const GENERAL_SCORES: Record<number, number> = {
-  1: 25,
-  2: 20,
-  3: 15,
-};
-
 export function calculateScore(
   section: SectionType,
   position: number,
-  _grade: GradeType = "none",
+  grade: GradeType = "none",
+  programConfig?: ProgramScoringConfig | null,
+  globalRules?: ScoringRules | null,
 ): number {
-  if (section === "single") {
-    return SINGLE_SCORES[position] || 0;
-  }
-
-  if (section === "group") {
-    return GROUP_SCORES[position] || 0;
-  }
-
-  return GENERAL_SCORES[position] || 0;
+  return calculateEntryScore(section, position, grade, programConfig, globalRules);
 }
 
 export async function updateLiveScore(teamId: string, delta: number) {

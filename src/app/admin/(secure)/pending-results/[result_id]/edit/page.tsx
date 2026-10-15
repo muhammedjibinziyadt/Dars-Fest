@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { AddResultForm } from "@/components/forms/add-result-form";
 import {
+  getGlobalScoringRules,
   getJuries,
   getPendingResultById,
   getPrograms,
@@ -82,12 +83,13 @@ export default async function EditPendingResultPage({
     redirect("/admin/pending-results");
   }
 
-  const [programs, students, teams, juries, registrations] = await Promise.all([
+  const [programs, students, teams, juries, registrations, globalScoringRules] = await Promise.all([
     getPrograms(),
     getStudents(),
     getTeams(),
     getJuries(),
     getProgramRegistrations(),
+    getGlobalScoringRules(),
   ]);
   const program = programs.find((item) => item.id === result.program_id);
   const jury = juries.find((item) => item.id === result.jury_id);
@@ -159,6 +161,7 @@ export default async function EditPendingResultPage({
         initialPenalties={initialPenaltyList}
         initialNotes={result.notes || ""}
         submitLabel="Update Pending Result"
+        scoringRules={globalScoringRules}
       />
     </div>
   );

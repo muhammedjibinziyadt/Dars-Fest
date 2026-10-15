@@ -1,22 +1,25 @@
 "use client";
 
 import { useMemo, useState, useEffect } from "react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Modal } from "@/components/ui/modal";
 import { SearchSelect } from "@/components/ui/search-select";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, Zap, Award } from "lucide-react";
 import type {
   GradeType,
   Jury,
   Program,
   ProgramRegistration,
   ResultRecord,
+  ScoringRules,
   Student,
   Team,
 } from "@/lib/types";
+import { DEFAULT_SCORING_RULES } from "@/lib/scoring-rules";
 
 export interface PlacementItem {
   id: string;
@@ -33,6 +36,7 @@ interface AddResultFormProps {
   registrations?: ProgramRegistration[];
   approvedResults?: ResultRecord[]; // List of approved results to check against
   action: (formData: FormData) => Promise<void>;
+  scoringRules?: ScoringRules;
   lockProgram?: boolean;
   initial?:
   | Array<{ position: number; winnerId: string; grade?: GradeType }>
@@ -56,13 +60,6 @@ interface AddResultFormProps {
   defaultJuryId?: string;
   initialNotes?: string;
 }
-
-const gradeOptions = [
-  { value: "A", label: "Grade A (+5)" },
-  { value: "B", label: "Grade B (+3)" },
-  { value: "C", label: "Grade C (+1)" },
-  { value: "none", label: "None" },
-];
 
 const POSITION_OPTIONS = [
   { value: 1, label: "🥇 1st Place" },
@@ -113,6 +110,7 @@ export function AddResultForm({
   registrations,
   approvedResults = [],
   action,
+  scoringRules: propScoringRules,
   lockProgram = false,
   initial,
   initialPenalties,
@@ -155,6 +153,32 @@ export function AddResultForm({
     () => programs.find((program) => program.id === programId) ?? programs[0],
     [programId, programs],
   );
+
+  // Active Scoring Rules
+  const scoringRules = propScoringRules || DEFAULT_SCORING_RULES;
+  const isCustomScoring = Boolean(selectedProgram?.scoringConfig?.useCustom);
+
+  const activePositionScores: Record<number, number> = useMemo(() => {
+    if (isCustomScoring && selectedProgram?.scoringConfig?.positionScores) {
+      return selectedProgram.scoringConfig.positionScores;
+    }
+    const section = selectedProgram?.section || "single";
+    return scoringRules[section] || DEFAULT_SCORING_RULES[section] || {};
+  }, [isCustomScoring, selectedProgram, scoringRules]);
+
+  const activeGradeScores: Record<GradeType, number> = useMemo(() => {
+    if (isCustomScoring && selectedProgram?.scoringConfig?.gradeScores) {
+      return selectedProgram.scoringConfig.gradeScores as Record<GradeType, number>;
+    }
+    return scoringRules.grades || DEFAULT_SCORING_RULES.grades;
+  }, [isCustomScoring, selectedProgram, scoringRules]);
+
+  const dynamicGradeOptions = useMemo(() => [
+    { value: "A", label: `Grade A (+${activeGradeScores.A ?? 5})` },
+    { value: "B", label: `Grade B (+${activeGradeScores.B ?? 3})` },
+    { value: "C", label: `Grade C (+${activeGradeScores.C ?? 1})` },
+    { value: "none", label: "None (0 pts)" },
+  ], [activeGradeScores]);
 
   // Reset winners when program changes if not in locked initial edit mode
   useEffect(() => {
@@ -535,17 +559,29 @@ export function AddResultForm({
                     />
                   </div>
 
-                  {isSingle ? (
-                    <SearchSelect
-                      name={`grade_${row.id}`}
-                      value={row.grade}
-                      onValueChange={(value) => updateRowGrade(row.id, value as GradeType)}
-                      disabled={!hasEligibleCandidates}
-                      options={gradeOptions}
-                      placeholder="Select grade"
-                    />
-                  ) : (
-                    <input type="hidden" name={`grade_${row.id}`} value="none" />
+                  <SearchSelect
+                    name={`grade_${row.id}`}
+                    value={row.grade}
+                    onValueChange={(value) => updateRowGrade(row.id, value as GradeType)}
+                    disabled={!hasEligibleCandidates}
+                    options={dynamicGradeOptions}
+                    placeholder="Select grade"
+                  />
+
+                  {/* Live calculated score badge */}
+                  {row.winnerId && (
+                    <div className="flex items-center justify-between text-xs py-1.5 px-3 rounded-xl bg-white/5 border border-white/5 text-white/70">
+                      <span className="flex items-center gap-1.5">
+                        <Award className="w-3.5 h-3.5 text-amber-400" />
+                        <span>Awarded score:</span>
+                      </span>
+                      <span className="text-amber-300 font-medium">
+                        {activePositionScores[row.position] || 0} pos + {activeGradeScores[row.grade] || 0} grade ={" "}
+                        <strong className="text-white font-bold">
+                          {(activePositionScores[row.position] || 0) + (activeGradeScores[row.grade] || 0)} pts
+                        </strong>
+                      </span>
+                    </div>
                   )}
                 </div>
               );
@@ -720,21 +756,80 @@ export function AddResultForm({
           onClose={() => setShowRules(false)}
           title="Scoring Matrix"
           actions={
-            <Button type="button" variant="secondary" onClick={() => setShowRules(false)}>
-              Close
-            </Button>
+            <div className="flex flex-wrap items-center justify-between w-full gap-2">
+              <Link
+                href="/admin/scoring-rules"
+                className="text-xs text-amber-400 hover:text-amber-300 underline font-medium"
+              >
+                ⚙️ Configure Scoring Rules in Admin
+              </Link>
+              <Button type="button" variant="secondary" onClick={() => setShowRules(false)}>
+                Close
+              </Button>
+            </div>
           }
         >
           <div className="space-y-4 text-sm">
+            {isCustomScoring && selectedProgram ? (
+              <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 space-y-2">
+                <div className="flex items-center gap-2">
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-400 text-black">
+                    CUSTOM SCORING ACTIVE
+                  </span>
+                  <span className="font-semibold text-white">{selectedProgram.name}</span>
+                </div>
+                <p className="text-xs text-amber-200">
+                  This program uses customized point values tailored specifically for it:
+                </p>
+                <div className="text-white/90 text-xs pt-1 space-y-1">
+                  <p>
+                    <strong>Placements:</strong>{" "}
+                    {Object.entries(activePositionScores)
+                      .map(([pos, pts]) => `${pos === "1" ? "1st" : pos === "2" ? "2nd" : pos === "3" ? "3rd" : `${pos}th`}: ${pts} pts`)
+                      .join(" · ")}
+                  </p>
+                  <p>
+                    <strong>Grades:</strong> A: {activeGradeScores.A} pts · B: {activeGradeScores.B} pts · C: {activeGradeScores.C} pts
+                  </p>
+                </div>
+              </div>
+            ) : null}
+
             <div className="grid gap-3 rounded-2xl border border-white/10 bg-slate-900/70 p-4">
-              <p className="font-semibold text-amber-400">Single Events</p>
-              <p className="text-white/80">1st: 10 pts · 2nd: 7 pts · 3rd: 5 pts</p>
+              <p className="font-semibold text-amber-400 flex items-center justify-between">
+                <span>Single Events</span>
+                <span className="text-xs text-white/50 font-normal">Global Default</span>
+              </p>
+              <p className="text-white/80">
+                1st: {scoringRules.single[1] ?? 10} pts · 2nd: {scoringRules.single[2] ?? 8} pts · 3rd: {scoringRules.single[3] ?? 6} pts
+              </p>
             </div>
+
             <div className="grid gap-3 rounded-2xl border border-white/10 bg-slate-900/70 p-4">
-              <p className="font-semibold text-amber-400">Group Events</p>
-              <p className="text-white/80">1st: 20 pts · 2nd: 10 pts</p>
-              <p className="font-semibold text-amber-400">General Events</p>
-              <p className="text-white/80">1st: 25 pts · 2nd: 20 pts · 3rd: 15 pts</p>
+              <p className="font-semibold text-amber-400 flex items-center justify-between">
+                <span>Group Events</span>
+                <span className="text-xs text-white/50 font-normal">Global Default</span>
+              </p>
+              <p className="text-white/80">
+                1st: {scoringRules.group[1] ?? 20} pts · 2nd: {scoringRules.group[2] ?? 10} pts
+              </p>
+              <p className="font-semibold text-amber-400 flex items-center justify-between pt-1">
+                <span>General Events</span>
+                <span className="text-xs text-white/50 font-normal">Global Default</span>
+              </p>
+              <p className="text-white/80">
+                1st: {scoringRules.general[1] ?? 25} pts · 2nd: {scoringRules.general[2] ?? 20} pts · 3rd: {scoringRules.general[3] ?? 15} pts
+              </p>
+            </div>
+
+            <div className="grid gap-3 rounded-2xl border border-white/10 bg-slate-900/70 p-4">
+              <p className="font-semibold text-amber-400 flex items-center justify-between">
+                <span>Grade-Based Points</span>
+                <span className="text-xs text-white/50 font-normal">Added to Position Score</span>
+              </p>
+              <p className="text-white/80">
+                Grade A: +{scoringRules.grades.A ?? 5} pts · Grade B: +{scoringRules.grades.B ?? 3} pts · Grade C: +{scoringRules.grades.C ?? 1} pts
+              </p>
             </div>
           </div>
         </Modal>

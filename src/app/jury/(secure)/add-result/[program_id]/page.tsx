@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { AddResultForm } from "@/components/forms/add-result-form";
 import { getCurrentJury } from "@/lib/auth";
-import { getApprovedResults, getAssignments, getPrograms, getStudents, getTeams } from "@/lib/data";
+import { getApprovedResults, getAssignments, getGlobalScoringRules, getPrograms, getStudents, getTeams } from "@/lib/data";
 import { getProgramRegistrations } from "@/lib/team-data";
 import { ensureRegisteredCandidates } from "@/lib/registration-guard";
 import { submitResultToPending, parsePlacementPayloads } from "@/lib/result-service";
@@ -100,13 +100,14 @@ export default async function JuryAddResultPage({
   if (!jury) {
     redirect("/jury/login");
   }
-  const [programs, students, teams, assignments, registrations, approvedResults] = await Promise.all([
+  const [programs, students, teams, assignments, registrations, approvedResults, globalScoringRules] = await Promise.all([
     getPrograms(),
     getStudents(),
     getTeams(),
     getAssignments(),
     getProgramRegistrations(),
     getApprovedResults(),
+    getGlobalScoringRules(),
   ]);
 
   const program = programs.find((item) => item.id === programId);
@@ -139,6 +140,7 @@ export default async function JuryAddResultPage({
         mode="jury"
         juryName={jury.name}
         initialNotes={assignment.notes || ""}
+        scoringRules={globalScoringRules}
       />
     </div>
   );

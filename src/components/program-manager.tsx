@@ -362,6 +362,11 @@ export const ProgramManager = React.memo(function ProgramManager({
                   >
                     Registered {registrationCount} / {candidateLimit}
                   </span>
+                  {program.scoringConfig?.useCustom && (
+                    <span className="rounded-full border border-amber-500/40 bg-amber-500/10 text-amber-300 px-3 py-1 text-xs font-semibold">
+                      ⚡ Custom Scoring
+                    </span>
+                  )}
                 </div>
                 <div className="text-sm text-white/70 w-full xl:w-auto">
                   Last updated · <span className="text-white/50">Auto</span>

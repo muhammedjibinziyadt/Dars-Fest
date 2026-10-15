@@ -18,6 +18,7 @@ import {
   Shuffle,
   QrCode,
   Calendar,
+  Sliders,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -42,6 +43,7 @@ export interface SidebarChild {
 const ICONS = {
   dashboard: LayoutDashboard,
   programs: Layers,
+  scoring: Sliders,
   students: GraduationCap,
   attendance: QrCode,
   jury: Users,

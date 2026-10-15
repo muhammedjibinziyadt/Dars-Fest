@@ -25,6 +25,19 @@ export interface Student {
   group_points?: number;
 }
 
+export interface ScoringRules {
+  single: Record<number, number>;
+  group: Record<number, number>;
+  general: Record<number, number>;
+  grades: Record<GradeType, number>;
+}
+
+export interface ProgramScoringConfig {
+  useCustom: boolean;
+  positionScores?: Record<number, number>;
+  gradeScores?: Partial<Record<GradeType, number>>;
+}
+
 export interface Program {
   id: string;
   name: string;
@@ -34,6 +47,7 @@ export interface Program {
   scheduledDate?: string;
   scheduledTime?: string;
   scheduleStatus?: "upcoming" | "live" | "ended";
+  scoringConfig?: ProgramScoringConfig;
 }
 
 export interface Jury {

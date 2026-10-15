@@ -82,9 +82,12 @@ export function parsePlacementPayloads(formData: FormData): WinnerPayload[] {
 }
 
 async function buildEntries(
-  program: { id: string; section: string },
+  program: { id: string; section: string; scoringConfig?: any },
   winners: WinnerPayload[],
 ) {
+  const { getGlobalScoringRules } = await import("./scoring-rules");
+  const globalRules = await getGlobalScoringRules();
+
   if (program.section === "single") {
     const ids = winners.map((winner) => winner.id);
     const students = await StudentModel.find({ id: { $in: ids } }).lean();
@@ -121,6 +124,8 @@ async function buildEntries(
           program.section as "single",
           winner.position,
           grade,
+          program.scoringConfig,
+          globalRules,
         ),
       });
     }
@@ -149,14 +154,17 @@ async function buildEntries(
     if (!team) {
       throw new Error("Invalid team selected");
     }
+    const grade = sanitizeGrade(winner.grade);
     entries.push({
       position: winner.position,
       team_id: team.id,
-      grade: "none" as const,
+      grade,
       score: calculateScore(
         program.section as "group" | "general",
         winner.position,
-        "none",
+        grade,
+        program.scoringConfig,
+        globalRules,
       ),
     });
   }

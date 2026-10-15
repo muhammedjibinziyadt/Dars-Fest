@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { AddResultForm } from "@/components/forms/add-result-form";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
-import { getApprovedResults, getJuries, getPrograms, getStudents, getTeams, getOrCreateAdminJury } from "@/lib/data";
+import { getApprovedResults, getJuries, getPrograms, getStudents, getTeams, getOrCreateAdminJury, getGlobalScoringRules } from "@/lib/data";
 import { getProgramRegistrations } from "@/lib/team-data";
 import { ensureRegisteredCandidates } from "@/lib/registration-guard";
 import { submitResultToPending, parsePlacementPayloads } from "@/lib/result-service";
@@ -113,7 +113,7 @@ async function submitResultAction(formData: FormData) {
 }
 
 export default async function AddResultPage() {
-  const [programs, students, teams, juries, registrations, approvedResults, adminJury] = await Promise.all([
+  const [programs, students, teams, juries, registrations, approvedResults, adminJury, globalScoringRules] = await Promise.all([
     getPrograms(),
     getStudents(),
     getTeams(),
@@ -121,6 +121,7 @@ export default async function AddResultPage() {
     getProgramRegistrations(),
     getApprovedResults(),
     getOrCreateAdminJury(),
+    getGlobalScoringRules(),
   ]);
 
   // Filter out programs that are already approved/published
@@ -153,6 +154,7 @@ export default async function AddResultPage() {
         approvedResults={approvedResults}
         action={submitResultAction}
         defaultJuryId={adminJury.id}
+        scoringRules={globalScoringRules}
       />
     </div>
   );
