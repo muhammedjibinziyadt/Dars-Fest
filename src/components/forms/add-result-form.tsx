@@ -19,7 +19,7 @@ import type {
   Student,
   Team,
 } from "@/lib/types";
-import { DEFAULT_SCORING_RULES } from "@/lib/scoring-rules";
+import { DEFAULT_SCORING_RULES } from "@/lib/scoring-constants";
 
 export interface PlacementItem {
   id: string;

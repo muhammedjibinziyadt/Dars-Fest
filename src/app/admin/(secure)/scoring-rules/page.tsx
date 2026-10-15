@@ -52,7 +52,7 @@ export default async function ScoringRulesPage() {
   async function resetProgramConfigAction(programId: string) {
     "use server";
     try {
-      await resetProgramConfigAction(programId);
+      await resetProgramScoringConfig(programId);
       revalidatePath("/admin/scoring-rules");
       revalidatePath("/admin/add-result");
       revalidatePath("/admin/programs");

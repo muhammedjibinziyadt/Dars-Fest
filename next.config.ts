@@ -25,7 +25,16 @@ const nextConfig: NextConfig = {
   // Disable Turbopack for PWA support (next-pwa requires webpack)
   webpack: (config, { isServer }) => {
     if (!isServer) {
-      // PWA service worker will be handled by next-pwa
+      config.resolve = config.resolve || {};
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        crypto: false,
+        fs: false,
+        path: false,
+        os: false,
+        net: false,
+        tls: false,
+      };
     }
     return config;
   },
